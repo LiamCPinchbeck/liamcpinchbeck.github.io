@@ -209,16 +209,10 @@ $$
 c &\sim \mathcal{U}(-10,10)\end{align}
 $$
 
-such that
+where
 
 $$
-\pi(m,c) =\pi(m)\pi(c)= \begin{cases}
-    \frac{1}{10-0} & \text{if } m \in [0, 10]\\ % & is your "\tab"-like command (it's a tab alignment character)
-    0 & \text{otherwise.}
-\end{cases} \cdot \begin{cases}
-    \frac{1}{10-(-10)} & \text{if } c \in [-10, 10]\\ % & is your "\tab"-like command (it's a tab alignment character)
-    0 & \text{otherwise.}
-\end{cases} 
+\pi(m,c) =\pi(m)\pi(c).
 $$
 
 
