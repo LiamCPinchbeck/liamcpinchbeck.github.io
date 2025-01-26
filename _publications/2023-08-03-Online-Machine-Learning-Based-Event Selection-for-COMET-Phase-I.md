@@ -4,7 +4,7 @@ collection: publications
 category: manuscripts
 permalink: /publication/2023-08-03-Online-Machine-Learning-Based-Event Selection-for-COMET-Phase-I
 excerpt: 'In this work I helped develop an initial framework to construct lightweight Convolutional Neural Networks to be loaded onto FPGA boards in the search for BSM signatures in COMET Phase-I data.'
-date: "2024-03-18"
+date: "2023-08-03"
 venue: 'Phys.Sci.Forum'
 paperurl: 'https://www.mdpi.com/2673-9984/8/1/32'
 # citation: 'Liam Pinchbeck, Csaba Balazs, Eric Thrane (2024). &quot;GammaBayes: a Bayesian pipeline for dark matter detection with CTA.&quot; <i>JCAP</i>.'
