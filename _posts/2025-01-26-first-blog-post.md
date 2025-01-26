@@ -24,7 +24,7 @@ Like many a statistics blogger, I'm going to make this post pretty similar to [D
 Fitting a line to data. (Gotta start somewhere)
 =====================
 
-For this post I'm going to through some data at you where I've generated some random x values, from that created some y values using the formula for a straight line, then added some noise that follows a gaussian distribution. Or more simply,
+For this post I'm going to throw some data at you. I've generated some random x values, from that created some y values using the formula for a straight line, then added some noise that follows a gaussian distribution. Or more simply,
 
 $$ X \sim \mathcal{U}(0,10)$$
 
@@ -32,7 +32,7 @@ $$y \sim \mathcal{N}(\mu=m\cdot X+ c, \sigma^2=1).$$
 
 (First line says that the probability of getting an $$X$$ value is the same or [uniformly distributed](https://en.wikipedia.org/wiki/Continuous_uniform_distribution) between 0 and 10 and the second that $$y$$ is [normally distributed](https://en.wikipedia.org/wiki/Normal_distribution) about the straight line $$m\cdot X+ c$$ with a standard deviation of $$1$$.)
 
-I won't tell you what $$m$$ and $$c$$ are, that is what we're trying to find. But let's say that we for some reason know that $$ m $$ will be between 0 and 10 and $$c$$ will be between $$-10$$ and $$10$$. 
+I won't tell you what $$m$$ and $$c$$ are, that is what we're trying to find. But let's say that we, for some reason, know that $$ m $$ will be between 0 and 10 and $$c$$ will be between $$-10$$ and $$10$$. 
 
 This gave me some data that looks like the following.
 
@@ -56,7 +56,7 @@ def line_function(x, m, c):
     return m * x + c
 ```
 
-The first thing that you may want to do is guess. There's nothing explicitly wrong with this, it may give you an idea of your parameters and is part of normal exploratory analysis where you get a feel for the data. I got the $$m$$ and $$c$$ values by gradually changing them by eye.
+The first thing that you may want to do is guess. There's nothing explicitly wrong with this, it may give you an idea of your parameters and is part of normal exploratory analysis where you get a feel for the data. For the following I got the $$m$$ and $$c$$ values by gradually changing them by eye.
 
 ```python
 # Instantiation some x values to use with our straight line
@@ -97,7 +97,7 @@ plt.show()
 Let's start with a "stupid" thing
 ---------------------
 
-You can see the header, but the following is not the stupid bit. We will also be using this later, but we need some sort of function to get some sort of probabilistic interpretation of our parameters. For that we will mimic how I generated the data, we'll investigate the probability that one could generate the data for the given input parameters. 
+You can see the header, but the following is not the stupid bit (we will also be using this later). We need some sort of function to get a probabilistic interpretation of our parameters. For that we will mimic how I generated the data, particularly the probability that one could generate the data for a given set of input parameters. 
 
 _Through Maths_
 
@@ -185,12 +185,12 @@ We can convert $$p(y\mid x, m, c, \sigma)$$ to the probability density on the pa
 
 $$p(\vec{\theta}\mid\vec{d}) = \frac{p(\vec{d}\mid\vec{\theta})p(\vec{\theta})}{p(d)}, $$
 
-where $$\vec{\theta}$$ denote the parameters of interest, $$\vec{d}$$ the data. We then generally actually write the equation with different symbols to denote there function in the equation,
+where $$\vec{\theta}$$ denote the parameters of interest, $$\vec{d}$$ the data. We then generally write the equation with different symbols to denote their function in the equation,
 
 $$p(\vec{\theta}\mid\vec{d}) = \frac{\mathcal{L}(\vec{d}\mid\vec{\theta})\pi(\vec{\theta})}{\mathcal{Z}(\vec{d})}. $$
 
 - $$\mathcal{L}(\vec{d}\mid\vec{\theta})$$ is the _likelihood_ that we previously discussed, 
-- $$p(\vec{\theta}\mid\vec{d})$$ is called the _posterior_ and is our goal of our analysis (probability of parameter based on data), 
+- $$p(\vec{\theta}\mid\vec{d})$$ is called the _posterior_ and is the goal of our analysis (probability of parameter based on data), 
 - $$\pi(\vec{\theta})$$ is called the _prior_ and quantifies our _prior_ assumptions on the parameters, and finally 
 - $$\mathcal{Z}(\vec{d})$$ is called the _evidence_ or _fully marginalised likelihood_ and is typically used for model comparison if at all (we'll circle back to this one later).
 
@@ -200,9 +200,9 @@ For our specific case, this looks like,
 $$p(m, c\mid \vec{y}, \vec{x}, \sigma) = \frac{\mathcal{L}(\vec{y}\mid \vec{x}, m, c, \sigma)\pi(m, c)}{\mathcal{Z}(\vec{y}\mid \vec{x}, \sigma)}. $$
 
 
-And this is where the Bayesian analysis officially start.
+And this is where the Bayesian analysis officially starts.
 
-One of the beautiful things about Bayesian analysis is the explicit quantification of our assumption, you might have noticed that at the beginning that I restricted our $$m$$ and $$c$$ values which kind of sneaked it's way in by the range of values that I tested. In Bayesian analysis we place this information into the prior! In essence,
+One of the beautiful things about Bayesian analysis is the explicit quantification of our assumptions, you might have noticed that at the beginning I restricted our $$m$$ and $$c$$ values, which later kind of sneaked it's way in by the range of values that I tested. In Bayesian analysis we place this information into the prior! In essence,
 
 $$
 \begin{align} m &\sim \mathcal{U}(0,10) \\
@@ -218,7 +218,7 @@ $$
 
 Slightly less stupid thing
 -----
- Now we'll brute force the values like before but now we've explicitly included our assumptions _into_ the model.
+ Now we'll brute force the values like before but now we've _explicitly_ included our assumptions into the model.
 
  ```python
 import numpy as np
@@ -272,15 +272,15 @@ plt.show()
       style="width: 75%; height: auto; border-radius: 8px;">
 </div>
 
-This looks the same as the previous plot as our priors were uniform thus the overall change is a multiplicative constant which if we normalise our probabilities (to make them a probability) this constant disappears. So we were lucky in that the likelihood and posterior are the same.
+This looks the same as the previous plot, as our priors were uniform, meaning the overall change is a multiplicative constant, which if we normalised our values (to make them a probability density) this constant disappears. So we were lucky that the likelihood and posterior are the same.
 
 Issues
 =====
 
 Woo! We have a probability density on our parameters. However, there are a few subtles that I failed to mention.
-1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension, this corresponds to 10 billion evaluations of the function, which by itself is a little rediculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB... not great. Additionally, we were lucky that the posterior wasn't too much smaller than our prior so we could zoom into the relevant region. However, if we had enough data then the posterior could be small enough that the parameter values that we evaluate we wouldn't see anything. I'll get back to this one later.
+1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension. This corresponds to 10 billion evaluations of the function, which by itself is a little rediculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB... not great. Additionally, we were lucky that the posterior wasn't much smaller than our prior, so we could zoom into the relevant region of parameter space. However, if we had enough data then the posterior could be small enough that the posterior values that evaluated may not see anything meaningful above 0. I'll get back to this one later.
 
-2. There's a bias in the gradient values towards positive values. Naturally you would presume that the gradient values are uniformly distributed by angles between 90 degrees and -90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we could have looked at they would look like the following. (Thanks Dr. Casey for this particular plot.)
+2. There's a bias in the gradient values towards positive values. Naturally you would presume that the gradient values are uniformly distributed between angles of -90 degrees to 90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we implicitly presumed looking at uniformly spaced values of m between 0 and 10 it would look like the following. (Thanks Dr. Casey for this particular plot.)
 
 ```python
 import numpy as np
@@ -315,7 +315,7 @@ fig.tight_layout()
       style="width: 75%; height: auto; border-radius: 8px;">
 </div>
 
-You can see that we heavily preferenced larger gradient values. We can instead ask that our gradients are uniformly distributed by the sin of the angle where the angle is given by $$\theta = \tan^{-1}(m)$$ (where $$\theta$$ is angle here not "parameters").
+You can see that we heavily preferenced larger gradient values. We can instead ask that our gradients are uniformly distributed by the sin of the angle, where the angle is given by $$\theta = \tan^{-1}(m)$$ (where $$\theta$$ is angle here _not_ "parameters").
 
 In essence,
 
@@ -331,7 +331,7 @@ $$ \begin{align} \pi(m) &= \pi(\theta) \left|\frac{d\theta}{dm}\right| \\
 \end{align}
 $$
 
-Now I don't know about you but first time I saw this I didn't really get it, but I love to figure it out by doing, so if we do the same trick as before. I can't show how I generated the samples without getting sidetracked but this is what random samples of this distribution look like.
+Now I don't know about you, but the first time I saw this I didn't really get it, but I love to figure it out by doing. I can't show how I generated these samples without getting sidetracked, but trust me that this is what random samples of our new distribution looks like.
 
 
 <div style="text-align: center;">
@@ -344,5 +344,5 @@ Now I don't know about you but first time I saw this I didn't really get it, but
 
 Much better!
 
-Now if we use _this_ prior in our analysis, we don't include this bias (spoiler alert, for our small case it doesn't make a huge difference). In the next post I'll try and tackle how we can explore the posterior without trying to scan the whole parameter space.
+Now if we use _this_ prior in our analysis, we don't include the bias (spoiler alert, for our small case it doesn't make a huge difference). In the next post I'll try and tackle how we can explore the posterior without trying to scan the whole parameter space.
 
