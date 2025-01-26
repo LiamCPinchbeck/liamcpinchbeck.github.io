@@ -45,7 +45,7 @@ This gave me some data that looks like the following.
       style="width: 50%; height: auto; border-radius: 8px;">
 </div>
 
-Let's start with the "stupid" thing
+Let's start with exploration
 ---------------------
 
 First let's define a function to use for our straight line.
@@ -94,7 +94,7 @@ plt.show()
 
 
 
-Let's start with the stupid thing
+Let's start with a "stupid" thing
 ---------------------
 
 You can see the header, but the following is not the stupid bit. We will also be using this later, but we need some sort of function to get some sort of probabilistic interpretation of our parameters. For that we will mimic how I generated the data, we'll investigate the probability that one could generate the data for the given input parameters. 
@@ -128,7 +128,7 @@ m_mesh, c_mesh = np.meshgrid(m_values, c_values, indexing='ij')
 log_likelihood_values = ln_likelihood((y, X_true), (m_mesh.flatten(), c_mesh.flatten()), sigma=1).reshape(m_mesh.shape)
 ```
 
-We'll then fit a Gaussian KDE to it to get contour curves and directly plot the likelihood values.
+We'll then fit a [Gaussian (KDE)](https://en.wikipedia.org/wiki/Kernel_density_estimation) to it to get contour curves and directly plot the likelihood values.
 
 
 ```python
@@ -212,14 +212,13 @@ $$
 such that
 
 $$
-\begin{align} \pi(m,c) =\pi(m)\pi(c)= \begin{cases}
+\pi(m,c) =\pi(m)\pi(c)= \begin{cases}
     \frac{1}{10-0} & \text{if } m \in [0, 10]\\ % & is your "\tab"-like command (it's a tab alignment character)
     0 & \text{otherwise.}
 \end{cases} \cdot \begin{cases}
     \frac{1}{10-(-10)} & \text{if } c \in [-10, 10]\\ % & is your "\tab"-like command (it's a tab alignment character)
     0 & \text{otherwise.}
-\end{cases}   \\
-\end{align}
+\end{cases} 
 $$
 
 
