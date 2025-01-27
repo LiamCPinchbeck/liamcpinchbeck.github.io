@@ -42,7 +42,7 @@ Let's say you have a normal probability distribution function (pdf) and it's cum
       style="width: 50%; height: auto; border-radius: 8px;">
 </div>
 
-And we can do this with any analytic continuous distribution. For example below I have an example with the power law distribution and gamma distribution in scipy (the explicit functions aren't important just that you can see that the samples gradually mimic the pdf of the relevant distribution).
+And we can do this with any analytic continuous distribution. For example below I have an examples with a power law distribution, gamma distribution, ARGUS distribution and others using scipy functions (the explicit functions aren't important just that you can see that the samples gradually mimic the pdf of the relevant distribution).
 
 
 <div style="text-align: center;">
