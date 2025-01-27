@@ -7,7 +7,7 @@
 # server process.
 
 # Basic Site Settings
-locale                   : "en-US"
+locale                   : "en-AU"
 title                    : "Liam's Homepage"
 title_separator          : "-"
 name                     : &name "Liam C. Pinchbeck"
@@ -293,7 +293,7 @@ sass:
 permalink: /:categories/:title/
 # paginate: 5 # amount of posts to show
 # paginate_path: /page:num/
-timezone: Etc/UTC # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+timezone: Australia/Sydney # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 
 # Plugins
