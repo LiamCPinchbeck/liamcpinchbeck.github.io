@@ -152,14 +152,9 @@ Now [ritvikmath](https://www.youtube.com/@ritvikmath) then goes on to solve for 
 
 Well, the inverse of a function is just that if I give it what _were_ the outputs of the _original function_ then I should get what the inputs must have been. So if I can create a map, or an _approximate map_ of inputs to outputs, then just do the ol' switcheroo then I can interpolate the result and get an approximate inverse CDF!
 
-e.g with the exponential distribution.
 ```python
+
 from scipy.interpolate import interp1d
-
-
-u_inputs = np.linspace(0, 1, 1001)
-x_inputs = np.linspace(0, 7, 1001)
-
 
 def create_an_invcdf(pdf, inputs, kwargs):
     # We are iplicitly presuming that the inputs are linearly spaced here and performing are finite Riemann sum
@@ -171,13 +166,24 @@ def create_an_invcdf(pdf, inputs, kwargs):
     inv_cdf_func = interp1d(y=inputs, x=cdf_outputs)
 
     return inv_cdf_func
+```
+
+I extract the pdf (a pmf would also work here) then calculate the cumulative sum, equivalent to a finite Riemann sum, diving by the max value (which should be the last but dw) such that the cdf values range from $$\approx 0$$ to 1[^1]. 
+
+[^1]: Presuming that we only sample in the range of the given inputs we can think of this as the complete domain, the final value should correspond to one hence the division. We could also take this step out if you are sure your distribution is properly normalised
+
+### Continuous Approx Case
+
+We can then apply this to the exponential distribution we looked at previously, looking at values from 0 to 7.
+
+```python
+
+u_inputs = np.linspace(0, 1, 1001)
+x_inputs = np.linspace(0, 7, 1001)
 
 
 def exact_exp_cdf_inverse(u, lam=1):
     return -np.log(1-u)/lam
-
-
-
 
 
 # Plotting the results
@@ -210,6 +216,7 @@ ax[1].set_title("Exact")
 plt.savefig("inv_cdf_comparison.png")
 plt.show()
 ```
+
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/2025-01-27/inv_cdf_comparison.png" 
@@ -219,7 +226,7 @@ plt.show()
 
 </div>
 
-And then if we produce uniform random samples and feed them into these functions with lambda equal to 2 we get the following.
+And then if we produce uniform random samples and feed them into these functions with lambda equal to 5 we get the following.
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/2025-01-27/inv_cdf_samples_comparison.png" 
@@ -230,9 +237,12 @@ And then if we produce uniform random samples and feed them into these functions
 </div>
 
 
-You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function it would likely be better to use something like ```np.abs(|input - cdf_outputs|).argmin()``` to get the index of the exact input/output.
+You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function it would likely be better to use something like ```np.abs(input - cdf_outputs).argmin()``` to get the index of the exact input/output.
 
 
 ## Next Steps
 
 In my next post we'll use this ability to sample "nice" probability distributions to sample "less nice" distributions using [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling).
+
+
+___

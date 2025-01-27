@@ -22,7 +22,7 @@ redirect_from:
   </div>
   <div style="flex: 1; min-width: 300px; max-width: 40%; display: flex; flex-direction: column;">
     <img 
-      src="/files/IDM_diagram.png" 
+      src="/files/AboutMe/IDM_diagram.png" 
       alt="Diagram of different dark matter search methods." 
       title="Diagram of different dark matter search methods. I focus on indirect searches where dark matter annihilates or decays into 'normal' particles." 
       style="width: 100%; height: auto; border-radius: 8px;">
@@ -34,17 +34,17 @@ redirect_from:
 <div style="display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
    <div style="flex: 1; min-width: 300px; max-width: 40%; display: flex; flex-direction: column; gap: 15px;">
         <img 
-            src="/files/CTAO_pic.png" 
+            src="/files/AboutMe/CTAO_pic.png" 
             alt="CTA Observatory" 
             title="Rendered image of the CTA Observatory, the next-generation ground-based gamma-ray observatory for high-energy astrophysics." 
             style="width: 100%; height: auto; border-radius: 8px;">
       <img 
-          src="/files/HESS_Observatory.png" 
+          src="/files/AboutMe/HESS_Observatory.png" 
           alt="HESS Telescope Array" 
           title="The HESS Telescope Array in Namibia, used for observing very high energy gamma rays." 
           style="width: 100%; height: auto; border-radius: 8px;">
       <img 
-          src="/files/FermiLAT_Telescope.png" 
+          src="/files/AboutMe/FermiLAT_Telescope.png" 
           alt="Fermi-LAT Telescope" 
           title="The Fermi-LAT Telescope in space, designed to study high-energy phenomena in the universe." 
           style="width: 100%; height: auto; border-radius: 8px;">
@@ -73,12 +73,12 @@ redirect_from:
 
    <div style="flex: 1; min-width: 300px; max-width: 40%; display: flex; flex-direction: column; gap: 15px;">
         <img 
-            src="/files/NS_Gif.gif" 
+            src="/files/AboutMe/NS_Gif.gif" 
             alt="Nested Sampling animation" 
             title="GIF showing how nested sampling, a method in Bayesian inference, explores parameter space and constructs a distribution of samples we can use for inference." 
             style="width: 100%; height: auto; border-radius: 8px;">
       <img 
-          src="/files/NormalFlow_GIF.gif" 
+          src="/files/AboutMe/NormalFlow_GIF.gif" 
           alt="Normalising Flow animation" 
           title="GIF showing how a normalising flow works. We first sample a simple distribution, such as the one at the beginning of the GIF (a gaussian), and optimise a transformation that brings this distribution closer to the one we want." 
           style="width: 100%; height: auto; border-radius: 8px;">
@@ -90,7 +90,7 @@ redirect_from:
 
    <div style="flex: 1; min-width: 300px; max-width: 40%; display: flex; flex-direction: column; gap: 15px;">
         <img 
-            src="/files/GammaRaySkyGif.gif" 
+            src="/files/AboutMe/GammaRaySkyGif.gif" 
             alt="Time dependent gamma ray sky" 
             title="GIF showing the complexity of the gamma ray sky." 
             style="width: 100%; height: auto; border-radius: 8px;">
@@ -113,7 +113,7 @@ redirect_from:
 
 <div style="padding-top: 3em">
 <img 
-    src="/files/FermiSky.jpg" 
+    src="/files/AboutMe/FermiSky.jpg" 
     alt="The gamma-ray sky by Fermi-LAT" 
     title="A map of the gamma-ray sky by Fermi-LAT." 
     style="width: 100%; height: auto; border-radius: 8px;">
