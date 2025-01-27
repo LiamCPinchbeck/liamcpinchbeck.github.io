@@ -1,6 +1,6 @@
 ---
 title: 'First Blog Post/Fitting a line I'
-date: 2024-01-26
+date: 2025-01-26
 permalink: /posts/2025/01/2025-01-26-first-blog-post/
 tags:
   - Bayesian Analysis
@@ -279,7 +279,7 @@ $$ \begin{align}
 p(A\mid B) = \frac{p(B\mid A)\,p(A)}{p(B)},
 \end{align}$$
 
-and voila! Bayes' theorem.
+and voila! Bayes' theorem. If you still don't feel that this satisfies your understanding, the man 3Blue1Brown also did a [whole video](https://www.youtube.com/watch?v=HZGCoVF3YvM) on this concept.
 
 This theorem is the cornerstone of Bayesian analysis, allowing us to update our beliefs about model parameters as new data becomes available. By combining the likelihood with prior knowledge, we can calculate the posterior distribution, which represents our updated understanding of the parameters.
 
@@ -433,7 +433,7 @@ Much better!
 Now if we use _this_ prior in our analysis, we don't include the bias (spoiler alert, for our small case it doesn't make a huge difference). 
 
 ### What's Next?
-As our models grow more complex, brute force quickly becomes impractical due to the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality). In the next post, I'll introduce more sophisticated techniques, such as [Markov Chain Monte Carlo (MCMC)](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo), to explore the posterior efficiently.
+As our models grow more complex, brute force quickly becomes impractical due to the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality). In the next few posts, I'll introduce more sophisticated techniques, such as [Markov Chain Monte Carlo (MCMC)](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo), to explore the posterior efficiently.
 
 In the mean time feel free to try and replicate what I've done here. You could also take it a step further and look at simultaneously fitting the spread of the gaussian $$\sigma$$ which you may have noticed has been left as an explicit dependency.
 
