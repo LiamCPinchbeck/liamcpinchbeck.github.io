@@ -1,7 +1,7 @@
 ---
 title: 'Practical MCMC Intro/Fitting a line II'
 date: 2025-01-30
-permalink: /posts/2025/01/2025-01-27-practical-MCMC-intro/
+permalink: /posts/2025/01/2025-01-30-practical-MCMC-intro/
 tags:
   - Bayesian Analysis
   - MCMC
@@ -37,7 +37,7 @@ In the last post we brute forced our analysis but scanning the whole entire para
 
     <div style="text-align: center;">
     <img 
-        src="/files/BlogPostData/2025-01-27/initial_data.png" 
+        src="/files/BlogPostData/2025-01-30/initial_data.png" 
         alt="Straight Line Data" 
         title="Initial data distributed about a straight line of unknown parameters." 
         style="width: 75%; height: auto; border-radius: 8px;">
@@ -47,7 +47,7 @@ In the last post we brute forced our analysis but scanning the whole entire para
 
     <div style="text-align: center;">
     <img 
-        src="/files/BlogPostData/2025-01-27/brute-force-unnormed-posterior.png" 
+        src="/files/BlogPostData/2025-01-30/brute-force-unnormed-posterior.png" 
         alt="2D Brute forced posterior on our gradient and intercept" 
         title="2D Brute forced posterior on our gradient and intercept" 
         style="width: 75%; height: auto; border-radius: 8px;">
@@ -86,7 +86,7 @@ plt.show()
 ```
 <div style="text-align: center;">
 <img 
-    src="/files/BlogPostData/2025-01-27/Y_samples.png" 
+    src="/files/BlogPostData/2025-01-30/Y_samples.png" 
     alt="Samples of a theoretical Y parameter" 
     title="Samples of a theoretical Y parameter" 
     style="width: 75%; height: auto; border-radius: 8px;">
