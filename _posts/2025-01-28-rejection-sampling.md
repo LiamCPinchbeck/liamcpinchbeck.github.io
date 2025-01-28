@@ -98,7 +98,7 @@ Which you can kind of see is following the right curve but let's increase the nu
 
 And that's the basic idea of [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling). 
 
-This base form is obviously extremely inefficient as producing exact representative samples unlike Inverse Transform Sampling. However, it is easier to implement for multi-dimensional distributions and when you can't rigorously normalise the PDF (either due to dimensionality or stability). The only requirement is that you have some $$M$$ such that $$PDF(x)<M$$ for all $$x$$. In the previous case $$M=1$$, but we could also have used 2 or anything higher if we wanted, it would just be less efficient as we would be wasting more samples.
+This base form is obviously extremely inefficient at producing exact representative samples as opposed to Inverse Transform Sampling. However, it is easier to implement for multi-dimensional distributions and when you can't rigorously normalise the PDF (either due to dimensionality or stability). The only requirement is that you have some $$M$$ such that $$PDF(x)<M*f(x)$$ where $$g(x)$$ is your proposal distribution (so far, a uniform distribution which is just a constant value) for all $$x$$. In the previous case $$M=1$$, but we could also have used 2 or anything higher if we wanted, it would just be less efficient as we would be wasting more samples.
 
 <div style="text-align: center;">
   <img 
