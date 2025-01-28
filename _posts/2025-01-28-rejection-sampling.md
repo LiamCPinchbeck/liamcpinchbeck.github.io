@@ -355,7 +355,7 @@ images[0].save(
 
 Thanks again to [ritvikmath](https://www.youtube.com/@ritvikmath) for his work. This particular section is heavily influenced by his [own video on the topic](https://youtu.be/OXDqjdVVePY). 
 
-Our goal here is to be sure that the probability density of our samples, $$D(s\mid A)$$[^3],  matches that of our target distribution, $$p(s)$$, which we have in the unnormalised form of $$f(x)$$. 
+Our goal here is to be sure that the probability density of our samples, $$D(x\mid A)$$[^3],  matches that of our target distribution, $$p(x)$$, which we have in the unnormalised form of $$f(x)$$. 
 
 [^3]: Density of our samples, given that they are accepted.
 
