@@ -223,7 +223,7 @@ i.e. The algorithm is
 
 1. Generate samples from a gaussian that is >= ARGUS for input values
 2. Sample the same number of uniformly distributed values between 0 and 1.
-3. If the proposal distributions probability times the uniform sample is $$\leq$$ to the ARGUS pdf value at for that input accept it. If not, reject it. 
+3. If the proposal distributions probability times the uniform sample is $$\leq$$ to the ARGUS pdf value for that input, accept it. If not, reject it. 
     - This equivalent to accepting a sample with the probability $$PDF(x)/Proposal(x)$$. More on this in the math-y introduction
 
 Here's a GIF showing the process.
