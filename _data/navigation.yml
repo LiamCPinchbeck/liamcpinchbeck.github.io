@@ -11,8 +11,7 @@ main:
   # - title: "Talks"
   #   url: /talks/    
 
-  # - title: "Teaching"
-  #   url: /teaching/    
+
     
   # - title: "Portfolio"
   #   url: /portfolio/
@@ -26,6 +25,9 @@ main:
 
   - title: "Resources"
     url: /resources/
+
+  - title: "."
+    url: /teaching/    
 
   # - title: "Guide"
   #   url: /markdown/
