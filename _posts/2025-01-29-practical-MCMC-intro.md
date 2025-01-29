@@ -230,7 +230,7 @@ The top left and bottom right plots in the above show the [_marginal distributio
 
 ### The algorithm
 
-So here are the steps in plain english.
+So here are the steps in plain-ish english.
 
 >
 #### Metropolis Algorithm
@@ -250,6 +250,8 @@ So here are the steps in plain english.
         2. Reject if: $$u>\alpha$$, s.t. $$x_{n+1} = x_n$$
 
 [^3]: The process of comparing the acceptance probability to the uniform sample is to simulate a random process where the probability of accepting the proposal is $$\alpha$$
+
+The first thing to notice is that we don't require the normalisation of our function is as it just depends on the ratios, and the normalisation cancels itself out. And the second is that it doesn't have many steps despite being able to do quite a lot.
 
 Now this is the point that I want to show you an animation of the process, but I don't want to do that with the 2D distribution as it's slow enough as it is and it would be annoying figuring out how to nicely visualise accepting or rejecting a sample. So forgive me for doing this for a single dimensional gaussian that I made up on the spot.
 
@@ -271,13 +273,118 @@ Slowing it down and having a look at the accepting conditions.
 </div>
 You will notice that in this one there are some samples off to the side that don't seem to fit the distribution. We refer to this as the "burn-in phase", it is a sequence of samples at the beginning of MCMC sampling (not specific to Metropolis or the Metropolis-Hastings) where the chain of samples hasn't reached the key part of the distribution yet. When doing your own MCMC sampling you should be sure to throw away a few samples at the beginning[^4].
 
-[^4]: There is no hard and fast rule for this that will work every time but I would start with ~10% of your samples and then wiggle that percentage around for each problem. You want to maximise the number of samples you have in your distribution but you don't want bad ones.
+[^4]: There is no hard and fast rule for this that will work every time but if you're new to MCMC I would start with ~10% of your samples and then wiggle that percentage around for each problem. You want to maximise the number of samples you have in your distribution but you don't want bad ones.
+
+[Very Normal](https://www.youtube.com/@very-normal) had a great analogy for this process, because it may not be immediately intuitive why simply asking the ratio of two probabilities at a time allows us to construct the full probability distribution. 
+
+Let's say you wanted to undertake the average distribution of activities that [Melburnian's](https://en.wiktionary.org/wiki/Melburnian) undertake every week. 
+- You go an activity around Melbourne that you think Melburnian's undertake (initialisation)
+- You do the activity
+- At the end of the activity you ask one of the natives whether they are going to go to a different activity of stay at this one (tomorrow inclusive in both stay and next) with a probability based around how much the Melburnian wants to change activities
+    - If they stay, you stay, and then you ask a different person next time when an activity ends
+    - If they are going to another activity, follow them (ask them if it's okay first though)
+- Repeat
+
+And eventually, even if you didn't pick an activity that was very good, you will eventually be lead to the "good" activities (equilibrium distribution) and start to do the same activities as typical Melburnian's do despite only ever comparing two choices at a time "stay" or "next". However, if this decision process only allows transitions between certain activities (e.g., people who go to cafes only talk to others at cafes), then some activities might be overrepresented while others remain underexplored[^5].
+
+This is an issue for the _Metropolis_ algorithm[^6], which is what I detailed above, but not the generalisation of the algorithm by [Wilfred Keith Hastings](https://en.wikipedia.org/wiki/W._K._Hastings) the _Metropolis Hastings_ algorithm. 
+
+
+[^5]: Trying to essentially have a common sense explanation of [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance). Please feel free to suggest another short and plain English way to explain this.
+[^6]: by [Nicholas Metropolis](https://en.wikipedia.org/wiki/Nicholas_Metropolis)(one of the best names ever btw),  [Arianna W. Rosenbluth](https://en.wikipedia.org/wiki/Arianna_W._Rosenbluth), [Marshall Rosenbluth](https://en.wikipedia.org/wiki/Marshall_Rosenbluth), [Augusta H. Teller](https://en.wikipedia.org/wiki/Augusta_H._Teller) and [Edward Teller](https://en.wikipedia.org/wiki/Edward_Teller)
+
+For the _Metropolis_ algorithm to work we presume that the proposal distribution, $$g$$, is symmetric, i.e. $$g(x\mid y)=g(y\mid x)$$, but this can be restrictive. Some distributions that may produce faster convergence or better fit a particular posterior setup may not be symmetric. So Hastings generalised the result to allow this, by modifying the acceptance probability from $$\alpha = f(x^*)/f(x_n)$$ to $$\alpha = \frac{f(x^*)g(x_n\mid x^*)}{f(x_n)g(x^*\mid x_n)}$$ which accounts for any assymetry in $$g$$ (I'll go into more detail in a later post).
+
+>
+#### Metropolis-Hastings Algorithm
+1. Initialise: 
+    1. Have a distribution you want to sample from (duh)
+    2. $$f(x)$$, manually create a starting point for the algorithm,
+    3. pick a symmetric distribution $$g(x\mid y)$$ to sample from 
+        - like a gaussian with a fixed covariance matrix such that $$g(x\mid y)=g(y\mid x)$$
+    4. pick the number of samples you can be bothered waiting for $$N$$
+2. For each iteration $$n$$/Repeat $$N$$ times
+    1. Sample a new _proposal point_ $$x^*$$ from the syymetric distribution centred at the previous sample 
+    2. Calculate the _acceptance probability_ $$\alpha$$ given as $$\alpha = \frac{f(x^*)g(x_n\mid x^*)}{f(x_n)g(x^*\mid x_n)}$$ <small>(Here's the change!)</small>
+        - And if the acceptance probability is more than 1, cap it at 1.
+    3. Generate a number, $$u$$, from a uniform distribution between 0 and 1
+    4. Accept or reject[^3]
+        1. Accept if: $$u\leq\alpha$$, s.t. $$x_{n+1} = x^*$$
+        2. Reject if: $$u>\alpha$$, s.t. $$x_{n+1} = x_n$$
+
+
+Now we'll see when an asymmetric proposal distribution can do better than a symmetric one, we'll look at the two algorithms side-by-side[^7].
+
+[^7]: Although special note, they aren't really "two" algorithms it's just that the Metropolis is a _specific case_ of the Metropolis-Hastings
+
+
+For the distribution that we're trying to model we'll use the [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) with $$\alpha=2$$ and our two proposal distributions will be a normal distribution with a standard deviation of 0.5 for our symmetric distribution and a [log-normal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) with $$\sigma=0.5$$ for our asymmetric distribution. 
+
+Additionally, through some voodoo magic that I don't understand, [arviz](https://python.arviz.org/en/stable/) can estimate the number of _effective_ samples based on just giving it a set of 'em, but it seems to support my point (more so than I would have thought) so I'll leave it in.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-01-29/assymetric_proposal.gif" 
+    alt="GIF showing a comparison between sampling a gamma distribution using MCMC with a symmetric vs asymmetric proposal distribution" 
+    title="GIF showing a comparison between sampling a gamma distribution using MCMC with a symmetric vs asymmetric proposal distribution" 
+    style="width: 90%; height: auto; border-radius: 1px;">
+</div>
+
+You can see that the asymmetric proposal distribution is able to get the core shape of the distribution quicker than the symmetric distribution. Especially if you look at the left edge of the distribution and the tail passed 7 or so. 
+
+Viva le estadistica[^8]!... (looks up noun gender of statistics in Spanish)... Viva la estadistica[^9]!
+
+[^8]: statistics
+[^9]: statistics with correct grammar
 
 ## Coding it up ... again
 
+Just for completeness I'll copy-paste my implementation of the Metropolis-Hastings algorithm here as well.
+
+```python
+def metropolis_hastings(
+        target_pdf, 
+        proposal_sampler, 
+        proposal_pdf, 
+        num_samples=5000, 
+        x_init=1.0):
+
+    samples = [x_init]
+
+    x = x_init
+
+    for _ in range(num_samples):
+
+        # Propose a new sample
+        x_prime = proposal_sampler(x) 
+
+        # Just for the gamma distribution to ensure positivity. 
+            # I couldn't get it to work nicely without this
+            # If _you_ wanna use this for something else, I would take this 
+            # bad boi out or replace it with a relevant constraint for the 
+            # distribution of interest
+        if x_prime <= 0:  
+            continue
+
+        # Compute acceptance ratio \alpha = f(x^*)/f(x_n) * g(x_n|x^*)/g(x_^*|x_n)
+        p_accept = (target_pdf(x_prime) / target_pdf(x)) \
+        * proposal_pdf(x, scale=x_prime)/proposal_pdf(x_prime, scale=x)
+
+        # Cap it, bop it, twist it
+        p_accept = min(1, p_accept)
+
+        # Simulate random process of accepting the proposed sample with probability p_accept
+        if np.random.rand() < p_accept:
+            x = x_prime
+        # else: x = x
+
+        samples.append(x)
+
+    return np.array(samples)
+```
 
 ## Well... now what?
 
-
+Next I'm going to attempt to explain what MCMC in general is and why [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance) as a property of our MCMC algorithms is important and later to maybe give a general intro into the now much more commonly used NUTS algorithm that most MCMC python packages like [emcee](https://emcee.readthedocs.io/en/stable/), [pyMC](https://www.pymc.io/welcome.html) and many others use.
 
 ---
