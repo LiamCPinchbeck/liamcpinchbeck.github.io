@@ -385,6 +385,6 @@ def metropolis_hastings(
 
 ## Well... now what?
 
-Next I'm going to attempt to explain what MCMC in general is and why [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance) as a property of our MCMC algorithms is important and later to maybe give a general intro into the now much more commonly used NUTS algorithm that most MCMC python packages like [emcee](https://emcee.readthedocs.io/en/stable/), [pyMC](https://www.pymc.io/welcome.html) and many others use.
+Next I'm going to attempt to explain what MCMC in general is and why [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance) as a property of our MCMC algorithms is important and how we can quantify how we can judge whether our samples are converged and representative and later to maybe give a general intro into the now much more commonly used NUTS algorithm that most MCMC python packages like [emcee](https://emcee.readthedocs.io/en/stable/), [pyMC](https://www.pymc.io/welcome.html) and many others use.
 
 ---
