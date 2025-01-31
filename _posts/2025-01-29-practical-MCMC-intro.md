@@ -9,9 +9,9 @@ tags:
 #   - category2
 ---
 
-In this post I'm going to try to give an intuitive intro into MCMC methods without getting bogged down in much of the math to show the utility of these methods.
+In this post I'm going to try to give an intuitive intro into the Metropolis-Hastings algorithm without getting bogged down in much of the math to show the utility of this method.
 
-MCMC is one of the most successful analytical methods that statisticians have ever used and is the bench mark for all future analysis methods that we will explore. I am basing this tutorial on various sources such as:
+Metropolis-Hastings (or more truthfully the subsequent MCMC field) is one of the most successful analytical methods that statisticians have ever used and is the bench mark for all future analysis methods that we will explore. I am basing this tutorial on various sources such as:
 - 📝 [A Conceptual Introduction to Markov Chain Monte Carlo Methods](https://arxiv.org/abs/1909.12313) - Joshua S. Speagle
 - 🌐 [Markov chain Monte Carlo sampling](https://astrowizici.st/teaching/phs5000/5/) - Andy Casey
 - 🌐 The wikipedia page on this topic is also very good [Metropolis–Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm)
@@ -73,7 +73,7 @@ In most scenarios this is infeasible (or _at least_ __expensive__) and we need s
 
 If our goal is to get something representative of the posterior we generally wantto do 1 or more of the following:
 1. Guess where the most optimal set of parameter values are based on our data is (not unique to posterior inference, can just be done with optimisation)
-2. Generate further values after taking into account parameter uncertainties
+2. Generate further values that reflect parameter uncertainties
 3. __Quantify uncertainty__
 4. Compare models via evidence values (normalisation for the posterior)
 
@@ -278,11 +278,11 @@ You will notice that in this one there are some samples off to the side that don
 [Very Normal](https://www.youtube.com/@very-normal) had a great analogy for this process, because it may not be immediately intuitive why simply asking the ratio of two probabilities at a time allows us to construct the full probability distribution. 
 
 Let's say you wanted to undertake the average distribution of activities that [Melburnian's](https://en.wiktionary.org/wiki/Melburnian) undertake every week. 
-- You go an activity around Melbourne that you think Melburnian's undertake (initialisation)
+- You go to an activity around Melbourne that you think Melburnian's undertake (initialisation)
 - You do the activity
-- At the end of the activity you ask one of the natives whether they are going to go to a different activity of stay at this one (tomorrow inclusive in both stay and next) with a probability based around how much the Melburnian wants to change activities
-    - If they stay, you stay, and then you ask a different person next time when an activity ends
-    - If they are going to another activity, follow them (ask them if it's okay first though)
+- After spending an amount of time at the activity you randomly pick an activity among a list of nearby ones that you are sure covers the whole range of activities that Melburnians undertake
+- You then ask one of the natives whether they think they spend more time at the current activity or the random one you picked
+- With a probability of the ratio of how much time they spend at each activity you either stay at your current activity or go to the new one
 - Repeat
 
 And eventually, even if you didn't pick an activity that was very good, you will eventually be lead to the "good" activities (equilibrium distribution) and start to do the same activities as typical Melburnian's do despite only ever comparing two choices at a time "stay" or "next". However, if this decision process only allows transitions between certain activities (e.g., people who go to cafes only talk to others at cafes), then some activities might be overrepresented while others remain underexplored[^5].
@@ -382,6 +382,10 @@ def metropolis_hastings(
 
     return np.array(samples)
 ```
+
+### A quick note
+
+I've gone through the Metropolis-Hasting algorithm here and told you about burn in, but there are other criteria for whether you should trust your samples/diagnostics. I'm going to leave that for another time as you will likely never use Metropolis-Hastings in practice but other algorithms, so I'll talk about diagnostics there and after I introduce MCMC as a concept in general (which I haven't so far).
 
 ## Well... now what?
 
