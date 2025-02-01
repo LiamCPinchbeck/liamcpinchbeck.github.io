@@ -69,7 +69,7 @@ Let's say that you own a rental car company that originated in the town of Bendi
 
 All your cars are currently at the Bendigo branch, but as time goes on you expect drivers from the Bendigo branch to drop off their cars in Colac some percentage of the time.
 
-Specifically you expect that 40% of the cars in Colac will be dropped off in Bendigo because the number of people that live around Bendigo is larger, and similarly only 10% of cars from Bendigo are dropped off at Colac.
+Specifically you expect that 40% of the cars in Colac will be dropped off in Bendigo because the number of people that live around Bendigo is larger, and similarly only 10% of cars from Bendigo are dropped off at Colac because the general population of Colac is that much smaller than Bendigo.
 
 From this we can see that 60% of the cars in Colac will also be dropped off at Colac, and 90% of the cars in Bendigo will stay in Bendigo.
 
