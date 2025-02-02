@@ -13,9 +13,6 @@ header-includes:
 
 In this post I'll go through what is MCMC? How is it useful for statistical inference? And the conditions under which it is stable.
 
-
-# PAGE UNDER CONSTRUCTION - read at your own risk
-
 As usual, here are some other resources if you don't like mine.
 
 - [The algorithm that (eventually) revolutionized statistics](https://www.youtube.com/watch?v=Jr1GdNI3Vfo&t=307s&pp=ygUQVmVyeSBOb3JtYWwgTUNNQw%3D%3D) - [Very Normal](https://www.youtube.com/@very-normal)
