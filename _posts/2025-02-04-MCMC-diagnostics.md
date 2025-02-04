@@ -14,7 +14,7 @@ In this post I will detail popular diagnostic tests to quantify how well/if your
 
 ---
 
-Before I jumpy into the many wonderful and interesting different MCMC algorithms (e.g. [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) or [Gibbs sampling](https://en.wikipedia.org/wiki/Gibbs_sampling)) I think it's important to understand whether the algorithm has actually given you what you want or whether it has converged at all in the first place.
+Before I jump into the many wonderful and interesting different MCMC algorithms (e.g. [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) or [Gibbs sampling](https://en.wikipedia.org/wiki/Gibbs_sampling)) I think it's important to understand whether the algorithm has actually given you what you want or whether it has converged at all in the first place.
 
 
 And as usual, if you don't like/understand the way I explain these concepts, it's not because you're too dumb, it is probably just that my writing style doesn't match your learning style. So, here are some other nice places to learn about these concepts.
@@ -34,12 +34,14 @@ And as usual, if you don't like/understand the way I explain these concepts, it'
 
 ## Table of Contents
 - [Example MCMC Issues](#example-mcmc-issues)
-- [Traceplots - ___DO THIS ANYWAY----DO IIIIIT___](#traceplots)
+- [Traceplots - ___DO THIS ANYWAY---DO IIIIIT___](#traceplots)
 - [Running mean](#running-mean)
 - [Effective Sample Size](#effective-sampling-size)
 - [Autocorrelation is not your friend](#autocorrelation-is-not-your-friend)
 - [Integrated Autocorrelation Time](#integrated-autocorrelation-time)
 - [Gelman-Rubin - The dynamic duo](#gelman-rubin---the-diagnostic-dynamic-duo)
+- [Toy Models - You've got a friend](#toy-modelling)
+- [Summary](#summary)
 - [Next Steps](#next-steps)
 
 
@@ -55,36 +57,61 @@ I would also say that I use these more in practice to make my results _more cert
 1. Convergence (duh)
     - We need to know that the samples that we are using for inference are actually samples from the target distribution and not some biased result because we didn't let the algorithm run for long enough
 2. Mixing (time)
-    - When statisticians refer to "good" or "bad" mixing when it comes to MCMC they are more accurately referring to the mixing time of the Markov chain.
+    - When statisticians refer to "good" or "bad" mixing when it comes to MCMC they are more accurately referring to the [mixing time of the Markov chain](https://en.wikipedia.org/wiki/Markov_chain_mixing_time).
     - This basically refers to how long/how many iterations it takes for the sampler to start properly sampling from the target distribution
-        - Or in a more fancy way how long it takes for a chain to forget where it came from/become independent of it's initialisation
+        - Or in a more fancy way how long it takes for a chain to forget where it came from/become independent of it's initialization
 3. Sample Independence
     - As discussed in [another post](/_posts/2025-01-29-practical-MCMC-intro.md) by its very nature MCMC produces correlated samples as each one is dependent on the last
     - When we extract samples from the eventual result we want to know that the sample we take out are approximately independent or independent enough as this is required for if we were to sample the distribution correctly
 4. Stability of estimates
     - If I run the sampler with a different starting position, slightly different number of samples, etc, do I get similar results? Or do they fly out the window?
 5. Adequacy of the chosen burn-in period
-    - We want to the maximise the number of accurate samples we produce so we want to make the burn-in as small as possible without contaminating our results with non-representative samples
+    - We want to maximise the number of accurate samples we produce so we want to make the burn-in as small as possible without contaminating our results with non-representative samples
+
+
 
 ## Traceplots
+
+Traceplots as in the name simply _trace_ the progression of a chain in your MCMC algorithm. For example, let's cook up a very basic example where we sample a 1d distribution of two normal distributions stacked on top of each other.
 
 
 ## Running mean
 
+A distribution as a whole always has a single mean, it might have multiple modes, but it will always have a single mean. What we do with a running mean is further use the traceplots described above, but as in the name, take a running mean of the samples. If you're sampler has converged then this mean should start to converge on a single value. That's it! Let's look at a couple of examples.
+
 
 ## Effective Sampling Size
+
+You might think that because you have 100,000 samples in your MCMC chain that you should have enough samples. Well buddy, absolutely not. For various reasons your mixing rate but be abysmally slow or you initialized your chain in what happens to be a local maxima and the sampler got confused or various other reasons. If the main goal of using MCMC is to generate samples representative of the posterior (which it generally is) then we should check that we actually have a reasonable number of them.
 
 
 ## Autocorrelation is not your friend
 
+MCMC samples are correlated, but how correlated are they? If not a lot, then great! If quite a lot, not great. Here we detail quantitative ways to estimate how correlated samples from a sampler's chains are.
+
+
 
 ## Integrated Autocorrelation Time
 
-
-## Gelman-Rubin - The (diagnostic) dynamic duo
-
+When investigating autocorrelation in the previous section we specifically looked at what the correlation between samples in chain look like at various _lags_. Another useful diagnostic is looking at the average lag, this is close to what Integrated Autocorrelation Time is.
 
 
+
+## Gelman-Rubin Diagnostic - The dynamic duo
+
+If you run multiple chains, do they give you similar results? Or is it that every time you run a chain it gives you something different. Well the Gelman-Rubin diagnostic helps us quantify this phenomenon.
+
+
+
+## Toy modelling - You've got a friend
+
+One of the key skills that I've developed as a statistician/physicist is being able to create perfectly representative values of how I believe the data is generated so that I have a clean dataset to test my framework on.
+
+
+
+## Summary
+
+*Insert summary table here with each diagnostic and what it can show you
 
 ## Next Steps
 

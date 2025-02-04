@@ -50,14 +50,6 @@ As usual, here are some other resources if you don't like mine.
 
 ## What is MCMC?
 
-<!-- As I'm writing this, I'm trying to be the silliest boi that ever was. The boingiest. Juiciest. Jesterous. Meandering to the pointiest[^1]. But I'm finding it quite hard to come up with a nice intro to go into MCMC algorithms. I could tell you that Markov Chain Monte Carlo methods are actually two methods that have been beautifully smashed together to give us a sampling algorithm that given enough time wil start drawing exactly representative samples of whatever distribution we wish[^2]. But that seems a bit dry. So I'm going to detail the [^3] time I was climbing a mountain blind folded, wearing a pair of stelletos, and altimeter.
-
-Now, as a clumsy person, I have quite a difficulty wearing high heels[^4].
-
-[^1]: Wait no, what was that middle one.
-[^2]: Albeit "infinite time" can sometimes be the "enough" time
-[^3]: definitely real
-[^4]: however great they make my legs look -->
 
 MCMC stands for "Markov Chain Monte Carlo" which actually details the combination of two separate (but more often than not combined) ideas of ["Markov Chains"](https://en.wikipedia.org/wiki/Markov_chain) and ["Monte Carlo methods"](https://en.wikipedia.org/wiki/Monte_Carlo_method) that simulate data to approximate distributions of interest. In the case of Markov Chains we are generally interested in the "equilibrium distribution" or "equilibrium state" and for Monte Carlo methods are a broad category of methods that use random sampling to obtain results of interest[^1]. I'll attempt to introduce both separately but then cover some important notes on the "MCMC" circling back to the Metropolis-Hastings algorithm for a bit as well.
 
