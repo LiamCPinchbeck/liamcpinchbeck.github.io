@@ -424,9 +424,9 @@ I'll leave it to you to see how the original Metropolis algorithm[^12] satisfies
 
 ## Monte Carlo (gambling) methods
 
-Now that we’ve explored Markov Chains, let's shift gears and look at Monte Carlo methods, the second half of MCMC. These methods rely on random sampling to approximate solutions to complex problems[^13], the obvious case is Metropolis-Hastings. They are often employed in simulations, integration, and optimization tasks. Just to show the Markov Chains and Monte Carlo methods are in fact distinct I'll use the a few other examples of them, as the above definition is really it. 
+Now that we’ve explored Markov Chains, let's shift gears and look at Monte Carlo methods, the second half of MCMC. These methods rely on random sampling to approximate solutions to complex problems[^13], the obvious case is Metropolis-Hastings. They are often employed in simulations, integration, and optimization tasks. To show the Markov Chains and Monte Carlo methods are in fact distinct, I'll use a few other examples of methods that fall in this category, as the above definition is really it. 
 
-[^13]: Fun fact, the method's name was inspired by the main developer [Stanislaw Ulam](https://en.wikipedia.org/wiki/Stanis%C5%82aw_Ulam)'s uncle who would borrow money from his relatives to go gamble in Monte Carlo...
+[^13]: Fun fact, the method's name was inspired by one the main developers [Stanislaw Ulam](https://en.wikipedia.org/wiki/Stanis%C5%82aw_Ulam)'s uncle who would borrow money from his relatives to go gamble in Monte Carlo...
 
 ### Examples
 
