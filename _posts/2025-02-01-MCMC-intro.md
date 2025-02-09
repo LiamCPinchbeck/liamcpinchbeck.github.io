@@ -558,9 +558,9 @@ roughly 64 Tb of memory...and I don't know many integrals where you just need to
 
 ### Things to remember
 
-The main takeaway from this post is that MCMC is the combination of two concepts in statistics. You generate samples using a Markov chain to get some sort of statistical result (emblematic of Monte Carlo methods), typically in the form of samples representative of a target distribution. However, true samples of the distributions shown are independent of each other, the value of one does not impact the value of another, but this is not the case for samples in a Markov Chain. In fact, by it's very construction the samples are correlated with each other. Recognising whether this may be an issue in your analysis will require diagnostics that I will try to detail next.
+The main takeaway from this post is that MCMC is the combination of two concepts in statistics. You generate samples using a Markov chain to get some sort of statistical result (emblematic of Monte Carlo methods), typically in the form of samples representative of a target distribution. However, true samples of the distributions shown are independent of each other, the value of one does not impact the value of another, but this is not the case for samples in a Markov Chain. In fact, by it's very construction the samples are correlated with each other[^X]. Recognising whether this may be an issue in your analysis will require diagnostics that I will try to detail next.
 
-
+[^X]: To be exact they are [autocorrelated](https://en.wikipedia.org/wiki/Autocorrelation)
 
 ---
 

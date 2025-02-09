@@ -84,3 +84,5 @@ A series of websites, papers and packages that I've found particularly helpful f
 - 🖥️ [CuPy](https://cupy.dev/)
     - NumPy/SciPy-compatible Array Library for GPU-accelerated Computing with Python
 
+-  🖥️ [Paperpile](https://paperpile.com/features/)
+    - Nice reference manager with Android app for those that like reading papers on the go/on tablets

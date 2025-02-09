@@ -31,13 +31,16 @@ And as usual, if you don't like/understand the way I explain these concepts, it'
 - [Markov Chain Monte Carlo (MCMC) diagnostics](https://www.statlect.com/fundamentals-of-statistics/Markov-Chain-Monte-Carlo-diagnostics) by [Marco Taboga](https://sites.google.com/site/marcotabogaspersonalwebpage/)
     - Marco Taboga has a pretty [in-depth website on statistics](https://www.statlect.com/fundamentals-of-statistics/) in general that I would recommend a read if you haven't found it already
 - [Some Diagnostics for MCMC Simulation](https://bookdown.org/kevin_davisross/bayesian-reasoning-and-methods/diagnostics.html) - [Kevin Ross](https://statistics.calpoly.edu/content/kevin-ross)
+- [Autocorrelation: What It Is, How It Works, Tests](https://www.investopedia.com/terms/a/autocorrelation.asp) - [Tim Smith](https://www.investopedia.com/contributors/54411/)
+
+
 --- 
 
 ## Table of Contents
 - [Example MCMC Issues](#example-mcmc-issues)
 - [Traceplots - ___DO THIS ANYWAY---DO IIIIIT___](#traceplots)
 - [Running mean](#running-mean)
-- [Effective Sample Size](#effective-sampling-size)
+- [Effective Sample Size (ESS)](#effective-sampling-size)
 - [Autocorrelation is not your friend](#autocorrelation-is-not-your-friend)
 - [Integrated Autocorrelation Time](#integrated-autocorrelation-time)
 - [Gelman-Rubin - The dynamic duo](#gelman-rubin---the-diagnostic-dynamic-duo)
@@ -62,7 +65,7 @@ I would also say that I use these more in practice to make my results _more cert
     - This basically refers to how long/how many iterations it takes for the sampler to start properly sampling from the target distribution
         - Or in a more fancy way how long it takes for a chain to forget where it came from/become independent of it's initialization
 3. Sample Independence
-    - As discussed in [another post](/_posts/2025-01-29-practical-MCMC-intro.md) by its very nature MCMC produces correlated samples as each one is dependent on the last
+    - As discussed in [another post](/_posts/2025-01-29-practical-MCMC-intro.md) by its very nature MCMC produces autocorrelated samples as each one is dependent on the last
     - When we extract samples from the eventual result we want to know that the sample we take out are approximately independent or independent enough as this is required for if we were to sample the distribution correctly
 4. Stability of estimates
     - If I run the sampler with a different starting position, slightly different number of samples, etc, do I get similar results? Or do they fly out the window?
@@ -396,14 +399,61 @@ Now we can see by comparing the corner plot to the plot I calculated directly th
 
 Another key thing to note here is that I've done this for the mean, but you could just as well do this for any statistical measure e.g. running variance, running median, or the running mean of any function of your samples that outputs a singular value.
 
-## Effective Sampling Size
-
-You might think that because you have 100,000 samples in your MCMC chain that you should have enough samples. Well buddy, absolutely not. For various reasons your mixing rate but be abysmally slow or you initialized your chain in what happens to be a local maxima and the sampler got confused or various other reasons. If the main goal of using MCMC is to generate samples representative of the posterior (which it generally is) then we should check that we actually have a reasonable number of them.
-
 
 ## Autocorrelation is not your friend
 
-MCMC samples are correlated, but how correlated are they? If not a lot, then great! If quite a lot, not great. Here we detail quantitative ways to estimate how correlated samples from a sampler's chains are.
+MCMC samples are autocorrelated[^2], but how autocorrelated are they? If not a lot, then great! If quite a lot, not great. Here we detail quantitative ways to estimate how autocorrelated samples from a sampler's chains are.
+
+[^2]: "Autocorrelation" might sound a bit strange if you are unfamiliar. The difference between "correlation" and "autocorrelation" is that _correlation_ refers to the dependencies between two __separate__ variables and [_autocorrelation_](https://en.wikipedia.org/wiki/Autocorrelation) refers to dependencies to itself.
+
+
+Autocorrelation in simple terms is how related a variable's current value with it's past values.
+
+The calculation of autocorrelation is nicely expressed as a combination of the _autocovariance_ and _variance_.
+
+In case it's been a while since you looked at the formula for _covariance_ here it is again.
+
+$$\begin{align}
+\text{cov}(X, Y) = \frac{1}{n} \sum_{i=1}^n (x_i - \mathbb{E}(X))(y_i - \mathbb{E}(Y))
+\end{align}$$
+
+Where $$n$$ is the number of datapoints, in our case this will specifically be the number of samples. The _autocovariance_ with _lag_ of $$k$$ is then,
+
+$$\begin{align}
+\text{K}(k) = \frac{1}{n} \sum_{i=k+1}^n (x_i - \mathbb{E}(X))(x_{\left(i-k \right)} - \mathbb{E}(X)),
+\end{align}$$
+
+when $$k=0$$ then you just get the _variance_, $$\text{var}(X)$$. And then finally we get to the _autocorrelation_ with lag $$k$$,
+
+$$\begin{align}
+\text{R}(k) = \frac{\text{K}(k)}{\text{K}(0)}.
+\end{align}$$
+
+From this we can see that the magnitude of autocorrelation is less than or equal to 1, the top has to be less than the bottom. Autocorrelation isn't specific to MCMC but has a wide range of applications, particularly in signal processing (so I apologize for those in the field if I don't describe all this at 100%). Just to give as much of an intuitive feel to this as possible, we'll look at a maximal and minimal example of autocorrelation.
+
+Starting with the minimal, 0 autocorrelation relates to completely random values or independent samples (our goal with the MCMC samples). If I generate random samples from a normal distribution, (i.e. each sample is independent from the next) then with enough samples we should see the values approach 0 (as you can see in the GIF below).
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-02-04/normal_random_samples_autocorrelation.gif" 
+    alt="GIF showing the running autocorrelations of random independent samples" 
+    title="GIF showing the running autocorrelations of random independent samples" 
+    style="width: 100%; height: auto; border-radius: 8px;">
+</div>
+
+The lines in the gif show the range of samples that are used for the calculation for the different lags on the right. Different lags look for behaviours over shorter ranges for shorter lags and larger ranges for larger lags. When analysing MCMC samples we generally prioritise shorters lags as if we presume that the "good" chains were they have found the target density and are approximately independent ("well mixed") the autocorrelation should decline rapidly. However, long lags may tell you about long term behaviour such as getting trapped in certain areas of the parameter space. 
+
+Best thing to do is similar to the above, look at the autocorrelation for multiple lag values. Let's do this for the 
+
+
+## Effective Sampling Size
+
+You might think that because you have 100,000 samples in your MCMC chain that you should have enough samples. Well buddy, absolutely not. For various reasons your mixing rate may be abysmally slow or you initialized your chain in what happens to be a local maxima and the sampler got confused or various other reasons. If the main goal of using MCMC is to generate samples representative of the posterior (which it generally is) then we should check that we actually have a reasonable number of them.
+
+Effective sample size (ESS) is an attempt to estimate the amount of independent information or samples in a (autocorrelated) chain. 
+
+
+
 
 
 
