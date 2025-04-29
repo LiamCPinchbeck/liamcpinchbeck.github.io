@@ -13,16 +13,16 @@ In this post I will attempt to give an introduction to normalising flows from th
 
 ---
 
-This is currently a stand-a-lone post to mostly teach myself how to rigorously talk about Normalising flows within the context of variational inference. 
-I am not very experienced with it in real world settings (as of 07/04/2025 as least), so just keep that in mind if you are reading this. 
-Later on I may create a new post that slots nicely into my series of introductory posts.
+This is currently a standalone post mainly teach myself how to rigorously talk about Normalising flows within the context of variational inference. 
+I am not very experienced with it in real world settings (as of 28/04/2025 as least), so just keep that in mind if you are reading this. 
+Later, I may create a new post that integrates into my series of introductory posts.
 
-And here are the resources that I will be using as references to this post. Go to any of these if you need more information or don't mesh well with the way I'm discussing this topic.
+Here are the resources I am using as references for this post. Go to any of these if you need more information or don't mesh well with the way I'm discussing this topic.
 
 - [Variational Inference with Normalizing Flows](https://arxiv.org/abs/1505.05770) - Rezende, 2015
-    - I meshed the best with this reference for general variational inference. Highly recommend to give it a read
+    - I connected best with this reference for general variational inference. Highly recommend to give it a read
 - [Normalizing Flows: An Introduction and Review of Current Methods](https://arxiv.org/abs/1908.09257v4) - Kobyzev, 2020
-    - Specifically for normalizing flows. I found it a tad confusing due to switching between variable names quite often but the core ideas were pretty clear and well communicated in my opinion.
+    - Specifically for normalizing flows. I found it a tad confusing due to frequent switching between variable names quite often but the core ideas were pretty clear and well communicated in my opinion.
 - ["Normalizing Flows" by Didrik Nielsen](https://youtu.be/bu9WZ0RFG0U) - [Probabilistic AI School](https://www.youtube.com/@probabilisticai)
 - ["Density estimation using Real NVP"](https://arxiv.org/abs/1605.08803) - Dinh, 2016
 - ["Masked Autoregressive Flow for Density Estimation"](https://arxiv.org/abs/1705.07057) - Papamakarios, 2018
@@ -44,19 +44,19 @@ And here are the resources that I will be using as references to this post. Go t
 
 ## Variational Inference
 
-One of the typical goals of analysis is to develop a posterior to perform inference with,
+One typical goal of analysis is to develop a posterior distribution for inference with,
 
 $$ \begin{align} \pi(z|x). \end{align} $$
 
-Bayesian inference methods typically approach this problem with the use of MCMC samplers or Nested Samplers by using the product of the likelihood and prior on $$x$$ and $$z$$ respectively.
+Bayesian inference methods typically approach this problem using MCMC or Nested Sampling, leveraging the product of the likelihood ($$p(x|z)$$) and prior on $$x$$ ($$p(z)$$).
 
 $$ \begin{align} \pi(z|x) \propto \mathcal{L}(x|z) \pi(z) \end{align} $$
 
-With the end result (hopefully) being representative samples of the posterior density. MCMC and Nested Samplers are exact in their respective limits. If you run MCMC for long enough (infinite time) or you increase the number of live points (e.g. infinite live points) then you should theoretically get exact results (or at least exact enough that the difference doesn't matter).
+With the goal of producing representative samples of the posterior density. MCMC and Nested Samplers are exact in their respective limits. If you run MCMC for long enough (infinite time) or you increase the number of live points (e.g. an infinite number live points) then you should theoretically get exact results (or at least exact enough that the difference doesn't matter).
 
-_Variational inference_ possibly throws away the possibility of exact-ness in favour of methods that find the closest "nice" distribution to the posterior distribution. 
+_Variational inference_ trades this possibility of exact-ness in favour of methods that find the closest "nice" distribution to the posterior distribution. 
 
-In essence, you define a family of probability densities/functions that you want to consider $$\mathcal{Q}$$, and then minimise the difference between your functions and your target density. The exact target density _may be_ within the set of functions that you consider, but not necessarily.
+In essence, you define a family of probability densities/functions that you want to consider, denoted $$\mathcal{Q}$$, and then minimise the difference between your approximate and target densities. The exact target density _may be_ within the set of functions that you consider, but not necessarily.
 
 
 <div style="text-align: center;">
@@ -73,14 +73,14 @@ You may like the guarantee that your algorithm will find the exact distribution,
 I would like to agree with this perspective, but during this post keep in mind:
 - The family of functions you consider may not have anything that follows the exact distribution very closely at all
     - One may take the Laplace approximation of the posterior but some of you may be dealing with a mixture model, and hence some variables will much more closely follow an uninformative Dirichlet distribution which a normal distribution will have a very hard time approximating for example
-- As far as I know, there are also no nice ways to analyse the convergence of a given variational inference algorithm like with MCMC and nested sampling do with autocorrelation and $$dlogz$$
+- As far as I know, there are also no nice ways to analyse the convergence of a given variational inference algorithm like with MCMC and nested sampling do with autocorrelation and $$\text{dlogz}$$
     - Although special note, I've found that once the log of loss curve for the below examples flattens out, it doesn't notably improve anymore and that seems to have been good enough so far
 
-But again, the end result of all variational algorithms (that at least I've stumbled across) give you a _parametric form_ of your posterior, which is extremely useful. However, the best thing that I've found, is that with this approach, it turns the issue of estimating the posterior from a sampling problem into an _optimisation_ problem. And with that, you get an easier problem and can utilise the many improvements in the field of optimisation in the last few years to further speed up your analysis.
+But again, the end result of all variational algorithms (that at least I've stumbled across) give you a _parametric form_ of your posterior, which is extremely useful. However, the best thing that I've found, is that with this approach, it turns the issue of estimating the posterior from a sampling problem into an _optimisation_ problem. And with that, you (theoretically) get an easier problem and can utilise the many improvements in the field of optimisation in the last few years to further speed up your analysis.
 
 ### The exact goal of variational inference
 
-Let's say that your approximation to the target density/posterior is $$q_\Phi(z) \in \mathcal{Q}$$[^1] where I use $$\Phi$$ for the parameters that characterise the approximation, $$\Phi$$ essentially determines where $$q$$ is within $$\mathcal{Q}$$. Then ___the exact goal___ of variational inference is the following,
+Let's say that your approximation to the target density/posterior is $$q_\Phi(z) \in \mathcal{Q}$$[^1] where I use $$\Phi$$ for the parameters that characterise the approximation, $$\Phi$$ determining where $$q$$ is within $$\mathcal{Q}$$. Then ___the exact goal___ of variational inference is the following,
 
 [^1]: Notice that I've dropped the $$x$$ dependence. This is because this approximation does not take x in as an input. Your final result will still be indirectly dependent on $$x$$ due to the optimisation of the KL divergence.
 
@@ -110,11 +110,11 @@ $$
 \log\left(\mathcal{L}(x)\right) = KL(q(z) || \pi(z|x)) + \text{ELBO}(q)\\
 \end{align}$$
 
-The KL divergence is always positive, hence you can see that the $$\text{ELBO}$$ acts as a lower bound for $$\log\left(\mathcal{L}(x)\right)$$. Additionally, the $$\text{ELBO}$$ only includes the joint probability density and posterior estimate and not the full posterior. Hence, we can use our standard likelihood and prior product for maximization of the $$\text{ELBO}$$ to find our $$q_{\Phi^*}(z)$$.
+The KL divergence is always positive, hence you can see that the $$\text{ELBO}$$ serves as a lower bound for $$\log\left(\mathcal{L}(x)\right)$$. Additionally, the $$\text{ELBO}$$ only includes the joint probability density and posterior estimate and not the full posterior. Hence, we can use our standard likelihood-prior product for maximisation of the $$\text{ELBO}$$ to find our $$q_{\Phi^*}(z)$$.
 
 ## Normalising Flows
 
-Normalizing flows in a nutshell are the construction of a variational inference posterior estimate with the use of stacked and transformed simpler probability densities. 
+normalising flows in a nutshell are the construction of a variational inference posterior estimate with the use of stacked and transformed simpler probability densities. 
 
 With some random variable $$Y$$ with known and tractable probability distribution, $$p_Y$$, and $$Z = g(Y)$$ or $$Y = f(Z)$$, it's the simply the use of,
 
@@ -123,9 +123,9 @@ p_Z(z) &= p_Y(Y=f(z)) | \det \, \mathbf{Df}(z)| \\
 &= p_Y(f(z)) | \det \, \mathbf{Dg}(f(z))|^{-1}, \\
 \end{align}$$
 
-where $$ \mathbf{Df}(z) = \frac{\partial f}{\partial z}$$ is the Jacobian of $$f$$ w.r.t $$z$$ and similarly $$ \mathbf{Dg}(y) = \frac{\partial g}{\partial y}$$ is the Jacobian of $$g$$ w.r.t $$y$$. $$p_Z(z)$$ in this scheme is referred to as the _pushforward_ of $$p_Y$$ by the function $$g$$ sometimes denoted $$g_* p_Y$$. 
+where $$ \mathbf{Df}(z) = \frac{\partial f}{\partial z}$$ is the Jacobian (matrix) of $$f$$ w.r.t $$z$$ and similarly $$ \mathbf{Dg}(y) = \frac{\partial g}{\partial y}$$ is the Jacobian of $$g$$ w.r.t $$y$$. $$p_Z(z)$$ in this scheme is referred to as the _pushforward_ of $$p_Y$$ by the function $$g$$ sometimes denoted $$g_* p_Y$$. 
 
-The ___normalizing___ in normalizing flows actually comes from the inverse function $$f$$ that transforms the presumably complicated variable $$Z$$ to the less complicated $$Y$$, as what we are essentially doing is simplifying or _"normalizing"_ our data into something simpler that we can compute/sample/explore.
+The ___normalising___ in normalising flows actually comes from the inverse function $$f$$ that transforms the presumably complicated variable $$Z$$ to the less complicated $$Y$$, as what we are essentially doing is simplifying or _"normalising"_ our data into something simpler that we can compute/sample/explore.
 
 The above only uses a single transformation $$g$$ to achieve this, but we know that if a function is bijective (one-to-one and surjective) with a given inverse, then a series of these functions as a composite function is still bijective with a defined inverse.
 
@@ -143,7 +143,7 @@ With $$s_i$$ being an intermediate variable described by,
 
 $$ s_i = g_i \circ g_{i-1} \circ \dots \circ g_2 \circ g_1(y) =f_{i+1} \circ f_{i+2} \circ \dots \circ f_{N-1} \circ f_N(z), $$
 
-with $$s_N = z$$. So we can construct a series of transformations, that individually can be quite simple, but combined can allow us to express quite complicated behaviour. An example of this at work is shown in the GIF below, made by Eric Jang for [his own tutorial on normalizing flows](https://blog.evjang.com/2019/07/nf-jax.html) focusing on how to actually code this all up yourself in JAX.
+with $$s_N = z$$. So we can construct a series of transformations, that individually can be quite simple, but combined can allow us to express quite complicated behaviour. An example of this at work is shown in the GIF below, made by Eric Jang for [his own tutorial on normalising flows](https://blog.evjang.com/2019/07/nf-jax.html) focusing on how to actually code this all up yourself in JAX.
 
 <div style="text-align: center;">
 <img 
@@ -155,16 +155,16 @@ with $$s_N = z$$. So we can construct a series of transformations, that individu
 
 
 
-Back to the math, because we typically like working in log-space to maintain numerical stability we can see that for $$M$$ values from our distribution $$\mathcal{Z}$$, the flow transformation parameters $$\theta$$ and any parameters of the base distribution $$p_Y$$, $$\phi$$, that[^X],
+Back to the math, because we typically like working in log-space to maintain numerical stability we observe that for $$M$$ values from our distribution $$\mathcal{Z}$$, the flow transformation parameters $$\theta$$ and any parameters of the base distribution $$p_Y$$, $$\phi$$, that[^X],
 
-[^X]: With this setup then the parameters $$\phi$$ and $$\theta$$ together signify $$\Phi$$ i.e. $$\Phi = \{\theta, \phi\}$$
+[^X]: With this setup, the parameters $$\phi$$ and $$\theta$$ together signify $$\Phi$$ i.e. $$\Phi = \{\theta, \phi\}$$
 
 $$\begin{align}
 \log \, p(\mathcal{Z}|\theta, \phi) &= \sum_{i=1}^M \log p_Z(z^{(i)}|\theta, \phi) \\
 &= \sum_{i=1}^M \log p_Y(f(z^{(i)}|\theta)| \phi) + \log|\det \, \mathbf{Df}(z^{(i)}|\theta)|.
 \end{align}$$
 
-So during training, the primary parameters to optimise over are those dictating the transformations $$\theta$$ and the dependencies of the simple distributions $$\phi$$ (which together represent the $$\Phi$$ above i.e. $$\Phi=\{\theta, \phi\}$$ ) to maximize the $$\text{ELBO}$$. By a slight reparameterization of the above such that $$q(z\mid x, \theta) = p_Z(z\mid\theta)$$ and the corollary of,
+$$z^(i)$$ being samples from our flow model. So during training, the primary parameters to optimise over are those dictating the transformations $$\theta$$ and the dependencies of the simple distributions $$\phi$$ (which together represent the $$\Phi$$ above i.e. $$\Phi=\{\theta, \phi\}$$ ) to maximize the $$\text{ELBO}$$. By a slight reparameterization of the above such that $$q(z\mid x, \theta) = p_Z(z\mid\theta)$$ and the corollary of,
 
 $$ \begin{align} \mathbb{E}_{p_Z(z|\theta)} [h(z)] = \mathbb{E}_{p_Y(y)}[h(g(y|\theta))], \end{align}$$
 
@@ -189,12 +189,12 @@ Something to keep in mind for the following is that the general process follows;
 
 ## Examples of Flow Methods
 
-Your next question should be then, well what are the transformations?? What should I specifically make $$g$$/$$f$$?? Well the class of functions that you wish to consider basically dictates the overall approach that you want to take. I'll show some examples of different methods building up to the ultimate goal of this post which is variational inference with normalizing flows with neural network assisted transformations. 
+Your next question should be then, well what are the transformations?? What should I specifically make $$g$$/$$f$$?? Well the class of functions that you wish to consider basically dictates the overall approach that you want to take. I'll show some examples of different methods building up to the ultimate goal of this post which is variational inference with normalising flows with neural network assisted transformations. 
 
 
 ### Linear Flows
 
-Linear flows are normalizing flows that utilise transformations of the form,
+Linear flows are normalising flows that utilise transformations of the form,
 
 $$\begin{align}
 
@@ -253,7 +253,7 @@ $$
 
 ## Autoregressive Flows
 
-General autoregressive models outside of just normalizing flows describe the probability of a given event or variable as some sort of function on previous events/variables. i.e. If I have a variable $$x=(x_1, x_2, ..., x_d)$$ then an autoregressive model might describe the probability as,
+General autoregressive models outside of just normalising flows describe the probability of a given event or variable as some sort of function on previous events/variables. i.e. If I have a variable $$x=(x_1, x_2, ..., x_d)$$ then an autoregressive model might describe the probability as,
 
 $$ p(x) = p(x_1)\cdot p(x_2\mid x_1)\cdot p(x_3\mid x_1, x_2) \cdot \dots \cdot p(x_d\mid x_1, ..., x_{d-1}) $$
 
@@ -805,58 +805,6 @@ Despite what the benefits that I've tried to get across with all of the above, t
 Additionally, I have only read this as I haven't had the need to look at discrete distributions in my posterior (and can't be bothered making synthetic data for yet). According to [Kobyzev, 2020](https://arxiv.org/abs/1908.09257v4), discrete distribution were still an open problem, I'm not sure if this is still the case or not.
 
 So, I would recommend giving normalising flows a try, out of interest and maybe you have a better touch for it than I do, but I would lean on the side of caution if one were unfamiliar with normalising flows and trying to implement in work where uncertainties have to be well understood (and if not, just use a optimiser!). In the cases above I probably pretty comfortably could have used the [Laplace approximation](https://en.wikipedia.org/wiki/Laplace%27s_approximation) to get a gaussian representation of my posterior as well.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
