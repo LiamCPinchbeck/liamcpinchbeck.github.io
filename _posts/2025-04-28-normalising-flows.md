@@ -344,7 +344,10 @@ $$\begin{align}
 X &\sim \mathcal{U}(0, 10)\\
 Y_1 &\sim \mathcal{N}(\mu=m_1 \cdot X + c_1, \sigma^2=\sigma_1^2)\\
 Y_2 &\sim \mathcal{N}(\mu=m_2 \cdot X + c_2, \sigma^2=\sigma_2^2)\\
-Y &\sim w_1 \cdot Y_1 + w_2 \cdot Y_2\\
+Y &\sim \begin{cases}
+Y_1 \text{ with probability }w_1\\
+Y_2 \text{ with probability }w_2
+\end{cases}
 \end{align}$$
 
 <div style="text-align: center;">
@@ -789,7 +792,7 @@ And posterior.
     style="width: 100%; height: auto; border-radius: 16px;">
 </div>
 
-Due to needing the results to be stable for this dimensionality this run took significantly longer than the first. The normalising flow for the first example took ~30 seconds to train, while this one took ~25 minutes. But hey, that's still relatively quick for the $$10^4$$ datapoints that this uses and now we have a parametric representation of our posterior that we can sample really easily and quickly.
+Due to needing the results to be stable for this dimensionality this run took significantly longer than the first. The normalising flow for the first example took ~30 seconds to train, while this one took ~25 minutes (although the large time for the second is likely due to my relative inexperience with flows). But hey, that's still relatively quick for the $$10^4$$ datapoints that this uses and now we have a parametric representation of our posterior that we can sample really easily and quickly.
 
 
 ## Some Annoying Things About Normalising Flows
