@@ -34,7 +34,9 @@ Here are the resources I am using as references for this post. Go to any of thes
 - [Normalising Flows](#normalising-flows)
 
 - [Normalising Flows with neural network mediated transforms](#normalising-flows-with-neural-network-mediated-transforms)
-- [Example: Hierarchical Bayesian Model with "hidden markov"-like layer](#example-hierarchical-bayesian-model-with-hidden-markov-like-layer)
+- [Examples](#examples-analyses)
+    - [Example: 2D with 4D posterior](#example-simple-4d-latent-model-normalising-flows-and-nested-sampling-comparison)
+    - [Example: Hierarchical Bayesian Model Analysis with 25D posteror](#example-hierarchical-bayesian-model-analysis)
 - [Some Annoying Things...](#some-annoying-things-about-normalising-flows)
 
 
