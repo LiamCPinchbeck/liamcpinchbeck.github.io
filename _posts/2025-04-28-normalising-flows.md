@@ -48,11 +48,11 @@ Here are the resources I am using as references for this post. Go to any of thes
 
 One typical goal of analysis is to develop a posterior distribution for inference with,
 
-$$ \begin{align} \pi(z\midx). \end{align} $$
+$$ \begin{align} \pi(z\mid x). \end{align} $$
 
 Bayesian inference methods typically approach this problem using MCMC or Nested Sampling, leveraging the product of the likelihood ($$p(x\mid z)$$) and prior on $$x$$ ($$p(z)$$).
 
-$$ \begin{align} \pi(z\mid x) \propto \mathcal{L}(x\midz) \pi(z) \end{align} $$
+$$ \begin{align} \pi(z\mid x) \propto \mathcal{L}(x\mid z) \pi(z) \end{align} $$
 
 With the goal of producing representative samples of the posterior density. MCMC and Nested Samplers are exact in their respective limits. If you run MCMC for long enough (infinite time) or you increase the number of live points (e.g. an infinite number live points) then you should theoretically get exact results (or at least exact enough that the difference doesn't matter).
 
