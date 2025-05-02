@@ -4,6 +4,9 @@ date: 2025-04-28
 permalink: /posts/2025/04/2025-04-28-normalising-flows/
 tags:
   - Variational Inference
+  - Normalising Flows
+  - JAX
+  - FlowJAX
 header-includes:
    - \usepackage{amsmath}
 ---
@@ -775,11 +778,123 @@ Here are some references that include discussions on issues involving normalisin
 - [Testing the boundaries: Normalizing Flows for higher dimensional data sets](https://arxiv.org/abs/2202.09188)
     - This paper looks more into how well MAF, A-RQS RealNVP (standard examples of autoregressive and coupling setups) perform for different dimensional distributions
 
-~~So, I would recommend giving normalising flows a try, out of interest and maybe you have a better touch for it than I do, but I would lean on the side of caution if one were unfamiliar with normalising flows and trying to implement in work where uncertainties have to be well understood (and if not, just use a optimiser!). In the cases above I probably pretty comfortably could have used the [Laplace approximation](https://en.wikipedia.org/wiki/Laplace%27s_approximation) to get a gaussian representation of my posterior as well.~~
+<!-- ~~So, I would recommend giving normalising flows a try, out of interest and maybe you have a better touch for it than I do, but I would lean on the side of caution if one were unfamiliar with normalising flows and trying to implement in work where uncertainties have to be well understood (and if not, just use a optimiser!). In the cases above I probably pretty comfortably could have used the [Laplace approximation](https://en.wikipedia.org/wiki/Laplace%27s_approximation) to get a gaussian representation of my posterior as well.~~
 
 
 Since writing this post I've learned slightly more about the flows that I was trying to implement and specifically how one can decrease the complexity of the flows they wish to consider (e.g. equivalent to using affine transformations instead of RQS or coupling flows instead of autoregressive) but increase the complexity of how the parameters of the transformations could be modelled. For example, in the 3D scatter example above it started acting much more nicely with less flow layers and more neural network nodes. This has turn my opinion around to a little less conclusive, in that if you're interested in using normalising flows in your own work I would give it a go! But from pure personal experience, I'd be wary of the instability issues that can come up (particularly once you pass ~10 dimensions in the distribution you're trying to approximate).
+ -->
 
+## Update!
+
+So a bit more time has introduced me to NumPyro and it's various Varitiational Inference classes, and some seemingly stable normalising flow setups. 
+Not in much of a writing mood, but I'll paste the code here for now seeing as it's basically made all the above irrelevant (please don't judge me for the bad code practices, I'm writing this at 2am).
+
+Here's the final result (with slightly different data, hence the extra mixture). It only took 15 minutes but I let it run for a little longer than I needed to so that I was sure the result was stable.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-04-28/4Track_Flow_Corner.png" 
+    alt="Normalising flow posterior for pseudo-particle track (with extra line and mixture)" 
+    title="Normalising flow posterior for pseudo-particle track (with extra line and mixture)" 
+    style="width: 100%; height: auto; border-radius: 16px;">
+</div>
+
+And the code
+
+
+```python
+import numpyro
+import numpyro.distributions as dist
+from numpyro.handlers import scale
+import jax.numpy as jnp
+from numpyro.infer.autoguide import AutoDiagonalNormal, AutoMultivariateNormal, AutoBNAFNormal, AutoIAFNormal
+from numpyro.infer.initialization import init_to_uniform
+from numpyro.infer import SVI, Trace_ELBO
+from numpyro.optim import Adam
+from tqdm import tqdm
+import jax
+
+
+def model_svi_flow():
+    a11 = numpyro.sample("a11", dist.Normal(aloc+ascale/2, ascale/5))
+    a12 = numpyro.sample("a12", dist.Normal(aloc+ascale/2, ascale/5))
+    a13 = numpyro.sample("a13", dist.Normal(aloc+ascale/2, ascale/5))
+
+    a21 = numpyro.sample("a21", dist.Normal(aloc+ascale/2, ascale/5))
+    a22 = numpyro.sample("a22", dist.Normal(aloc+ascale/2, ascale/5))
+    a23 = numpyro.sample("a23", dist.Normal(aloc+ascale/2, ascale/5))
+
+    a31 = numpyro.sample("a31", dist.Normal(aloc+ascale/2, ascale/5))
+    a32 = numpyro.sample("a32", dist.Normal(aloc+ascale/2, ascale/5))
+    a33 = numpyro.sample("a33", dist.Normal(aloc+ascale/2, ascale/5))
+
+    b11 = numpyro.sample("b11", dist.Normal(bloc+bscale/2, bscale/5))
+    b12 = numpyro.sample("b12", dist.Normal(bloc+bscale/2, bscale/5))
+
+    b21 = numpyro.sample("b21", dist.Normal(bloc+bscale/2, bscale/5))
+    b22 = numpyro.sample("b22", dist.Normal(bloc+bscale/2, bscale/5))
+    
+    b31 = numpyro.sample("b31", dist.Normal(bloc+bscale/2, bscale/5))
+    b32 = numpyro.sample("b32", dist.Normal(bloc+bscale/2, bscale/5))
+
+
+    loge_01 = numpyro.sample("loge_01", dist.Normal(loge0_loc+loge0_scale/2, loge0_scale/5))
+    loge_02 = numpyro.sample("loge_02", dist.Normal(loge0_loc+loge0_scale/2, loge0_scale/5))
+    loge_03 = numpyro.sample("loge_03", dist.Normal(loge0_loc+loge0_scale/2, loge0_scale/5))
+
+    e_index1 = numpyro.sample("e_index1", dist.Normal(e_index_loc+e_index_scale/2, e_index_scale/5))
+    e_index2 = numpyro.sample("e_index2", dist.Normal(e_index_loc+e_index_scale/2, e_index_scale/5))
+    e_index3 = numpyro.sample("e_index3", dist.Normal(e_index_loc+e_index_scale/2, e_index_scale/5))
+
+
+    logsigma_e = numpyro.sample("logsigma_e", dist.Normal(logsigma_e_loc+logsigma_e_scale/2, logsigma_e_scale/5))
+    logsigma_t = numpyro.sample("logsigma_t", dist.Normal(logt_loc+logt_scale/2, logt_scale/5))
+
+
+    w1reg = numpyro.sample("w1reg", dist.Uniform(0,1))
+    w2reg = numpyro.sample("w2reg", dist.Uniform(0,1))
+    w3reg = numpyro.sample("w3reg", dist.Uniform(0,1))
+    w4reg = numpyro.sample("w4reg", dist.Uniform(0,1))
+
+
+    theta_flow = jnp.array([a11, a12, a13, b11, b12, loge_01, e_index1, \
+                        a21, a22, a23, b21, b22, loge_02, e_index2, \
+                        a31, a32, a33, b31, b32, loge_03, e_index3, \
+                        logsigma_t, logsigma_e, w1reg, w2reg, w3reg, w4reg])  
+
+    # Add your custom log-likelihood
+    unnormalised_posterior_val = unnormalised_posterior(theta_flow)
+
+    numpyro.factor("unnormalised_posterior_val", unnormalised_posterior_val)
+
+
+
+guide_flow = AutoIAFNormal(model_svi_flow, 
+                            num_flows=8, 
+                            hidden_dims=[50, 50])
+
+
+svi_flow_optimizer = Adam(1e-3, b1=0.99, b2=0.999)
+svi_flow_svi = SVI(model_svi_flow, guide_flow, svi_flow_optimizer, loss=Trace_ELBO(num_particles=50))
+
+# Initialize and run
+rng_key_svi_flow= jax.random.PRNGKey(0)
+svi_state_svi_flow = svi_flow_svi.init(rng_key_svi_flow)
+
+n_steps = 2000
+num_save_skip = 20
+param_history_svi_flow = []
+elbo_history_svi_flow = []
+
+for step in tqdm(range(n_steps)):
+    svi_state_svi_flow, loss_svi_flow = svi_flow_svi.update(svi_state_svi_flow)
+
+    if step % num_save_skip == 0:
+        params_svi_flow = svi_flow_svi.get_params(svi_state_svi_flow)
+        param_history_svi_flow.append(params_svi_flow)
+        elbo_history_svi_flow.append(loss_svi_flow)
+
+```
 
 
 
