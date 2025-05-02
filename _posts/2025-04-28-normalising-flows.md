@@ -789,7 +789,7 @@ Since writing this post I've learned slightly more about the flows that I was tr
 So a bit more time has introduced me to NumPyro and it's various Varitiational Inference classes, and some seemingly stable normalising flow setups. 
 Not in much of a writing mood, but I'll paste the code here for now seeing as it's basically made all the above irrelevant (please don't judge me for the bad code practices, I'm writing this at 2am).
 
-Here's the final result (with slightly different data, hence the extra mixture). It only took 15 minutes but I let it run for a little longer than I needed to so that I was sure the result was stable.
+Here's the final result (with slightly different data, hence the extra mixture). It only took 10 minutes but I let it run for a little longer than I needed to so that I was sure the result was stable.
 
 <div style="text-align: center;">
 <img 
@@ -881,7 +881,7 @@ svi_flow_svi = SVI(model_svi_flow, guide_flow, svi_flow_optimizer, loss=Trace_EL
 rng_key_svi_flow= jax.random.PRNGKey(0)
 svi_state_svi_flow = svi_flow_svi.init(rng_key_svi_flow)
 
-n_steps = 2000
+n_steps = 1400
 num_save_skip = 20
 param_history_svi_flow = []
 elbo_history_svi_flow = []
