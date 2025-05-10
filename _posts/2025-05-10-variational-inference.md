@@ -64,7 +64,7 @@ Additionally, VI can more easily update an approximate distribution with new dat
 
 Perhaps most importantly: **VI provides a parametric representation of the posterior**, rather than a set of samples. This is especially valuable in computational settings where you need to manipulate or compose distributions, such as in probabilistic programming or generative modeling (e.g., VAEs) or more specifically, to use as a prior for future inference.
 
-Okay then — what are the core ideas behind VI? How can you implement it yourself, and what should you watch out for if you do? Focusing on bayesian inference, hence from here I'll stop talking about 'target distribution' and instead 'posterior' but that's my gut reaction and I find it annoying to keep having to go back and correct myself. But know, that you can do a quick replacement as the posterior is just a distribution.
+Okay then — what are the core ideas behind VI? How can you implement it yourself, and what should you watch out for if you do? Focusing on bayesian inference, hence from here I'll stop talking about 'target distribution' and instead 'posterior' for convenience. But of course, you can do a quick replacement as the posterior is just a distribution.
 
 --- 
 
@@ -86,7 +86,7 @@ And the more dissimilar they are, the larger the divergence tends to be — rega
 [^1]: Hot tub vs Jacuzzi situation here btw, all distances are divergences, but not all divergences are distances. When people say “divergence” in this context, they usually mean one that *isn't* a proper distance (i.e., fails symmetry or triangle inequality). And forgive me for quite often referring to these divergences as distances anyway...
 [^2]: For the mathematically inclined yes I'm telling a couple white lies here, but I'm trying to introduce Variational Inference, not measure theory.
 
-The overwhelming common way that we measure the divergence between two distributions in statistics is the ___Kullback-Leibler___ divergence, denoted $$KL(p\mid\mid q)$$ for two distributions $$p$$ and $$q$$. For these two distributions over a discrete sample space $$\mathcal{Z}$$ then the Kullback-Leibler divergence is defined,
+The overwhelming common way that we measure the divergence between two distributions in statistics is the ___Kullback-Leibler___ divergence, denoted $$KL(q\mid\mid p)$$ for two distributions $$p$$ and $$q$$. For these two distributions over a discrete sample space $$\mathcal{Z}$$ then the Kullback-Leibler divergence is defined,
 
 $$\begin{align}
 KL(q\mid\mid p) = \sum_{z\in \mathcal{Z}} q(z) \log \frac{q(z)}{p(z)}.
