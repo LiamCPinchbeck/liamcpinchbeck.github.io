@@ -74,7 +74,7 @@ The key idea here is, that you have an approximate distribution that you can sam
 More abstractly, if you are within a space of distributions within which the set of approximate distributions _and_ your posterior are, you want the _distance_ between your posterior and your approximate distribution to be minimised.
 
 
-Unfortunately, we don't have a good way to measure "distance" between two distributions, but we have a _"divergence"_[^1], which is pretty close but not quite. 
+Unfortunately, we don't have a great way to measure "distance" between two distributions (debatably), but we have a _"divergence"_[^1], which is pretty close but not quite. 
 If you have a distribution $$X$$ and distribution $$Y$$, a function that would quantify the distance $$d$$ would satisfy **symmetry** $$d(X, Y)=d(Y, X)$$.
 i.e. In real world settings, if I run 5km North, then run 5km South, I should be in the same direction I started (and quite tired from the running).
 But for a divergence $$D$$, then $$D(X, Y)\neq D(Y, X)$$. 
