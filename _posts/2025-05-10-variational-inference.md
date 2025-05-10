@@ -4,7 +4,8 @@ date: 2025-05-10
 permalink: /posts/2025/05/2025-05-10-variational-inference/
 tags:
   - Variational Inference
-  - SVI
+  - ADVI
+  - Control Variates
   - CAVI
   - BBVI
   - JAX
