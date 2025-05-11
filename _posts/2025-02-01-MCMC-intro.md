@@ -11,7 +11,7 @@ header-includes:
 ---
 
 
-In this post I'll go through what is MCMC? How is it useful for statistical inference? And the conditions under which it is stable.
+In this post I'll go through "what is MCMC?", "How is it useful for statistical inference?" And the conditions under which it is stable.
 
 As usual, here are some other resources if you don't like mine.
 
@@ -51,7 +51,7 @@ As usual, here are some other resources if you don't like mine.
 ## What is MCMC?
 
 
-MCMC stands for "Markov Chain Monte Carlo" which actually details the combination of two separate (but more often than not combined) ideas of ["Markov Chains"](https://en.wikipedia.org/wiki/Markov_chain) and ["Monte Carlo methods"](https://en.wikipedia.org/wiki/Monte_Carlo_method) that simulate data to approximate distributions of interest. In the case of Markov Chains we are generally interested in the "equilibrium distribution" or "equilibrium state" and for Monte Carlo methods are a broad category of methods that use random sampling to obtain results of interest[^1]. I'll attempt to introduce both separately but then cover some important notes on the "MCMC" circling back to the Metropolis-Hastings algorithm for a bit as well.
+MCMC stands for "Markov Chain Monte Carlo" which actually details the combination of two separate (but more often than not combined) ideas of ["Markov Chains"](https://en.wikipedia.org/wiki/Markov_chain) and ["Monte Carlo methods"](https://en.wikipedia.org/wiki/Monte_Carlo_method) that simulate data to approximate distributions of interest. In the case of Markov Chains we are generally interested in the "equilibrium distribution" or "equilibrium state" and Monte Carlo methods are a broad category of methods that use random sampling to analyse the behaviour of distributions[^1]. I'll attempt to introduce both separately but then cover some important notes on the "MCMC" circling back to the Metropolis-Hastings algorithm for a bit as well.
 
 [^1]: I know this is a bit vague, but this in part because of the wide range of outputs you can get from Monte Carlo methods. Plus, I'll detail some concrete examples below.
 
@@ -61,7 +61,7 @@ MCMC stands for "Markov Chain Monte Carlo" which actually details the combinatio
 
 To introduce this I'm going to closely follow an example from one of the [(VCE) General Mathematics](https://www.vcaa.vic.edu.au/curriculum/vce/vce-study-designs/generalmathematics/Pages/Index.aspx)[^2] textbooks that I use with students.
 
-[^2]: I do love that this relatively abstract concept that has broad implications not only for day-to-day life but for advanced statistical methods and many concepts in the natural sciences is taught in the base maths curriculum in Victoria but not the more advanced maths curricula?? Good job VCAA. 
+[^2]: I do love that this relatively abstract that this concept has broad implications not only for day-to-day life but for advanced statistical methods and many concepts in the natural sciences, is taught in the base maths curriculum in Victoria but not the more advanced maths curricula?? Good job VCAA. 
 
 Let's say that you own a one-day rental car company that has two branches in the towns of Colac and Bendigo (trust me we'll get back to probability distributions in a minute). 
 
@@ -109,7 +109,7 @@ $$
 
 Very unhelpfully it is also unclear how many days/weeks/months/years it has been since they returned the car, all you can assume is that its been "a long time"... (at this point you may be wondering whether this person even rented a car from you in the first place but let's assume that they did in fact rent a car)
 
-First thing that we're going to do is translate the picture into the ___transition matrix___ that will mathematically represent how one day/state (e.g the 2x1 matrix above) will transform into the next[^3].
+First thing that we're going to do is translate the picture into a ___transition matrix___ that will mathematically represent how one day/state (e.g the 2x1 matrix above) will transform into the next[^3].
 
 [^3]: Most Markov chain examples start with two total states so the transition matrix is 2x2. But I want to make clear that if there are $$n$$ possible states in the discrete space of states then the transition matrix is $$n \times n$$ describing how each state transitions to every other state.
 
@@ -160,7 +160,7 @@ S_1 = T \, S_0 = \left[
 \end{align}
 $$
 
-So we can interpret this as there is a 60% chance that the car is in Colac and 40% chance it's in Bendigo and this will be our "state" for that day, thinking in terms of probability now instead of number of cars. Now stick with me, we'll look at the state of the next day.
+So we can interpret this as 'there is a 60% chance that the car is in Colac and 40% chance it's in Bendigo' and this will be our "state" for that day. Thinking in terms of probability now instead of number of cars. Now stick with me, we'll look at the state of the next day.
 
 $$
 \begin{align}
@@ -282,7 +282,7 @@ S_{10000000000000} = \left[
 \end{align}
 $$
 
-Well that's interesting (at least to me). We call this state that remains the steady- or equilibrium-state, often denoted with subscript, $$S$$, or with an infinity to denote it is the matrix that will occur after an infinite number of transitions, $$S_{\infty}$$[^5]. It is this state in the "chain" of events that is a key characteristic of Markov Chains, which the above situation is an example of. And just to finish the example off, we should likely investigate the Bendigo branch first as in the long run there is an 80% chance of the car being there. I like the equilibrium definition of the state as it reminds me of a pendulum coming to rest, and now matter how much you perturb it, it has "a state" that it will "rest" in after which it won't move anymore. 
+Well that's interesting (at least to me). We call this state that remains the 'steady-' or 'equilibrium-' state, often denoted with subscript, $$S$$, or with an infinity to denote it is the matrix that will occur after an infinite number of transitions, $$S_{\infty}$$[^5]. It is this state in the "chain" of events that is a key characteristic of Markov Chains, which the above situation is an example of. And just to finish the example off, we should likely investigate the Bendigo branch first as in the long run there is an 80% chance of the car being there. I like the equilibrium definition of the state as it reminds me of a pendulum coming to rest, and now matter how much you perturb it, it has "a state" that it will "rest" in after which it won't move anymore. 
 
 [^5]: I prefer the no subscript version as it means that I have to type less.
 
@@ -326,7 +326,7 @@ It allows the user to investigate systems (physical, statistical or a mix of bot
 
 ### Detailed Balance
 
-Detailed balance is a condition ensures that (but is not required for) Markov Chains converge to the target distribution over time[^8]. It requires that for a Markov process whose transitions from state $$i$$ to state $$j$$ are described by the transition matrix $$P_{ij}$$ that for discrete state space (like above)[^9]
+Detailed balance is a condition that ensures that (but is not required for) Markov Chains converge to the target distribution over time[^8]. It requires that for a Markov process with transitions from state $$i$$ to state $$j$$ are described by the transition matrix $$P_{ij}$$ that for discrete state space (like above)[^9]
 
 [^8]: Detailed balance is not only a concept in Markov chains, it also relates to many physical phenomena (e.g. Einstein and his description of radiation emission and absorption), but I discuss it as such for brevity. 
 [^9]: I'm using relatively non-standard notation here, but I want to be consistent with the above rental car example.
@@ -368,7 +368,7 @@ P(s_i \mid s_j) \pi(s_i) = q(s_j \mid s_i) \pi(s_i) A(s_i \rightarrow s_j)  = q(
 \end{align}$$
 
 
-The minimum function then gives us to cases.
+The minimum function then gives us two cases.
 
 ##### Case 1: minimum = 1 < $$\pi(s_j)q(s_i\mid s_j)/\pi(s_i)q(s_j\mid s_i) $$
 
@@ -415,7 +415,7 @@ P(s_i \mid s_j) \pi(s_i) &= \pi(s_j)q(s_i\mid s_j) \\
 
 ##### Yay
 
-So, even if the proposal distribution is asymmetric, by the modification of the acceptance probability compared to the Metropolis, the Metropolis-Hastings algorithm _always_ satisfies detailed balance, meaning that there exists a stationary distribution and due to the stochastic nature of the algorithm, it will eventually find it. This absolutely does not mean it will find it within the timeframe that you require or that what you think is the equilibrium distribution is actually the equilibrium distribution. I will talk more on this when I get to diagnostics you can run on MCMC.
+So, even if the proposal distribution is asymmetric, by the modification of the acceptance probability compared to the Metropolis algorithm, the Metropolis-Hastings algorithm _always_ satisfies detailed balance, meaning that there exists a stationary distribution and due to the stochastic nature of the algorithm, it will eventually find it. This absolutely does not mean it will find it within the timeframe that you require or that what you think is the equilibrium distribution is actually the equilibrium distribution. I will talk more on this when I get to diagnostics you can run on MCMC.
 
 I'll leave it to you to see how the original Metropolis algorithm[^12] satisfies detailed balance.
 

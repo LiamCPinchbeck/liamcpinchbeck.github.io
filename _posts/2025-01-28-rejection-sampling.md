@@ -10,7 +10,7 @@ tags:
 
 In this post I'm going to introduce rejection sampling as a way to generate samples from an unnormalised pdf as further background to MCMC.
 
-Like my posts so far, I take heavy inspiration from a few resources. In this case these in particular are:
+Like my posts so far, I take heavy inspiration from a few resources. In this case, the in particular ones are:
 1. [Accept-Reject Sampling : Data Science Concepts](https://youtu.be/OXDqjdVVePY) - [ritvikmath](https://www.youtube.com/@ritvikmath)
 2. [An introduction to rejection sampling](https://youtu.be/kYWHfgkRc9s) - [Ben Lambert](https://www.youtube.com/@SpartacanUsuals)
     - Although this one is icky because he uses [mathematica](https://dictionary.cambridge.org/dictionary/english/horrible)
@@ -27,7 +27,7 @@ Like my posts so far, I take heavy inspiration from a few resources. In this cas
 
 ## Intuition Introduction
 
-Let's begin with the same kind of function as in my previous post on Inverse Transform Sampling (IVS).
+Let's begin with the same kind of function as in my [previous post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-27-inverse-transform-sampling/) on Inverse Transform Sampling (IVS).
 
 
 <div style="text-align: center;">
@@ -85,7 +85,7 @@ Converting these samples into a histogram we then find the following.
 
 </div>
 
-Which you can kind of see is following the right curve but let's increase the number of samples to be sure.
+Which you can see is following the right curve but let's increase the number of samples to be sure.
 
 <div style="text-align: center;">
   <img 
@@ -396,13 +396,15 @@ Woo! And if this all still doesn't satisfy you [here's a link](https://youtu.be/
 
 ## Next Steps
 
-So one of the beautiful things we've done here is created a method where we can get an exact representation for any given sample distribution, but there are quite a few hiccups for why this isn't used very much in practice, as opposed to something like MCMC, when trying to draw samples from a posterior distribution.
+So, one of the beautiful things we've done here is created a method where we can get an exact representation for any given sample distribution, but there are quite a few hiccups for why this isn't used very much in practice as opposed to something like MCMC when trying to draw samples from a posterior distribution.
 
-The main reason that we don't often use these methods is because we never know (or don't presume to know) the exact shape of our posterior distribution. So we can't pick a very good proposal distribution, or pick one at all, meaning that we have to use something like a uniform distribution that we would have to update every call where we find a probability density higher than it's max value, and update all our previous samples.
+The main reason that we don't often use these methods is we never know (or don't presume to know) the exact shape of our posterior distribution[^5]. So we can't pick a very good proposal distribution, or pick one at all, meaning that we have to use something like a uniform distribution that we would have to update every call where we find a probability density higher than it's max value, and update all our previous samples.
 
-1. This is very inefficient especially in distributions with a high dimensionality as we'll inevitably be sampling regions with extremely low probabilities
+[^5]: If we are presuming that then we are doing [Variational Inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods)
+
+1. This is very inefficient especially with distributions that have a high dimensionality as we'll inevitably be sampling regions with extremely low probabilities
 2. This could be extremely expensive because we not only have to keep the samples that we are accepting, but also the ones that we aren't, because we may update the distribution such that the acceptance/rejection of a sample changes
 
-So, in the next post I'll go through one of the most commonly used algoriths ever, and one of the most widely successful statistical algorithm ever, to explore unknown posterior densities when we have the likelihood and prior, the [MCMC](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) [Metropolis-Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm).
+So, in the next post I'll go through one of the most commonly used algoriths ever, and one of the most widely successful statistical algorithm ever, to explore unknown posterior densities when we have the likelihood and prior, the [MCMC](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) [Metropolis-Hastings algorithm](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-29-practical-MHA-intro/).
 
 ---

@@ -23,13 +23,13 @@ First blog post, outlining what I'm going to try and do in the next few posts an
 Statistics is cool trust me
 ----
 
-My research interests are in astro-particle physics. This involves a lot of data, models and parameters. To get information on all of this requires very careful treatment of the analysis.
+My research interests are in astro-particle physics. This involves a lot of data, models and parameters. Extracting meaningful information from all of that requires careful and thoughtful analysis.
 
 Due to this I frequently (always) use Bayesian methods. In my first few posts, or however long it takes, I hope to show why this is.
 
-Like many a statistics blogger, I'm going to make this post pretty similar to [Dan Foreman Mackey's](https://dfm.io/posts/fitting-a-plane/) and then I am particularly further influenced by [Andy Casey's](https://astrowizici.st/) teaching, the relevant posts can be found [here](https://astrowizici.st/teaching/phs5000/). One key difference between what I'm going to do and Dr. Casey's website, is that I'm going to skip the analytical methods at the beginning, as I personally rarely use those methods in my work and figure that this is my blog, so I'm going to show what _I_ do. 
+Like many a statistics blogger, I'm going to make this post pretty similar to [Dan Foreman Mackey's](https://dfm.io/posts/fitting-a-plane/) and then I am particularly further influenced by [Andy Casey's](https://astrowizici.st/) teaching, the relevant posts can be found [here](https://astrowizici.st/teaching/phs5000/) (unless it's bad, then he had nothing to do with it). One key difference between what I'm going to do and Dr. Casey's website, is that I'm going to skip the analytical methods at the beginning, as I personally rarely use those methods in my work and figure that this is my blog, so I'm going to show what _I_ do. 
 
-Now I'm not sure of what the background of the reader is here so I'm going to try and come from as low of a familiarity with the topic as possible. However, I admit that I'm sometimes really narrowed in on my own understanding of topics, so if there is something that doesn't make sense or you think could be explained better _please_ shoot me an email.
+I'm not sure what your background is, so I’ll try to start from as basic a level as I can. That said, I know I sometimes get a bit locked into my own way of thinking—so if anything here is unclear or could be better explained, _please_ shoot me an email!
 
 
 
@@ -39,13 +39,14 @@ Fitting a line to data. (Gotta start somewhere)
 
 For this post I'm going to throw some data at you. It might seem simple but will provide some of the ground-rules for following posts. 
 
-I've generated some random x values, from that created some y values using the formula for a straight line, then added some noise that follows a gaussian distribution. Or more simply,
+I’ve generated some random x values, then created corresponding y values using the equation for a straight line and added noise drawn from a Gaussian distribution. In notation:
 
 $$ X \sim \mathcal{U}(0,10)$$
 
 $$y \sim \mathcal{N}(\mu=m\cdot X+ c, \sigma^2=1).$$
 
-(First line says that the probability of getting an $$X$$ value is the same or [uniformly distributed](https://en.wikipedia.org/wiki/Continuous_uniform_distribution) between 0 and 10 and the second that $$y$$ is [normally distributed](https://en.wikipedia.org/wiki/Normal_distribution) about the straight line $$m\cdot X+ c$$ with a standard deviation of $$1$$.)
+(The first line says that X is [uniformly distributed](https://en.wikipedia.org/wiki/Continuous_uniform_distribution) between 0 and 10. The second says that y is [normally distributed](https://en.wikipedia.org/wiki/Normal_distribution) around the straight line $$m · X + c$$ with a standard deviation of 1.)
+
 
 I won't tell you what $$m$$ and $$c$$ are, that is what we're trying to find. But let's say that we, for some reason, know that $$ m $$ will be between 0 and 10 and $$c$$ will be between $$-10$$ and $$10$$. 
 
@@ -107,12 +108,12 @@ plt.show()
       style="width: 50%; height: auto; border-radius: 8px;">
 </div>
 
-When trying this out in practice you can be quite surprised at how close you get to the true values. Unfortunately, guesstimation won’t make it into a scientific paper!
+When trying this out in practice you can be quite surprised at how close you get to the true values. Unfortunately, guesstimation won’t make it into a paper!
 
 Let’s start with a simple, albeit often flawed, approach
 ---------------------
 
-We need some sort of function to get a probabilistic interpretation of our parameters. For that we will mimic how I generated the data, particularly the probability that one could generate the data for a given set of input parameters otherwise known as the [_likelihood_](https://en.wikipedia.org/wiki/Likelihood_function).
+We need some sort of function to get a probabilistic interpretation of our parameters. For that, we will mimic how I generated the data, particularly the probability to generate the data for a given set of input parameters otherwise known as the [_likelihood_](https://en.wikipedia.org/wiki/Likelihood_function).
 
 _Through Maths_
 
@@ -121,9 +122,9 @@ $$
 &= \prod_{i} \frac{1}{\sqrt{2\pi\sigma^2}} exp\left(-\frac{(y-f(x, m, c))^2}{2\sigma^2}\right)
 \end{align}$$
 
-This is saying that for each data point we imagine a gaussian about the value. The probability that this value came from a line with gradient $$m$$ and intercept $$c$$ is described by a [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) which is an extremely common assumption (due to something called the [Central Limit Theorem](https://en.wikipedia.org/wiki/Central_limit_theorem) and other magical things about normal distributions). The [probability (density)](https://www.dannidanliu.com/probability-distributions-for-beginners/#:~:text=The%20PMF%20gives%20us%20the,Probability%20Density%20Function%20(PDF)%3A&text=PDF%20is%20used%20for%20continuous,any%20value%20within%20a%20range.) that the whole dataset comes from the line is just the product of all the individual probabilities. 
+The probability that this value came from a line with gradient $$m$$ and intercept $$c$$ is described by a [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) which is an extremely common assumption (due to something called the [Central Limit Theorem](https://en.wikipedia.org/wiki/Central_limit_theorem) and other magical things about normal distributions). The [probability (density)](https://www.dannidanliu.com/probability-distributions-for-beginners/#:~:text=The%20PMF%20gives%20us%20the,Probability%20Density%20Function%20(PDF)%3A&text=PDF%20is%20used%20for%20continuous,any%20value%20within%20a%20range.) that the whole dataset comes from the line is just the product of all the individual probabilities. 
 
-In a simpler case you can ask what the probability of getting three heads in a row is when flipping a coin. Presuming that the coin is fair, then the probability of heads at each flip is 50% or $$0.5$$. The probability of getting three in a row is then $$0.5\cdot0.5\cdot0.5$$. This is exactly what's happening here, but instead of a simple 50/50 coin toss, we're dealing with a more complex probability distribution.
+In a simpler case you can ask what the probability of getting three heads in a row is when flipping a coin. Presuming that the coin is fair, then the probability of heads at each flip is 50% or $$0.5$$. The probability of getting three in a row is then $$0.5\cdot0.5\cdot0.5 = 0.125$$. This is exactly what's happening here, but instead of a simple 50/50 coin toss, we're dealing with a more complex probability distribution.
 
 In essence, the likelihood function tells us how likely it is to observe our data given specific parameters of the model. For this example, the likelihood assumes that each data point is drawn from a normal distribution centered on the line defined by $$m$$ and $$c$$.
 
@@ -137,7 +138,7 @@ def ln_likelihood(d, theta, sigma=1):
 ```
 (We take the log value to avoid issues of [numerical instability](https://en.wikipedia.org/wiki/Numerical_stability))
 
-The basic (and often very bad) thing to do is then just brute force possible combinations of $$m$$ and $$c$$ using those assumptions we stated at the beginning.
+The basic (and often very bad) thing to do is then to just brute force possible combinations of $$m$$ and $$c$$ using those assumptions we stated at the beginning.
 
 ```python
 # Create a grid of parameter values (m, c) to evaluate likelihood
@@ -228,7 +229,7 @@ $$p(\vec{\theta}\mid\vec{d}) = \frac{p(\vec{d}\mid\vec{\theta})p(\vec{\theta})}{
 
 where $$\vec{\theta}$$ denote the parameters of interest, $$\vec{d}$$ the data. 
 
-We then generally write the equation with different symbols to denote their function in the equation,
+We commonly then write the equation with different symbols to denote their function in the equation,
 
 $$p(\vec{\theta}\mid\vec{d}) = \frac{\mathcal{L}(\vec{d}\mid\vec{\theta})\pi(\vec{\theta})}{\mathcal{Z}(\vec{d})}. $$
 
@@ -255,7 +256,7 @@ I initially found this easier to understand with a Venn diagram/using sets.
 
 Here, set A represents all possible data we could observe, while set B represents all possible parameter values for our model. The intersection of A and B corresponds to data and parameters that are consistent with each other.
 
-Let's say that we know that we in set A, and wish to know the probability that we are _also_ in set B. Intuitively, you can see that this would just be the area of the intersection over the total area of the A. i.e.
+Let's say that we know that we are in set A, and wish to know the probability that we are _also_ in set B. Intuitively, you can see that this would just be the area of the intersection over the total area of the A. i.e.
 
 $$ \begin{align}
 p(B\mid A) = p(B\cup A)/p(A)
@@ -362,15 +363,15 @@ plt.show()
       style="width: 75%; height: auto; border-radius: 8px;">
 </div>
 
-This looks the same as the previous plot, as our priors were uniform, meaning the overall change is a multiplicative constant, which if we normalised our values (to make them a probability density) this constant disappears. So we were lucky that the likelihood and posterior are the same.
+This looks the same as the previous plot, as our priors were uniform, meaning the overall change is a multiplicative constant. And if we normalised our values (to make them a probability density) this constant disappears. So, we were lucky that the likelihood and posterior are the same.
 
 Issues
 =====
 
 Woo! We have a probability density on our parameters. However, there are a few subtleties that I failed to mention.
-1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension. This corresponds to 10 billion evaluations of the function, which by itself is a little ridiculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB... not great. Additionally, we were lucky that the posterior wasn't much smaller than our prior, so we could zoom into the relevant region of parameter space. However, if we had enough data then the posterior could be small enough that the posterior values that evaluated may not see anything meaningful above 0. I'll get back to this one later.
+1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension. This corresponds to 10 billion evaluations of the function, which by itself is a little ridiculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB (~54 times the size of Skyrim)... not great. Additionally, we were lucky that the posterior wasn't much smaller than our prior, so we could zoom into the relevant region of parameter space. However, if we had enough data then the posterior could be small enough that the posterior values that evaluated may not see anything meaningful above 0. I'll get back to this one later.
 
-2. There's a bias in the gradient values towards positive values. Naturally you would presume that the gradient values are uniformly distributed between angles of -90 degrees to 90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we implicitly presumed looking at uniformly spaced values of m between 0 and 10 it would look like the following. (Thanks Dr. Casey for this particular plot.)
+2. There's a bias in the gradient values towards positive values. Naturally you would presume that the gradient values are uniformly distributed between angles of -90 degrees to 90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we implicitly presumed looking at uniformly spaced values of m between 0 and 10 it would look like the following. (Thanks Dr. Casey for inspo on this particular plot.)
 
 ```python
 x = np.linspace(-1, 1, 101)
@@ -433,7 +434,7 @@ Much better!
 Now if we use _this_ prior in our analysis, we don't include the bias (spoiler alert, for our small case it doesn't make a huge difference). 
 
 ### What's Next?
-As our models grow more complex, brute force quickly becomes impractical due to the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality). In the next few posts, I'll introduce more sophisticated techniques, such as [Markov Chain Monte Carlo (MCMC)](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo), to explore the posterior efficiently.
+As our models grow more complex, brute force quickly becomes impractical due to the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality). In the next few posts, I'll introduce more sophisticated techniques, such as [Markov Chain Monte Carlo (MCMC)](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo), to explore the posterior efficiently. I've written another post on that [here](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-29-practical-MHA-intro/).
 
-In the mean time feel free to try and replicate what I've done here. You could also take it a step further and look at simultaneously fitting the spread of the gaussian $$\sigma$$ which you may have noticed has been left as an explicit dependency.
+Otherwise, feel free to try and replicate what I've done here. You could also take it a step further and look at simultaneously fitting the spread of the gaussian $$\sigma$$ which you may have noticed has been left as an explicit dependency.
 

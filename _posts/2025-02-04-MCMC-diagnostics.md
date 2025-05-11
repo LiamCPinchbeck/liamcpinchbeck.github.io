@@ -59,14 +59,14 @@ For as many questions that you are trying to solve with MCMC there are many more
 I would also say that I use these more in practice to make my results _more certain_, i.e. a double check that I didn't miraculously get a false positive result. Enough prologue though, what should we look out for?
 
 1. Convergence (duh)
-    - We need to know that the samples that we are using for inference are actually samples from the target distribution and not some biased result because we didn't let the algorithm run for long enough
+    - We would like to know that the samples that we are using for inference are actually samples from the target distribution and not some biased result because we didn't let the algorithm run for long enough (spoiler - you'll never truly know except for simple posteriors)
 2. Mixing (time)
     - When statisticians refer to "good" or "bad" mixing when it comes to MCMC they are more accurately referring to the [mixing time of the Markov chain](https://en.wikipedia.org/wiki/Markov_chain_mixing_time).
     - This basically refers to how long/how many iterations it takes for the sampler to start properly sampling from the target distribution
         - Or in a more fancy way how long it takes for a chain to forget where it came from/become independent of it's initialization
 3. Sample Independence
     - As discussed in [another post](/_posts/2025-01-29-practical-MCMC-intro.md) by its very nature MCMC produces autocorrelated samples as each one is dependent on the last
-    - When we extract samples from the eventual result we want to know that the sample we take out are approximately independent or independent enough as this is required for if we were to sample the distribution correctly
+    - When we extract samples from the eventual result we want to know that the sample we take out are approximately independent or independent enough
 4. Stability of estimates
     - If I run the sampler with a different starting position, slightly different number of samples, etc, do I get similar results? Or do they fly out the window?
 5. Adequacy of the chosen burn-in period
@@ -78,9 +78,9 @@ I would also say that I use these more in practice to make my results _more cert
 
 Traceplots as in the name simply _trace_ the progression of a chain in your MCMC algorithm. For example, let's cook up a very basic example where we sample a 1d distribution of two normal distributions stacked on top of each other.
 
-I am using the python package [emcee](https://emcee.readthedocs.io/en/stable/) to do the sampling that uses [Affine-Invariant Ensemble Sampling](https://arxiv.org/abs/1202.3665) where you initialise multiple chains, often called 'walkers', that proposes new samples not only based on it's current position but the positions of the other walkers. For this post you can just think of it as Metropolis-Hastings where the chains talk to each to propose more useful proposal samples[^1]. 
+I am using the python package [emcee](https://emcee.readthedocs.io/en/stable/) to do the sampling that uses [Affine-Invariant Ensemble Sampling](https://arxiv.org/abs/1202.3665) where you initialise multiple chains, often called 'walkers', that proposes new samples not only based on it's current position but the positions of the other walkers. For this post you can just think of it as Metropolis-Hastings where the chains talk to each to propose more useful proposal samples[^0]. 
 
-[^1]: One thing to note here is that I'm using a small number of walkers so later plots are easier to look at, but in practice you should be using more if you can.
+[^0]: One thing to note here is that I'm using a small number of walkers so later plots are easier to look at, but in practice you should be using more if you can.
 
 ```python
 import numpy as np
@@ -420,13 +420,13 @@ $$\begin{align}
 Where $$n$$ is the number of datapoints, in our case this will specifically be the number of samples. The _autocovariance_ with _lag_ of $$k$$ is then,
 
 $$\begin{align}
-\text{K}(k) = \frac{1}{n} \sum_{i=k+1}^n (x_i - \mathbb{E}(X))(x_{\left(i-k \right)} - \mathbb{E}(X)),
+\rho_k = \frac{1}{n} \sum_{i=k+1}^n (x_i - \mathbb{E}(X))(x_{\left(i-k \right)} - \mathbb{E}(X)),
 \end{align}$$
 
-when $$k=0$$ then you just get the _variance_, $$\text{var}(X)$$. And then finally we get to the _autocorrelation_ with lag $$k$$,
+when $$k=0$$ then you just get the _variance_, $$\text{Var}(X)$$. And then finally we get to the _autocorrelation_ with lag $$k$$,
 
 $$\begin{align}
-\text{R}(k) = \frac{\text{K}(k)}{\text{K}(0)}.
+\gamma_k = \frac{\rho_k}{\rho_0}.
 \end{align}$$
 
 From this we can see that the magnitude of autocorrelation is less than or equal to 1, the top has to be less than the bottom. Autocorrelation isn't specific to MCMC but has a wide range of applications, particularly in signal processing (so I apologize for those in the field if I don't describe all this at 100%). Just to give as much of an intuitive feel to this as possible, we'll look at a maximal and minimal example of autocorrelation.
@@ -443,46 +443,176 @@ Starting with the minimal, 0 autocorrelation relates to completely random values
 
 The lines in the gif show the range of samples that are used for the calculation for the different lags on the right. Different lags look for behaviours over shorter ranges for shorter lags and larger ranges for larger lags. When analysing MCMC samples we generally prioritise shorters lags as if we presume that the "good" chains were they have found the target density and are approximately independent ("well mixed") the autocorrelation should decline rapidly. However, long lags may tell you about long term behaviour such as getting trapped in certain areas of the parameter space. 
 
-Best thing to do is similar to the above, look at the autocorrelation for multiple lag values. Let's do this for the 
-
-
-## Effective Sampling Size
-
-You might think that because you have 100,000 samples in your MCMC chain that you should have enough samples. Well buddy, absolutely not. For various reasons your mixing rate may be abysmally slow or you initialized your chain in what happens to be a local maxima and the sampler got confused or various other reasons. If the main goal of using MCMC is to generate samples representative of the posterior (which it generally is) then we should check that we actually have a reasonable number of them.
-
-Effective sample size (ESS) is an attempt to estimate the amount of independent information or samples in a (autocorrelated) chain. 
-
-
-
-
+Best thing to do is similar to the above, look at the autocorrelation for multiple lag values. 
 
 
 ## Integrated Autocorrelation Time
 
-When investigating autocorrelation in the previous section we specifically looked at what the correlation between samples in chain look like at various _lags_. Another useful diagnostic is looking at the average lag, this is close to what Integrated Autocorrelation Time is.
+When investigating autocorrelation in the previous section we specifically looked at what the correlation between samples in chain look like at various _lags_. The integrated autocorrelation time is denoted,
+
+$$
+\begin{align}
+\tau_{\text{int}} = 1 + 2 \sum_{k=1}^{\infty} R(k)
+\end{align}
+$$
+
+To show what this says about the MCMC chains we'll show how the variance of the sample average, $$Var(\bar{X})$$, is related to $$\tau_{\text{int}}$$. 
+
+The sample variance is calculated by,
+
+$$
+\begin{align}
+Var(\bar{X}) &= Var\left(\frac{1}{N} \sum_{i=1}^N X_i \right) \\
+&= Var\left(\frac{1}{N} \sum_{i=1}^N X_i \right) \\
+&= \frac{1}{N^2} \sum_{i=1}^N \sum_{j=1}^N Cov(X_i, X_j)  \\
+\end{align}
+$$
+
+Now if we assume that we've hit the stationary distribution, then the covariance between any two samples is just a function of the lag,
+
+$$\begin{align}
+\gamma_k = Cov(X_i, X_{i+k}) = Cov(X_j, X_{j+k}).
+\end{align}$$
+
+Defining $$\gamma_k$$ for the covariance for lag $$k$$ (i.e. the autocovariance with lag $$k$$) that has the following properties;
+- $$\gamma_k$$ $$=$$ $$\gamma_{-k}$$ 
+- $$\gamma_0$$ $$=$$ $$Var(X)$$
+
+This allows us to simplify the $$\bar{X}$$ variance into,
+
+$$
+\begin{align}
+Var(\bar{X}) &= \frac{1}{N^2} \sum_{i=1}^N \sum_{j=1}^N Cov(X_i, X_j)  \\
+&= \frac{1}{N^2} \left[N\gamma_0 + 2\sum_{k=1}^{N-1} (N-k)\gamma_k \right]  \\
+\end{align}
+$$
+
+Which without a tangent into combinatorics, I'll just show you the above is true in the case of $$N=4$$.
+
+$$
+\begin{align}
+Var(\bar{X}) &= \frac{1}{4^2} \sum_{i=1}^4 \sum_{j=1}^4 Cov(X_i, X_j)  \\
+4^2 Var(\bar{X}) &= \sum_{i=1}^4 Cov(X_i, X_1) + Cov(X_i, X_2) + Cov(X_i, X_3) + Cov(X_i, X_4)  \\
+&= Cov(X_1, X_1) + Cov(X_1, X_2) + Cov(X_1, X_3) + Cov(X_1, X_4)  \\
+& \quad + Cov(X_2, X_1) + Cov(X_2, X_2) + Cov(X_2, X_3) + Cov(X_2, X_4)  \\
+& \quad + Cov(X_3, X_1) + Cov(X_3, X_2) + Cov(X_3, X_3) + Cov(X_3, X_4)  \\
+& \quad + Cov(X_4, X_1) + Cov(X_4, X_2) + Cov(X_4, X_3) + Cov(X_4, X_4)  \\
+&= \gamma_0 + \gamma_1 + \gamma_2 + \gamma_3  \\
+& \quad + \gamma_1 + \gamma_0 + \gamma_1 + \gamma_2  \\
+& \quad + \gamma_2 + \gamma_1 + \gamma_0 + \gamma_1  \\
+& \quad + \gamma_3 + \gamma_2 + \gamma_1 + \gamma_0  \\
+&= 4 \gamma_0 + 6 \gamma_1 + 4\gamma_2 + 2\gamma_3  \\
+Var(\bar{X}) &= \frac{1}{4^2} \left(4\gamma_0 + 2(4-1)\gamma_1 + 2(4-2)\gamma_2 + 2(4-3)\gamma_3 \right)  \\
+&= \frac{1}{N^2} \left(N\gamma_0 + 2\sum_{k=1}^{N=4} (N-k)\gamma_k \right)  \\
+\end{align}
+$$
+
+Further expanding the variance of the average,
+
+$$
+\begin{align}
+Var(\bar{X}) &= \frac{1}{N} \left[\rho_0\gamma_0 + 2\sum_{k=1}^{N-1} (1-k/N)\rho_k\gamma_0 \right]  \\
+&= \frac{\gamma_0}{N} \left[1 + 2\sum_{k=1}^{N-1} (1-k/N)\rho_k \right]  \\
+\end{align}
+$$
+
+And again presuming that we've hit the staionary distribution then we take the limit as large $$N$$ then $$k/N\approx0$$ and,
+
+$$
+\begin{align}
+Var(\bar{X}) &= \lim_{N\rightarrow\infty} \frac{\gamma_0}{N} \left[1 + 2\sum_{k=1}^{N-1} (1-k/N)\rho_k \right]  \\
+&\approx \frac{Var(X)}{N} \left[1 + 2\sum_{k=1}^{\infty}\rho_k \right]  \\
+&\approx \frac{Var(X)}{N} \tau_\text{int}  \\
+\end{align}
+$$
+
+Then we note that for independent and identically distributed samples $$X$$ you would expect that,
+
+$$
+\begin{align}
+Var(\bar{X}) &\approx \frac{Var(X)}{N}. \\
+\end{align}
+$$
+
+So $$\tau_\text{int}$$ quantifies the inflation of the variance due to inefficiencies.
+
+For the above unconverged and converged examples this is how the Integrated Autocorrelation Time progresses.
+
+___Unconverged___
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-02-04/IACT_progression_fixed.png" 
+    alt="Progression of IACT for unconverged example" 
+    title="Progression of IACT for unconverged example" 
+    style="width: 80%; height: auto; border-radius: 8px;">
+</div>
+For the unconverged IACT you can see that the value _increases_ after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the IACT value is not close not small indicating that the algorithm hadn't converged.
+
+___Converged___
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-02-04/converged_IACT_progression_fixed.png" 
+    alt="Progression of IACT for converged example" 
+    title="Progression of IACT for converged example" 
+    style="width: 80%; height: auto; border-radius: 8px;">
+</div>
+
+For the converged MCMC algorithm you can see that the IACT drops over time but the IACT for the Y is quite large meaning that it takes a much longer time to generate independent samples but has stabilised. While X is much much smaller meaning that it takes much less time to get independent samples. This matches the compleixty of the repsective marginals.
 
 
 
-## Gelman-Rubin Diagnostic - The dynamic duo
+## Effective Sampling Size
 
-If you run multiple chains, do they give you similar results? Or is it that every time you run a chain it gives you something different. Well the Gelman-Rubin diagnostic helps us quantify this phenomenon.
+If we had independent and identically distributed samples then you would expect $$Var(\bar{X}) \approx \frac{Var(X)}{N}$$, however we've just derived $$Var(\bar{X}) = \frac{Var(X)}{N}\tau_\text{int}$$ in the above section. By a simple rearrangement then,
 
+$$
+\begin{align}
+N_{eff} = \frac{N}{\tau_\text{int}}.
+\end{align}
+$$
 
-## MSE
+So $$N_{eff}$$ represents the approximate number of effective independent samples at a given iteration. And due to it being a simple rearrangement of the integrated autocorrelation time we can make a similar set of plots.
+
+___Unconverged___
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-02-04/ESS_progression_fixed.png" 
+    alt="Progression of ESS for unconverged example" 
+    title="Progression of ESS for unconverged example" 
+    style="width: 80%; height: auto; border-radius: 8px;">
+</div>
+For the unconverged ESS graph you can see that the value randomly drops after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the ESS value is extremely small saying that we $$\leq1000$$ samples.
+
+___Converged___
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-02-04/converged_ESS_progression_fixed.png" 
+    alt="Progression of ESS for converged example" 
+    title="Progression of ESS for converged example" 
+    style="width: 80%; height: auto; border-radius: 8px;">
+</div>
+
+For the converged MCMC algorithm you can see that the ESS increases over time for both variables but more slowly for Y, again matching the complexity of the marginals.
+
 
 
 ## Toy modelling - You've got a friend
 
-One of the key skills that I've developed as a statistician/physicist is being able to create perfectly representative values of how I believe the data is generated so that I have a clean dataset to test my framework on.
+One of the key skills that I've developed as a statistician/physicist is being able to create perfectly representative values of how I believe the data is generated so that I have a clean dataset to test my framework on. I would do an example of this but it's in pretty much every single post I make, but I'm particularly proud of the one I made for the [normalising flows post](https://liamcpinchbeck.github.io/posts/2025/04/2025-04-28-normalising-flows/).
 
 
 
 ## Summary
 
-*Insert summary table here with each diagnostic and what it can show you*
+<!-- *Insert summary table here with each diagnostic and what it can show you* -->
 
 And one final note. I've tried to show that all of these methods are incomplete, they show you some things but not others per se. So, when doing any kind of diagnostics, more is better. This includes diagnostics but also just the number of samples. If you are unsure of whether a sampler has converged, just run it for longer if you can.
 
 ## Next Steps
 
 Next I'll try and detail some more commonly used MCMC methods starting with [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) then [Gibbs Sampling](https://en.wikipedia.org/wiki/Gibbs_sampling), [Metropolis-Adjusted Langevin Algorithm](https://en.wikipedia.org/wiki/Metropolis-adjusted_Langevin_algorithm) then finally [Slice Sampling](https://en.wikipedia.org/wiki/Slice_sampling). 
+
+
+## TBD 
+- Gelman-Rubin Diagnostic
+- MSE

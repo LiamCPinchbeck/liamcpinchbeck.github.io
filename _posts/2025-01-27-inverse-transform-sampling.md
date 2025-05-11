@@ -27,7 +27,7 @@ At the heart of MCMC is a sampling algorithm for probability distribution with a
 
 ## The End Result
 
-For some this will be the only section that you wish to look into. A general understanding of this topic will allow us to move on to future topics in Rejection Sampling and MCMC methods. 
+If you're short on time, this will be the only section that you need to look at. A general understanding of this topic will allow us to move on to future topics in Rejection Sampling and MCMC methods. 
 
 Let's say you have a normal probability distribution function (pdf) and it's cumulative distribution function (cdf). From the below gif you can see if we invert the cdf and plug in some uniform samples from 0 to 1 then we get samples representative of the normal probability distribution.
 
@@ -85,7 +85,7 @@ I always imagine the values on the left smashing into the cdf on the right and d
 
 ## The Math
 
-So the question is, how is it that I can transform samples of the uniform distribution, into samples of any probability distribution where I can figure out the cumulative disitribution function?
+So the question is, how is it that I can transform samples of the uniform distribution, into samples of any probability distribution with an analytic cumulative disitribution function?
 
 As a test case, let's say we want samples from the exponential distribution,
 
@@ -106,7 +106,7 @@ CDF(x) = \int_{-\infty}^{x} p(x') dx' = \begin{cases}
 \end{cases}
 \end{align}$$
 
-If I give a specific value of x to the CDF, it will output the probability of being that value or below for the given probability distribution. Here's a plot showing some example curves.
+If I give a specific value of x to the CDF, it will output the probability of being that value or below, for the given probability distribution. Here's a plot showing some example curves.
 
 
 <div style="text-align: center;">
@@ -148,9 +148,9 @@ So you can clearly see that $$CDF = T^{-1}$$ or equivalently $$T = CDF^{-1}$$. A
 
 ## Coding up our own sampler
 
-Now [ritvikmath](https://www.youtube.com/@ritvikmath) then goes on to solve for the exact analytical inverse of the exponential. It isn't that hard, you can have a crack yourself, but what I'm interested in is if you give me a general probability density function, how can I sample it? And let's presume that either there is no closed form expression for the inverse CDF or that I don't have the time/can't be bothered to figure it out. 
+Now [ritvikmath](https://www.youtube.com/@ritvikmath) then goes on to solve for the exact analytical inverse of the exponential. It isn't that hard, you can have a crack yourself, but what I'm interested in is "if you give me a general probability density function, how can I sample it?" And let's presume that either there is no closed form expression for the inverse CDF or that I don't have the time/can't be bothered to figure it out. 
 
-Well, the inverse of a function is just that if I give it what _were_ the outputs of the _original function_ then I should get what the inputs must have been. So if I can create a map, or an _approximate map_ of inputs to outputs, then just do the ol' switcheroo then I can interpolate the result and get an approximate inverse CDF!
+Well, the inverse of a function is just if I give the inverse what _were_ the outputs of the _original function_ then I should get what the inputs must have been. So if I can create a map (or an _approximate map_) of inputs to outputs, then just do the ol' switcheroo I can interpolate the result and get an approximate inverse CDF!
 
 ```python
 
@@ -242,7 +242,7 @@ You can also see how you can immediately expand this to discrete distributions, 
 
 ## Next Steps
 
-In my next post we'll use this ability to sample "nice" probability distributions to sample "less nice" distributions using [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling).
+In my [next post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/) we'll use this ability to sample "nice" probability distributions to sample "less nice" distributions using [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling).
 
 
 ___
