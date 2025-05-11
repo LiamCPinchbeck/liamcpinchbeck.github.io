@@ -581,7 +581,7 @@ ___Unconverged___
     title="Progression of ESS for unconverged example" 
     style="width: 80%; height: auto; border-radius: 8px;">
 </div>
-For the unconverged ESS graph you can see that the value randomly drops after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the ESS value is extremely small saying that we $$\leq1000$$ samples.
+For the unconverged ESS graph you can see that the value randomly drops after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the ESS value is extremely small saying that we have $$\leq1000$$ samples.
 
 ___Converged___
 <div style="text-align: center;">
