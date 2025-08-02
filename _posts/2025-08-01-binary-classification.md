@@ -387,7 +387,7 @@ Now I'm just going to re-run everything above but changing the number of samples
     style="width: 100%; height: auto; border-radius: 32px;">
 </div>
 
-You can see both of these changes on the samples above but the impact of the scaling is much greater. When looking at the samples directly and comparing to the performance as can be seen below you can intuit that this should be the case presuming that our classifier is doing the most it can with the data provided. I don't know about you, but after $$\sigma \approx 1.0$$ I couldn't even say that there were two gaussians there, yet alone which samples came from which one.
+You can see both of these changes on the samples above but the impact of the scaling is much greater. When looking at the samples directly and comparing to the performance as can be seen below you can intuit that this should be the case presuming that our classifier is doing the most it can with the data provided. I don't know about you, but after $$\sigma \approx 1.0$$ I couldn't even say that there were two gaussians there, yet alone which samples came from which one, so it makes sense that the neural network similarly starts losing it's distinguishing power.
 
 
 # Conclusion
