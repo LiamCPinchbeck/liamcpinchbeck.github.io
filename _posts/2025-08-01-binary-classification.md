@@ -13,7 +13,18 @@ In this post I will attempt to give an introduction to _binary classifiers_ and 
 
 ---
 
-Resources
+## Resources
+
+Hey there, this is another introductory post, going into binary classifiers and kinda neural networks in general. Figured it would be nice to have alongside all the other things in my posts that rely on neural networks that at least gives an intuitive feel for how neural network work and for a future post where you can use binary classifiers to perform likelihood-free or simulation-based inference with [Nested Ratio Estimation](https://arxiv.org/abs/2008.13087).
+
+
+As usual, here are some of the resources I’m using as references for this post. Feel free to explore them directly if you want more information or if my explanations don’t quite click for you:
+
+- [3Blue1Brown's](https://www.youtube.com/@3blue1brown) [series on neural networks](https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)
+- [StatQuest with Josh Starmer's](https://www.youtube.com/@statquest) [intro video](https://www.youtube.com/watch?v=CqOfi41LfDw&t=14s) on neural networks and [his subsequent neural networks playlist](https://www.youtube.com/watch?v=zxagGtF9MeU&list=PLblh5JKOoLUIxGDQs4LFFD--41Vzf-ME1)
+- [An introduction to Neural Networks for Physicists](https://arxiv.org/abs/2505.13042) by [G. Café de Miranda](https://arxiv.org/search/physics?searchtype=author&query=de+Miranda,+G+C), [Gubio G. de Lima](https://arxiv.org/search/physics?searchtype=author&query=de+Lima,+G+G), and [Tiago de S. Farias](https://arxiv.org/search/physics?searchtype=author&query=de+S.+Farias,+T) (possibly biased by the fact that I am a physicist)
+- [An introduction to artificial neural networks](https://arxiv.org/pdf/astro-ph/0102224) by [Coryn A.L. Bailer-Jones](https://arxiv.org/search/astro-ph?searchtype=author&query=Bailer-Jones,+C), [Ranjan Gupta](https://arxiv.org/search/astro-ph?searchtype=author&query=Gupta,+R), and [Harinder P. Singh](https://arxiv.org/search/astro-ph?searchtype=author&query=Singh,+H)
+
 
 
 ---
