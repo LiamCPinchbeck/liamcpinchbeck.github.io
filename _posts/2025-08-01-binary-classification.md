@@ -4,7 +4,8 @@ date: 2025-08-01
 permalink: /posts/2025/08/2025-08-01-binary-classifier/
 tags:
   - PyTorch
-  - Variational Inference
+  - Neural Networks
+
 header-includes:
    - \usepackage{amsmath}
 ---
