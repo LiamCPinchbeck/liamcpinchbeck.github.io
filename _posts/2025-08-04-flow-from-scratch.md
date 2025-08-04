@@ -48,7 +48,7 @@ In today's post we will try and do two things: 1. approximate a sample distribut
 
 
 <div style="display: flex; width: 100%;">
-  <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_wow_model.gif" style="width: 50%; height: auto;" />
+  <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_WOW_model copy.gif" style="width: 50%; height: auto;" />
   <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_hello_model copy.gif" style="width: 50%; height: auto;" />
 </div>
 
@@ -599,7 +599,7 @@ And looking at the result along with some samples that look like HELLO because w
 
 
 <div style="display: flex; width: 100%;">
-  <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_wow_model.gif" style="width: 50%; height: auto;" />
+  <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_WOW_model copy.gif" style="width: 50%; height: auto;" />
   <img src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_hello_model copy.gif" style="width: 50%; height: auto;" />
 </div>
 
