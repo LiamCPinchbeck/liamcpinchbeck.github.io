@@ -86,3 +86,7 @@ A series of websites, papers and packages that I've found particularly helpful f
 
 -  🖥️ [Paperpile](https://paperpile.com/features/)
     - Nice reference manager with Android app for those that like reading papers on the go/on tablets
+
+- 🖥️ [PyTorch Tutorials](https://docs.pytorch.org/tutorials/index.html)
+
+- 🖥️ [Pyro Documentation](https://docs.pyro.ai/en/stable/)
