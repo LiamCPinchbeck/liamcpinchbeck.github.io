@@ -541,7 +541,7 @@ This allows us to further manipulate our derivative above as,
 $$\begin{align}
 \frac{\partial \log p(\mathbf{z}(t))}{\partial t} &=  - \lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert \\
 
-&= - \lim_{\epsilon \rightarrow 0^+} \textrm{tr}\left(\textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right)
+&= - \lim_{\epsilon \rightarrow 0^+} \textrm{tr}\left(\textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \\
 
 &= -  \textrm{tr}\left( \lim_{\epsilon \rightarrow 0^+} \textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \\
 
@@ -566,7 +566,73 @@ $$\begin{align}
 
 # The Adjoint Method and Derivatives
 
-The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight in this method is backpropagating our derivatives through this kind of system.
+The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight in this method is backpropagating our derivatives through this kind of system. So debatably the main achievement of the paper is to introduce the use of adjoint method for "reverse-mode" automatic differentiation/backpropagation that alleviates some of the introduced inefficiencies regardless of the ODE solver used[^bb].
+
+[^bb]: Or in their own words for "black box" ODE solvers. Referring to the fact that you don't need to know about the internals of the ODE solver to use this method.
+
+So, we treat the ODE solver as just some function $$\textrm{ODESolve}$$ that takes in the initial state $$z(t_0)$$, the initial time $$t_0$$, final time $$t_1$$ and parameters of $$f$$, $$\mathbf{\theta}$$. Looking at the loss which is calculated based on the final state this translate into,
+
+$$\begin{align}
+L(\mathbf{z}(t_1)) &= L\left(\mathbf{z}(t_0) + \int_{t_0}^{t_1} f(\mathbf{z}(t), t, \theta) dt \right) \\
+&= L\left(\textrm{ODESolve}(\mathbf{z}(t_0), f, t_0, t_1, \mathbf{\theta})\right)
+\end{align}$$
+
+Normally, we would then blindly apply automatic differentiation of our loss $$L$$ with respect to the parameters being trained $$\mathbf{\theta}$$ but again, this would have to go through the solver. The key idea of the adjoint method is that instead of this, you get the derivatives by solving for the dynamics of a separate quantity $$a(t)$$ and it will give you,
+
+$$\begin{align}
+\frac{dL}{d\theta} = - \int_{t_0}^{t_1} a(t)^T \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{\theta}} dt,
+\end{align}$$
+
+which can be done simultaneously to $$\mathbf{z}(t)$$ by the same solver as it requires the same information as is required for $$\mathbf{z}(t)$$. 
+
+Thank you so much [Vaibhav Patel](https://vaipatel.com/)[^SF] for their post on [Deriving the Adjoint Equation for Neural ODEs using Lagrange Multipliers](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/) for helping me with the following. We can set up our system as finding the set of values $$\mathbf{\theta}$$ that minimise our loss subject to the constraint,
+
+[^SF]: And thank you [Sam Foster](https://www.linkedin.com/in/sam-foster-820096234/?trk=public_profile_browsemap&originalSubdomain=au) you magnificent beast for your help as well.
+
+$$\begin{align}
+F\left(\frac{d\mathbf{z}(t)}{dt}, \mathbf{z}(t), \mathbf{\theta}, t\right) = \frac{d\mathbf{z}(t)}{dt} - f(\mathbf{z}(t), \mathbf{\theta}, t) = 0.
+\end{align}$$
+
+We can make this more applicable by translating it into terms involving our loss function,
+
+$$\begin{align}
+\psi(\mathbf{\theta}) = L(\mathbf{z}(t_1)) - \int_{t_0}^{t_1} \mathbf{a}(t)F\left(\frac{d\mathbf{z}(t)}{dt}, \mathbf{z}(t), \mathbf{\theta}, t\right) dt,
+\end{align}$$
+
+introducing the time dependent [Lagrange multipler](https://en.wikipedia.org/wiki/Lagrange_multiplier). If we take a gradient of this with respect to $$\theta$$ we see that,
+
+$$\begin{align}
+\frac{d\psi}{d\theta} = \frac{dL(\mathbf{z}(t_1))}{d\theta},
+\end{align}$$
+
+as we know by construction that $$F=0$$. The benefit to doing all this is to choose $$\mathbf{a}(t)$$ to eliminate computationally difficult to calculate terms in $$dL/d\mathbf{\theta}$$. e.g. the largest derivative we could take $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$. I'm going to tell you to jumpy over to [Patel's post](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms)
+ for the following,
+
+$$\begin{align}
+\frac{dL}{d\theta} &= \left[\frac{\partial L}{\partial \mathbf{z}(t_1)} - \mathbf{a}(t_1)\right]\frac{d\mathbf{z}(t_1)}{d\mathbf{\theta}}\\
+& + \int_{t_0}^{t_1} \left(\frac{d\mathbf{a}(t)}{dt}+\mathbf{a}(t)\frac{\partial f}{\partial \mathbf{z}} \right) \frac{d\mathbf{z}(t)}{d\mathbf{\theta}} dt\\
+& + \int_{t_0}^{t_1} \mathbf{a}(t)\frac{\partial f}{\partial \mathbf{\theta}} dt .
+\end{align}$$
+
+So based on the fact that we don't want to have to evaluate $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$, we want to get rid of both of the first terms. This means that we want,
+
+$$\begin{align}
+a(t_1) = \frac{\partial L}{\partial \mathbf{z}(t_1)}
+\end{align}$$
+
+and,
+
+$$\begin{align}
+&\frac{da(t)}{dt}= -a(t)\frac{\partial f}{\partial \mathbf{z}}. \\
+\end{align}$$
+
+Then once the first two terms are cancelled out and flip the direction of the integral, you arrive at Equation 5 of [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) allowing us to efficiently calculate derivatives of the loss with respect to our training parameters regardless of the specifics of the ODE solver,
+
+$$\begin{align}
+\frac{dL}{dt} = - \int_{t_1}^{t_0} \mathbf{a}(t)\frac{\partial f(\mathbf{z}(t), t, \mathbf{\theta})}{\partial \mathbf{\theta}} dt.
+\end{align}$$
+
+And thankfully, at least as a user, we never have to worry about this as various python packages including [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) which I used for my above code examples have solvers with this baked in (e.g. torchdiffeq's [`odeint_adjoint`](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py)).
 
 
 ---
