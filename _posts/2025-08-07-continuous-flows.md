@@ -14,10 +14,6 @@ header-includes:
 In this post I will attempt to give an introduction to _continuous normalising flows_, an evolution of normalising flows that translate the idea of training a discrete set of transformations to approximate a posterior, into training an [ODE](https://en.wikipedia.org/wiki/Ordinary_differential_equation) or vector field to do the same thing. 
 
 ---
-
-
-___UNDER CONSTRUCTION, DO NOT TRUST OR LET WHAT IS WRITTEN REFLECT ME AS A PERSON/RESEARCHER PLEASE___
-
 ---
 
 ## Table of Contents
@@ -85,13 +81,479 @@ There are many fantastic things about this, the three ones that are of interest 
 3. __Normalising flow scalability__. On top of the constant memory cost, reparameterising our problem into this form means that our jacobians/change of variables is easier/quicker to compute and the forward and reverse directions of evaluating our flow become roughly equal in cost unlike methods such as autoregressive models that have a particular direction with faster computation while still having great flexibility.
 
 
+
+
+# 'Ground Up' CNF
+
+I'm going to skip some of the details relating to the backpropagation of the parameters being trained and skip straight into coding up an example that is basically a re-work of the example by [Ricky Chen](https://github.com/rtqichen)[^rchen] stored on github [here](https://github.com/rtqichen/torchdiffeq/blob/master/examples/cnf.py).
+
+[^rchen]: First author for the original [Neural Ordinary Differential Equations](https://arxiv.org/pdf/1806.07366)
+
+Analogous to a _planar normalising flow_,
+
+$$\begin{align}
+\mathbf{z}(t+1) &= \mathbf{z}(t) + h\left(w^T \mathbf{z}(t) + b \right), \\
+\log p(\mathbf{z}(t+1)) &= \log p(\mathbf{z}(t)) - \log \left\vert 1 + u^T \frac{\partial h}{\partial \mathbf{z}}\right\vert,
+\end{align}$$
+
+we're going to initially be interested in the system defined as,
+
+$$\begin{align}
+\frac{d\mathbf{z}(t)}{dt} = u \cdot h\left(w^T \mathbf{z}(t) + b \right), \frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -u^T \frac{\partial h}{\partial \mathbf{z}(t)}.
+\end{align}$$
+
+
+So our parameters that we need to learn as a function of $$t$$ and $$u$$, $$w$$ and $$b$$ that are a function of just $$t$$. 
+
+---
+
+Just to get some boring stuff out of the way here are most of imports for the post.
+
+```python
+import os
+import argparse
+import glob
+from PIL import Image
+import numpy as np
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_circles, make_swiss_roll # yes a swiss roll
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+
+results_dir = "./results"
+```
+
+For the actual code for the continuous normalising flow, which from now on I'll just call ___CNF___ not to be confused with [_conditional normalising flows_](https://arxiv.org/abs/1912.00042), the forward model is stupid simple. We just need to take in a time, the state of the samples/probabilities.
+
+```python
+    def forward(self, t, states):
+        z = states[0]
+        logp_z = states[1]
+```
+
+Then because of the ODE solver that we will be using later on from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) require it for some internals basically, we're going to forcibly require gradient tracking.
+
+```python
+        with torch.set_grad_enabled(True):
+            z.requires_grad_(True)
+```
+
+We'll then off-load the calculation of the $$w$$, $$b$$ and $$u$$ to a dedicated neural network.
+
+```python
+            # Neural network to model the vector field
+            W, B, U = self.hyper_net(t)
+```
+
+
+Then because we're actually dealing with matrices in practice, specifically 
+- $$z$$ will have the dimensionality of the distribution we're trying to model and the number of samples we want to estimate the expectation value from the loss 
+    - e.g. 2D posterior with 300 monte carlo samples >> `z.shape = (300, 2)`, 
+- and then $$u$$, $$w$$ and $$b$$ will have the dimensionality of the distribution we're trying to model and the width in the neural network's output we're using to model these.
+    - e.g. above + width of 64 >> `w.shape = (64, 2, 1)` & `b.shape = (64, 1, 1)` & `u.shape = (64, 1, 2)` (the 2s being there for sake of the distributions' dimensionality)
+
+So we'll expand $$z$$ so that it has compatible shapes for the multiplication with $$w$$.
+
+```python
+            Z = torch.unsqueeze(z, 0).repeat(self.width, 1, 1)
+```
+
+We then do what we came for and calculate $$\frac{dz}{dt}$$ using $$\tanh$$ for our 'kind of' activation function $$h$$ averaging over the dimension of 'width'.
+
+```python
+            h = torch.tanh(torch.matmul(Z, W) + B)
+            dz_dt = torch.matmul(h, U).mean(0)
+```
+
+Then we want to calculate the derivative of the probability with respect to time so that we can get a functional form of our probabilities as we usually do with flows, noting that,
+
+$$\begin{align}
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left( \frac{df}{d\mathbf{z}(t)}\right),
+\end{align}$$
+
+which proving right now will get in the way of the result so I'll just promise to prove that later and you're just gonna have to trust me for now.
+
+<div style="text-align: center;">
+<img 
+    src="https://data.textstudio.com/output/sample/animated/8/2/8/5/trust-3-5828.gif" 
+    alt="https://data.textstudio.com/output/sample/animated/8/2/8/5/trust-3-5828.gif" 
+    title="Trust me bruh" 
+    style="width: 60%; height: auto; border-radius: 16px;">
+</div>
+
+Our starting point for all this was $$\frac{d\mathbf{z}}{dt} = f(\mathbf{z}(t), t, \mathbf{\theta})$$, using this we can see $$\frac{\partial f}{\partial \mathbf{z}(t)} = \frac{\partial}{\partial \mathbf{z}(t)} \frac{d\mathbf{z}}{dt}$$. We can manually do this with [`torch.autograd.grad`](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad.html) which is broadly plug-n-chug. I'll however note that,
+- the `create_graph=True` option allows higher order derivatives to be calculated later on 
+- that you can think of the jacobian as an outer product of the vector input and vector derivative, and hence we single out each dimension of $$z$$ when taking the derivative `dz_dt[:, i]` but later on slice into this to get the diagonal term(s) `...aph=True)[0][:, i]`
+- remember that the first dim of `dz_dt` is over the number of samples, for which we need to do these calculations for each of them independently
+
+```python
+            trace_df_dz = 0.
+            for i in range(z.shape[1]):
+                trace_df_dz += torch.autograd.grad(dz_dt[:, i].sum(), z, create_graph=True)[0][:, i]
+
+            dlogp_z_dt =  - trace_df_dz.view(batchsize, 1) # some other reshaping fun stuff
+```
+
+And badabing we have our `CNF`, copy-pasted here so you can look at it in full (and see how simple it is at the end of the day).
+
+```python
+class CNF(nn.Module):
+    def __init__(self, in_out_dim, hidden_dim, width):
+        super().__init__()
+        self.in_out_dim = in_out_dim
+        self.hidden_dim = hidden_dim
+        self.width = width
+        self.hyper_net = HyperNetwork(in_out_dim, hidden_dim, width)
+
+    def forward(self, t, states):
+        z = states[0]
+        logp_z = states[1]
+
+        batchsize = z.shape[0]
+
+        with torch.set_grad_enabled(True):
+            z.requires_grad_(True)
+
+            # Neural network to model the vector field
+            w, b, u = self.hyper_net(t)
+
+            Z = torch.unsqueeze(z, 0).repeat(self.width, 1, 1)
+
+            h = torch.tanh(torch.matmul(Z, w) + b)
+
+            dz_dt = torch.matmul(h, u).mean(0)
+
+            # calculating the trace
+            trace_df_dz = 0.
+            for i in range(z.shape[1]):
+                trace_df_dz += torch.autograd.grad(dz_dt[:, i].sum(), z, create_graph=True)[0][:, i]
+
+            dlogp_z_dt =  - trace_df_dz.view(batchsize, 1)
+
+
+        return (dz_dt, dlogp_z_dt)
+```
+
+I'll then rush through the creation of that dedicated neural network because it's essentially just 
+- single dim input ($$t$$)
+- do some neural network stuff
+- slice into the neural network outputs to get $$w$$, $$b$$, $$u$$ (capitalised) with the modelling of an extra internal variable `G` to stabilise the values for $$u$$.
+
+
+```python
+class HyperNetwork(nn.Module):
+    def __init__(self, in_out_dim, hidden_dim, width):
+        super().__init__()
+
+        blocksize = width * in_out_dim
+
+        self.fc1 = nn.Linear(1, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, 3 * blocksize + width)
+
+        self.in_out_dim = in_out_dim
+        self.hidden_dim = hidden_dim
+        self.width      = width
+        self.blocksize  = blocksize
+
+    def forward(self, t):
+        # predict params
+        params = t.reshape(1, 1)
+        params = torch.tanh(self.fc1(params))
+        params = torch.tanh(self.fc2(params))
+        params = self.fc3(params)
+
+        # restructure
+        params  = params.reshape(-1)
+
+        W       = params[:self.blocksize].reshape(self.width, self.in_out_dim, 1)
+
+        U       = params[self.blocksize:2 * self.blocksize].reshape(self.width, 1, self.in_out_dim)
+
+        G       = params[2 * self.blocksize:3 * self.blocksize].reshape(self.width, 1, self.in_out_dim)
+
+        U       = U * torch.sigmoid(G)
+
+        B       = params[3 * self.blocksize:].reshape(self.width, 1, 1)
+
+        return [W, B, U]
+```
+
+<br>
+
+# Training our CNF
+
+To make the loss simpler, as I showed in my post on [building a normalising flow from scratch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/), we'll presume that we're trying to estimate the probability distribution from a set of samples from some target distribution, which reduces our loss to effectively being,
+
+$$\begin{align}
+\mathcal{L}(\mathbf{\theta}) \approx -\frac{1}{N} \sum_i^N \log q_{\mathbf{z}}(\mathbf{z}_i\vert\mathbf{\theta}).
+\end{align}$$
+
+We'll try and model 4 rings of samples.
+
+```python
+def get_dist_samples(num_samples):
+    points1, _ = make_circles(n_samples=num_samples//2, noise=0.06, factor=0.5)
+    points2, _ = make_circles(n_samples=num_samples//2, noise=0.03, factor=0.5)
+    points2*=4
+    points = np.vstack((points1, points2))
+    x = torch.tensor(points).type(torch.float32).to(device)
+    logp_diff_t1 = torch.zeros(num_samples, 1).type(torch.float32).to(device)
+
+    return (x, logp_diff_t1)
+
+z, logp_diff_t1 = get_dist_samples(num_samples=100000)
+```
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-cont-flows/4ring_sample_example.png" 
+    alt="Example samples from 4 rings in 2D with progressively larger radii."
+    title="Example samples from 4 rings in 2D with progressively larger radii."
+    style="width: 70%; height: auto; border-radius: 32px;">
+</div>
+
+
+We'll then use an ODE solver/integrator from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) called [`odeint_adjoint'](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py), and all it does (at least as far as we'll discuss for now) is take some input $$\frac{df}{dt}$$ and integrates it over $$t$$.
+
+```python
+from torchdiffeq import odeint_adjoint as odeint
+```
+
+We'll then initialise an example model, our start and end "times", the optimiser we want to use (Adam) with a learning rate of 0.02, our base distribution (2D normal) and something to keep track of the loss later (doesn't have anything to do with the actual implementation of the CNF)
+
+```python
+t0 = 0
+t1 = 10
+device = torch.device('cpu')
+losses = []
+
+
+cnf_func = CNF(in_out_dim=2, hidden_dim=32, width=64).to(device)
+
+optimizer = optim.Adam(cnf_func.parameters(), lr=1e-2)
+
+# base distribution for "z at time 0" hence z0
+p_z0 = torch.distributions.MultivariateNormal(
+    loc=torch.tensor([0.0, 0.0]).to(device),
+    covariance_matrix=torch.tensor([[0.1, 0.0], [0.0, 0.1]]).to(device)
+)
+
+# thing to keep track of loss that isn't necessarily required
+loss_meter = RunningAverageMeter()
+```
+
+So for our training we'll specify the number of iterations we want...iterating over them. We'll turn off the gradients so that we have control over specifically where we'll track gradients otherwise we'll get some inefficiencies pop up.
+
+```python
+    niters = 1000
+    for itr in range(1, niters + 1):
+        optimizer.zero_grad()
+```
+
+We'll grab some samples from our target distribution, specifically 300, because from some of my own testing, that's as many I could use before I couldn't be bothered waiting for the training to finish, and it outputs an empty array that we can use for tracking the derivatives of the log probabilities.
+
+```python
+        x, logp_diff_t1 = get_dist_samples(num_samples=300)
+```
+
+We then chuck our
+- CNF function/model
+- distribution samples and dummy probability to transform (backwards)
+- our end and start times
+- our tolerances for the accuracy of the ODE solver (`rtol` and `atol`)
+- and the general method that we want the ODE solver to use, which I'm picking to be the [Runge-Kutta-Fehlberg method](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)
+into our ODE solver to get our transformed samples and transformation jacobian.
+
+```python
+        z_t, logp_diff_t = odeint(
+            func, 
+            (x, logp_diff_t1),
+            torch.tensor([t1, t0]).type(torch.float32).to(device),
+            atol=1e-5,
+            rtol=1e-5,
+            method='fehlberg2',
+        )
+
+        # Picking the samples and probabilities in the base distribution space
+        z_t0, logp_diff_t0 = z_t[-1], logp_diff_t[-1]
+
+        # log probabilities of our CNF model on the target distribution samples
+            # our equivalently the probabilities under our base distribution of the reverse
+            # transformed samples and the jacobian for the transformation
+        logp_x = p_z0.log_prob(z_t0).to(device) - logp_diff_t0.view(-1)
+```
+
+We then calculate our loss using the equation above.
+
+```python
+        loss = -logp_x.mean(0)
+```
+
+And then backwards propagate the model parameters and take a step with our optimiser.
+
+```python
+        loss.backward()
+        optimizer.step()
+
+        # Keeping track of the losses using the running meter
+        loss_meter.update(loss.item())
+
+        # Keeping track of the average losses with a basic list
+        losses.append(loss_meter.avg)
+```
+
+In total looking like this with some division between actual mathematical steps and general neural network training.
+
+```python
+niters = 1000
+for itr in range(1, niters + 1):
+    optimizer.zero_grad()
+
+    x, logp_diff_t1 = get_dist_samples(num_samples=300)
+
+    ############################################################
+    ############################################################
+    ##### Solve ODE and calculate loss
+
+    z_t, logp_diff_t = odeint(
+        func,
+        (x, logp_diff_t1),
+        torch.tensor([t1, t0]).type(torch.float32).to(device),
+        atol=1e-5,
+        rtol=1e-5,
+        method='fehlberg2',
+    )
+
+    z_t0, logp_diff_t0 = z_t[-1], logp_diff_t[-1]
+
+    logp_x = p_z0.log_prob(z_t0).to(device) - logp_diff_t0.view(-1)
+    
+    loss = -logp_x.mean(0)
+
+
+    ############################################################
+    ############################################################
+
+    loss.backward()
+    optimizer.step()
+
+    loss_meter.update(loss.item())
+
+    losses.append(loss_meter.avg)
+    print('Iter: {}, running avg loss: {:.4f}'.format(itr, loss_meter.avg))
+
+```
+
+From this I get the following loss curve.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-cont-flows/loss_curve4.png" 
+    alt="Loss curve for training the neural network behind our Continuous Normalising Flow."
+    title="Loss curve for training the neural network behind our Continuous Normalising Flow."
+    style="width: 70%; height: auto; border-radius: 32px;">
+</div>
+
+And then what we really came for, how well our CNF actually did to approximate our sample distribution!
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-cont-flows/cnf-4viz4.gif" 
+    alt="GIF showing the progression of samples and probability density for our Continuous Normalising Flows approximation of the target sample distribution as a function of 'time'."
+    title="GIF showing the progression of samples and probability density for our Continuous Normalising Flows approximation of the target sample distributio as a function of 'time'."
+    style="width: 100%; height: auto; border-radius: 32px;">
+</div>
+
+And I would just like to emphasize, this is not a training animation, this is actually how the samples are transformed from our assumed base distribution to our target distribution.
+
+
+
+---
+---
+
+# Proof of det Jacobian trace derivative
+
+[Chen et al. 2019](https://arxiv.org/pdf/1806.07366) also produce this proof but put it into one of the appendices, but personally I would have liked it in the main body, as to me it really came out of left field. Hence...
+
+What we want to prove (in less rigour than the original paper, so head on over there if you want more of that) is that for a ODE defined as (omitting transformation variables $$\mathbf{\theta}$$ )
+
+$$\begin{align}
+\frac{d\mathbf{z}}{dt} = f(\mathbf{z}(t), t)
+\end{align}$$
+
+with $$\mathbf{z}$$ being a continuous random variable with probability density $$p(\mathbf{z}(t))$$, then,
+
+
+$$\begin{align}
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left(\frac{df}{d\mathbf{z}}(t)\right)
+\end{align}$$
+
+
+To prove this we'll first introduce $$T_\epsilon$$ which you can think of as $$f(\mathbf{z}(t), t)$$ integrated over time $$\delta t = \epsilon$$ such that,
+
+$$\begin{align}
+\mathbf{z}(t+\epsilon) = T_\epsilon(\mathbf{z}(t))
+\end{align}$$
+
+Assuming nothing about $$f$$, $$T_\epsilon$$ or $$\frac{\partial}{\partial \mathbf{z}}T_\epsilon$$ then we can say among other things (possibly somewhat obviously),
+
+$$\begin{align}
+\frac{\partial}{\partial \mathbf{z}} \mathbf{z}(t) &= 1 \\
+\frac{\partial}{\partial \mathbf{z}} \log(\mathbf{z}(t)) |_{\mathbf{z}=\mathbf{1}} &= \frac{\frac{\partial}{\partial \mathbf{z}} \mathbf{z}(t)}{\mathbf{z}(t)} |_{\mathbf{z}=\mathbf{1}} = \frac{1}{\mathbf{z}(t)} |_{\mathbf{z}=\mathbf{1}} = \mathbf{1} \\
+\frac{\partial}{\partial \epsilon} \epsilon = 1.
+\end{align}$$
+
+If $$\epsilon$$ goes to 0, then the transformation becomes the identity or,
+
+$$\begin{align}
+\lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) &= \mathbf{1} \\
+\therefore \lim_{\epsilon\rightarrow 0^+} \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert &= 1 \\
+\therefore \lim_{\epsilon\rightarrow 0^+} \frac{1}{\left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert} &= 1.
+\end{align}$$
+
+Hence (equations 15-20 in [Chen et al. 2019](https://arxiv.org/pdf/1806.07366)),
+
+$$\begin{align}
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} &= \lim_{\epsilon\rightarrow 0^+} \frac{ \log p(\mathbf{z}(t+\epsilon)) - \log p(\mathbf{z}(t))}{\epsilon}\\
+&= \lim_{\epsilon\rightarrow 0^+} \frac{ \log p(\mathbf{z}(t)) - \log \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert - \log p(\mathbf{z}(t))}{\epsilon} \hspace{2em} \textrm{(basic taylor expansion)} \\
+&=  - \lim_{\epsilon\rightarrow 0^+} \frac{ \frac{\partial}{\partial \epsilon} \log \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert}{ \frac{\partial}{\partial \epsilon} \epsilon} \hspace{2em} \textrm{(L'Hôpital's rule)} \\
+&=  - \lim_{\epsilon\rightarrow 0^+} \frac{ \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert}{  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert} \\
+
+&=  - \lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert \cdot \lim_{\epsilon\rightarrow 0^+}  \frac{1}{  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert} \\
+
+&=  - \lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert
+
+\end{align}$$  
+
+And then unfortunately I'm going to just state a theorem and leave it up to you to investigate more if you aren't satisfied with the levels of detail I've shown, as this may come as a surprise to you, I do not want to axiomatically prove all of math in this blog post. The method is called [Jacobi's formula](https://en.wikipedia.org/wiki/Jacobi%27s_formula), 
+
+$$\begin{align}
+\frac{d}{dt} \det A(t) = \textrm{tr}\left(\textrm{adj}(A(t)) \frac{d A(t)}{dt} \right) .
+\end{align}$$
+
+This allows us to further manipulate our derivative above as,
+
+$$\begin{align}
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} &=  - \lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert \\
+
+&= - \lim_{\epsilon \rightarrow 0^+} \textrm{tr}\left(\textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right)
+\end{align}$$
+
+---
+---
+
 # The Adjoint Method and Derivatives
 
 The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight in this method is backpropagating our derivatives through this kind of system.
 
 
-# Practical Examples
-
+---
+---
 
 ## Example 1: Comparisons with other methods
 
@@ -106,3 +568,7 @@ The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) hig
 
 
 # Appendices
+
+
+## Proof of Jacobi's formula
+
