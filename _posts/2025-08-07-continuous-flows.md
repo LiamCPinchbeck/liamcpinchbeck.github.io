@@ -542,7 +542,24 @@ $$\begin{align}
 \frac{\partial \log p(\mathbf{z}(t))}{\partial t} &=  - \lim_{\epsilon\rightarrow 0^+} \frac{\partial}{\partial \epsilon}  \left\vert \det \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t))\right\vert \\
 
 &= - \lim_{\epsilon \rightarrow 0^+} \textrm{tr}\left(\textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right)
+
+&= -  \textrm{tr}\left( \lim_{\epsilon \rightarrow 0^+} \textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \\
+
+&= -  \textrm{tr}\left( \left(\lim_{\epsilon \rightarrow 0^+} \textrm{adj}\left(\frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right)\right) \left(\lim_{\epsilon \rightarrow 0^+} \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right)\right) \\
+
+&= -  \textrm{tr}\left(\lim_{\epsilon \rightarrow 0^+} \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} T_\epsilon(\mathbf{z}(t)) \right) \\
+
 \end{align}$$
+
+The final part of this proof is to then just Taylor expand $$T_\epsilon$$ about $$\epsilon$$,
+
+$$\begin{align}
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} &=  - \textrm{tr}\left( \lim_{\epsilon \rightarrow 0^+} \frac{\partial}{\partial \epsilon} \frac{\partial}{\partial \mathbf{z}} \left(\mathbf{z} + \epsilon f(\mathbf{z}(t), t) + \mathcal{O}(\epsilon^2) \right)\right) \\
+&=  - \textrm{tr}\left( \lim_{\epsilon \rightarrow 0^+} \frac{\partial}{\partial \epsilon} \left(\mathbf{I}+ \epsilon \frac{\partial}{\partial \mathbf{z}} f(\mathbf{z}(t), t) + \mathcal{O}(\epsilon^2) \right)\right) \\
+&=  - \textrm{tr}\left( \lim_{\epsilon \rightarrow 0^+} \left(\frac{\partial}{\partial \mathbf{z}} f(\mathbf{z}(t), t) + \mathcal{O}(\epsilon) \right)\right) \\
+&=  - \textrm{tr}\left(\frac{\partial}{\partial \mathbf{z}} f(\mathbf{z}(t), t) \right) \\
+\end{align}$$
+
 
 ---
 ---
