@@ -14,15 +14,35 @@ header-includes:
 In this post I will attempt to give an introduction to _continuous normalising flows_, an evolution of normalising flows that translate the idea of training a discrete set of transformations to approximate a posterior, into training an [ODE](https://en.wikipedia.org/wiki/Ordinary_differential_equation) or vector field to do the same thing. 
 
 ---
----
 
+## Resources
+
+As usual, here are some of the resources I’m using as references for this post. Feel free to explore them directly if you want more information or if my explanations don’t quite click for you:
+
+- [Neural Ordinary Differential Equations](https://arxiv.org/abs/1806.07366)
+    - Original paper that introduced the underpinning theory for continuous normalising flows and subsequently flow matching
+    - I broadly follow the paper skipping some bits on the utility of pure application of the neural ODEs instead of neural networks
+- [torchdiffeq cnf example](https://github.com/rtqichen/torchdiffeq/blob/master/examples/cnf.py)
+    - The construction of the continuous normalising flow in this example is basically the same as my own example as every time I made an example this one was just better and simpler. Thanks Dr Chen
+- [Wikipedia's Residual Neural Network page](https://en.wikipedia.org/wiki/Residual_neural_network)
+    - For a quick ref if you're unfamiliar
+- [Vai Patel's](https://vaipatel.com/) post on [Deriving the Adjoint Equation for Neural ODEs using Lagrange Multipliers](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms)
+    - I honestly didn't really get how the adjoint method came about before writing this post and reading this for reference. I actually recommend you read this later on, so maybe just open it now?
+- My other posts on normalising flows, just because I reference them a couple times for examples or basic theory.
+- [Wikpedia's page on Jacobi's formula](https://en.wikipedia.org/wiki/Jacobi%27s_formula) 
+    - The proof of within I reproduce in the appendix for my post for completeness, and so that I actually write it down and hopefully not forget it
+
+
+---
 ## Table of Contents
 
 - [Motivation](#variational-inference)
 - [Core Idea](#core-idea)
-- [The Math/How to solve an IDE with the adjoint method](#the-adjoint-method-and-derivatives)
-- [Further Reading](#further-reading)
-- [Appendices](#appendices)
+- ['Ground Up' Continuous Normalising Flow](#ground-up-cnf)
+- [Training our CNF](#training-our-cnf)
+- [Proof of the determinant-jacobian trace-derivative formula](#proof-of-det-jacobian-trace-derivative)
+- [The Adjoint Method](#the-adjoint-method-and-derivatives)
+- [Conclusion](#conclusion)
 
 ---
 
@@ -564,7 +584,7 @@ $$\begin{align}
 ---
 ---
 
-# The Adjoint Method and Derivatives
+# The Adjoint Method
 
 The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight in this method is backpropagating our derivatives through this kind of system. So debatably the main achievement of the paper is to introduce the use of adjoint method for "reverse-mode" automatic differentiation/backpropagation that alleviates some of the introduced inefficiencies regardless of the ODE solver used[^bb].
 
@@ -638,16 +658,10 @@ And thankfully, at least as a user, we never have to worry about this as various
 ---
 ---
 
-## Example 1: Comparisons with other methods
 
+# Conclusion
 
-## Example 2: Comparisons with normalising flows
-
-
-## Example 3: 
-
-
-# Further Reading
+So hopefully you better understand continuous normalising flows for variational inference now, for a follow up I would recommend directly reading through [Patel's post on the adjoint method](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms), and [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) (should be easier to read now).
 
 
 # Appendices
@@ -655,3 +669,62 @@ And thankfully, at least as a user, we never have to worry about this as various
 
 ## Proof of Jacobi's formula
 
+
+As I stated above, I'm basically just yoinking this [from Wikpedia](https://en.wikipedia.org/wiki/Jacobi%27s_formula), feel free to skip this and head over there.
+
+So, what we want to show is,
+
+$$\begin{align}
+d \det (A) = \textrm{tr}\left(\textrm{adj}(A) dA \right)
+\end{align}$$
+
+
+where $$t$$ is continuous and $$A$$ is some differentiable map to $$ n \times n $$ matrices. 
+
+Hopefully, you're at least vaguely familiar with [Laplace's formula](https://en.wikipedia.org/wiki/Laplace_expansion) for calculating determinants[^LE] that gives,
+
+$$\begin{align}
+\det (A) = \sum_j A_{ij} \, \textrm{adj}^T(A)_{ij}.
+\end{align}$$
+
+
+In which case the proof is pretty straight forward, starting with just a general differential of the determinant
+
+[^LE]: I would link to a better source for the derivation but I can't find a nicely accessible one besides this for now.
+
+$$\begin{align}
+\frac{\partial \det(A)}{\partial A_{ij}} &= \sum_j \frac{\partial}{\partial A_{ij}} \left( A_{ik} \, \textrm{adj}^T(A)_{ik} \right) \\
+ &= \sum_j \frac{\partial A_{ik}}{\partial A_{ij}} \, \textrm{adj}^T(A)_{ik}  + \sum_j  A_{ik} \, \frac{\partial}{\partial A_{ij}} \left( \textrm{adj}^T(A)_{ik} \right) \\
+\end{align}$$
+
+The adjoint $$ \textrm{adj}^T(A)_{ik}$$ can be derived as the determinant of the parts of the matrix not in the row $$i$$ or column $$k$$ and thus if $$j=k$$ then $$ \textrm{adj}^T(A)_{ik}$$ will by pretty much definition not involve $$A_{ij}$$ (as they will either share $$i$$ or $$j$$), hence,
+
+$$\begin{align}
+\frac{\partial \textrm{adj}^T(A)_{ik}}{\partial A_{ij}} = 0.
+\end{align}$$
+
+Simplifying our formula to,
+
+$$\begin{align}
+\frac{\partial \det(A)}{\partial A_{ij}} &= \sum_j \frac{\partial A_{ik}}{\partial A_{ij}} \, \textrm{adj}^T(A)_{ik},
+\end{align}$$
+
+which can be seen to easily be simplified as $$\frac{\partial A_{ik}}{\partial A_{ij}}$$ can only be non-zero if $$A_{ik} = A_{ij}$$ otherwise you're just taking derivatives with respect to unrelated quantities. Hence,
+
+$$\begin{align}
+\frac{\partial \det(A)}{\partial A_{ij}} = \sum_j \delta_{jk} \textrm{adj}^T(A)_{ik} = \textrm{adj}^T(A)_{ij}.
+\end{align}$$
+
+And by chain rule you can see that,
+
+$$\begin{align}
+d\left( \det(A)\right) &= \sum_i \sum_j \frac{\partial \det(A)}{\partial A_{ij}} dA_{ij} \\
+&= \sum_i \sum_j \textrm{adj}^T(A)_{ij} dA_{ij} \\
+&= \sum_i \sum_j \textrm{adj}(A)_{ji} dA_{ij} \hspace{1em} \textrm{(expanding the transpose)}\\
+&= \sum_j \left(\textrm{adj}(A) dA \right)_{jj} \hspace{2.4em} \textrm{(tis how matrix multiplication works)}\\
+&= \textrm{tr}\left(\textrm{adj}(A) dA \right) \hspace{3.8em} \textrm{(definition of the trace)}.
+\end{align}$$
+
+
+---
+---
