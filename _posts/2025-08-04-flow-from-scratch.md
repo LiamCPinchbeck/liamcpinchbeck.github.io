@@ -763,7 +763,7 @@ Hopefully, I wrote this in such a way that each step was super easy, if not, fee
 
 
 
-# Extra: 09/09/2025
+# Extra: 09/08/2025
 
 
 Just for another example of how expressive RealNVP can be despite it's simplicitly, using samples from the `scikit-learn` package's [`make_swiss_roll`](https://scikit-learn.org/stable/auto_examples/manifold/plot_swissroll.html#sphx-glr-auto-examples-manifold-plot-swissroll-py) function we can also see that the method can handle higher dimensions with a couple slight tweaks. Specifically just the cell specifiying the dimension
