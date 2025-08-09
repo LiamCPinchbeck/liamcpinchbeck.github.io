@@ -663,6 +663,10 @@ And thankfully, at least as a user, we never have to worry about this as various
 
 So hopefully you better understand continuous normalising flows for variational inference now, for a follow up I would recommend directly reading through [Patel's post on the adjoint method](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms), and [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) (should be easier to read now).
 
+___EDIT___: 09/08/2025
+
+Just had another look at Patel's website and saw he has another post on the computational efficiency on [the vector jacobian product](https://vaipatel.com/posts/how-is-the-vector-jacobian-product-invoked-in-neural-odes/) that you should also definitely have a look at!
+
 
 # Appendices
 
