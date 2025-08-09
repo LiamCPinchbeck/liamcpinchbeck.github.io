@@ -10,7 +10,7 @@ header-includes:
 
 ---
 
-In this post I will detail popular diagnostic tests to quantify how well/if your MCMC sampling has converged. ***UNDER CONSTRUCTION - read at your own risk***
+In this post I will detail popular diagnostic tests to quantify how well/if your MCMC sampling has converged.
 
 ---
 # UNDER CONSTRUCTION - read at your own risk

@@ -15,8 +15,6 @@ In this post, I’ll attempt to give an introduction to normalising flows from t
 
 ---
 
-This is currently a standalone post, mainly written to teach myself how to rigorously talk about normalising flows within the context of variational inference. I'm not very experienced with this in real-world settings (as of 28/04/2025, at least), so keep that in mind as you read. Later on, I may create a post that integrates this into my broader series of introductory articles.
-
 Below are the resources I’m using as references for this post. Feel free to explore them directly if you want more information or if my explanations don’t quite click for you:
 
 - [Variational Inference with Normalizing Flows](https://arxiv.org/abs/1505.05770) — Rezende, 2015  
