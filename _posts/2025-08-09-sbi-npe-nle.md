@@ -107,9 +107,10 @@ $$\begin{align}
 &= p(\vec{x}, \vec{\eta}, \vec{\theta} ),
 \end{align}$$
 
-assuming that we can robustly sample over the space of nuisance parameters, we can imagine simultaneously marginalising them out[^m] when generating the samples such that,
+assuming that we can robustly sample over the space of nuisance parameters, we can imagine simultaneously marginalising them out[^m] when generating the samples such that[^exp],
 
 [^m]: in practice this just comes to throwing the samples of the nuisance parameters out
+[^exp]: If you're unfamiliar with the notation $$\mathbb{E}_{\vec{\eta}\sim \pi(\vec{\eta}) }$$ denote the average over $$\vec{\eta}$$ using the probability distribution $$ \pi(\vec{\eta})$$ in the continuous case, which is most often assumed for these problems, $$\mathbb{E}_{\vec{\eta}\sim \pi(\vec{\eta}) }\left[f(\vec{\eta}) \right] = \int_{\vec{\eta}} d\left(\vec{\eta}\right) \pi(\vec{\eta}) f(\vec{\eta}) $$
 
 $$\begin{align}
 \vec{x}, \vec{\theta} &\sim \mathbb{E}_{\vec{\eta}\sim \pi(\vec{\eta}) } \left[\mathcal{L}(\vec{x}\vert \vec{\theta}, \vec{\eta}) \pi(\vec{\theta})\pi(\vec{\eta})\right] \\
@@ -117,22 +118,27 @@ $$\begin{align}
 &= p(\vec{x}, \vec{\theta} ).
 \end{align}$$
 
+Now because we have these samples, we can try and approximate the various densities that are behind them, using variational approximations such as normalising flows, variational autoencoders, etc. And that's SBI, the different methods differ in specifically how they choose to model these densities (e.g. flow vs VAE) and importantly which densities they are actually trying to approximate. e.g. Neural Posterior Estimation directly models the posterior density $$p(\vec{\theta}\vert\vec{x})$$, while Neural Likelihood Estimation tries to model the likelihood $$\mathcal{L}(\vec{x}\vert \vec{\theta})$$ and then you use something like MCMC to obtain the posterior density $$p(\vec{\theta}\vert\vec{x})$$. Arguably Neural Posterior Estimation is easier to implement, so we'll start with that.
 
-With thi[^exp] we can then try and estimate the density $$p(\vec{\theta}\vert\vec{x})$$ more simply known as the posterior with some variational approximation $$q(\vec{\theta}\vert \vec{x})$$ such as conditional normalising flows through the [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence).
+# Neural Posterior Estimation (NPE)
 
-[^exp]: If you're unfamiliar with the notation $$\mathbb{E}_{\vec{\eta}\sim \pi(\vec{\eta}) }$$ denote the average over $$\vec{\eta}$$ using the probability distribution $$ \pi(\vec{\eta})$$ in the continuous case, which is most often assumed for these problems, $$\mathbb{E}_{\vec{\eta}\sim \pi(\vec{\eta}) }\left[f(\vec{\eta}) \right] = \int_{\vec{\eta}} d\left(\vec{\eta}\right) \pi(\vec{\eta}) f(\vec{\eta}) $$
+
+Continuing off from where we left the math, we can then try and estimate the density $$p(\vec{\theta}\vert\vec{x})$$ more simply known as the posterior with some variational approximation $$q(\vec{\theta}\vert \vec{x})$$ such as conditional normalising flows through the forward [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence).
+
 
 $$\begin{align}
 \textrm{KL}(p\vert\vert q) &= \mathbb{E}_{\pi(\vec{\theta})} \left[\mathbb{E}_{\vec{x} \sim \mathcal{L}(\vec{x}\vert \vec{\theta})} \left[ \log p(\vec{\theta}\vert \vec{x}) - \log q(\vec{\theta}\vert \vec{x}) \right]\right]
 \end{align}$$
 
-We train the variational approximation to the distribution by optimising over the parameters that dictate the shape of said approximation, e.g. $$\vec{\varphi}$$, that are separate to the parameters of the actual problem we are trying to solve meaning that our KL divergence looks more like, 
+We train the variational approximation to the distribution by optimising over the parameters that dictate the shape of said approximation, e.g. $$\vec{\varphi}$$, that are separate to the parameters of the actual problem we are trying to solve. Meaning, that our KL divergence looks more like, 
 
 $$\begin{align}
 \textrm{KL}(p\vert\vert q ; \vec{\varphi}) &= \mathbb{E}_{\pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x} \sim \mathcal{L}(\vec{x}\vert \vec{\theta})} \left[ \log p(\vec{\theta}\vert \vec{x}) - \log q(\vec{\theta}\vert \vec{x} ; \vec{\varphi}) \right]\right],
 \end{align}$$
 
-where I use the symbol $$;$$ to specifically highlight the dependence through the variational approximation and not the density that we are trying to model. During training, all that we trying to do is minimise this divergence with respect to the parameters $$\vec{\varphi}$$, hence from this perspective, the first term inside the divergence is a constant and plays no part in the loss function we are trying to optimise. So the final form of the loss that we are trying to minimise is[^eqn4],
+where I use the symbol "$$;$$" to specifically highlight the dependence through the variational approximation and not the conditional dependencies in the density that we are trying to model. 
+
+During training, all that we trying to do is minimise this divergence with respect to the parameters $$\vec{\varphi}$$. Hence from this perspective, the first term inside the divergence is a constant, and plays no part in the _loss function_ we are trying to optimise. So the final form of the _loss_ that we are trying to minimise is[^eqn4],
 
 [^eqn4]: Equation 4 in [Recent Advances in Simulation-based Inference for Gravitational Wave Data Analysis](https://arxiv.org/pdf/2507.11192) if you're following along there.
 
