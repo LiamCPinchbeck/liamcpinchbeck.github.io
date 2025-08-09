@@ -23,8 +23,8 @@ As usual, here are some of the resources I’m using as references for this post
 
 - [A robust neural determination of the source-count distribution of the Fermi-LAT sky at high latitudes](https://arxiv.org/abs/2505.02906) by [Eckner](https://arxiv.org/search/astro-ph?searchtype=author&query=Eckner,+C) et al.
 - [The frontier of simulation-based inference](https://arxiv.org/pdf/1911.01429) by [Kyle Cranmer](https://theoryandpractice.org/), [Johann Brehmer](https://johannbrehmer.github.io/) and [Gilles Louppe](https://glouppe.github.io/)
-
 - [Recent Advances in Simulation-based Inference for Gravitational Wave Data Analysis](https://arxiv.org/abs/2507.11192) by [Bo Liang](https://www.researchgate.net/profile/Bo-Liang-34) and [He Wang](https://iphysresearch.github.io/-he.wang/author/he-wang-%E7%8E%8B%E8%B5%AB/)
+    - Really recommend giving this a read, it's hard to find papers that discuss the general topics without getting into the weeds of the specific implementation that they are trying to advocate for or simply too vague.
 
 ---
 
