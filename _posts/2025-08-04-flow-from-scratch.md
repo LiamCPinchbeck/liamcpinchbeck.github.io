@@ -761,3 +761,40 @@ So in this post we:
 
 Hopefully, I wrote this in such a way that each step was super easy, if not, feel free to shoot me an email and I'll respond as soon as I'm near a computer. For further resources I again want to emphasize heading over to Eric Jang's website specifically the posts that I am borderline copying e.g. [Normalizing Flows Tutorial, Part 1: Distributions and Determinants](https://blog.evjang.com/2018/01/nf1.html). And to give [Normalizing Flows for Probabilistic Modeling and Inference](https://arxiv.org/abs/1912.02762) a read if you weren't already, I basically just cover bits and pieces and you can implement more state-of-the-art (but still pretty simple) normalising flow models.
 
+
+
+# Extra: 09/09/2025
+
+
+Just for another example of how expressive RealNVP can be despite it's simplicitly, using samples from the `scikit-learn` package's [`make_swiss_roll`](https://scikit-learn.org/stable/auto_examples/manifold/plot_swissroll.html#sphx-glr-auto-examples-manifold-plot-swissroll-py) function we can also see that the method can handle higher dimensions with a couple slight tweaks. Specifically just the cell specifiying the dimension
+
+```python
+torch.manual_seed(2)
+np.random.seed(0)
+
+num_flow_layers = 8
+hidden_size = 32
+
+NVP_model = RealNVPFlow(
+               num_dim=3, 
+               num_flow_layers=num_flow_layers, 
+               hidden_size=hidden_size)
+trained_nvp_model, loss = train(
+                             NVP_model, 
+                             torch.tensor(sr_points), 
+                             epochs = 500, 
+                             lr=1e-3)
+```
+
+Then with the same training I was able to get the below GIF!
+
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-flow-from-scratch/realnvp_swiss_roll.gif" 
+    alt="Figure showing exact samples from RealNVP approximation of a swiss roll and samples from the target distribution/swiss roll directly." 
+    title="Figure showing exact samples from RealNVP approximation of a swiss roll and samples from the target distribution/swiss roll directly." 
+    style="width: 100%; height: auto; border-radius: 8px;">
+</div>
+
