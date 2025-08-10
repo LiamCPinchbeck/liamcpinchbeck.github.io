@@ -32,8 +32,8 @@ In this post I will attempt to give an introduction to _conditional normalising 
 
 - [Motivation](#motivation)
 - [Mathematical Setup](#mathematical-setup)
-- [Practical Implementation in PyTorch](#practical-implementation)
-- [Example Training](#example-training)
+- [Practical Implementation in PyTorch](#practical-implementation-version-1-one-shot-conditional)
+- [Example Training](#example-training-version-1-one-shot-conditional-with-double-moon-distribution)
 - [Conclusion](#conclusion)
 
 
