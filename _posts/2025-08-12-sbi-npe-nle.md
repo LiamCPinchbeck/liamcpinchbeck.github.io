@@ -1,7 +1,7 @@
 ---
 title: 'An introduction to Simulation-Based Inference with NPE and NLE'
-date: 2025-08-10
-permalink: /posts/2025/08/2025-08-10-SBI-w-NPE-NLE/
+date: 2025-08-12
+permalink: /posts/2025/08/2025-08-12-SBI-w-NPE-NLE/
 tags:
   - PyTorch
   - Variational Inference

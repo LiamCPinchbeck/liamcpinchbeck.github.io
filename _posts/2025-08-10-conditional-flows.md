@@ -1,7 +1,7 @@
 ---
 title: 'A RealNVP conditional normalising flow (from scratch?)'
-date: 2025-08-09
-permalink: /posts/2025/08/2025-08-09-CondNF/
+date: 2025-08-10
+permalink: /posts/2025/08/2025-08-10-CondNF/
 tags:
   - Pyro
   - PyTorch
@@ -10,6 +10,7 @@ tags:
   - Conditional Density Estimation
 header-includes:
    - \usepackage{amsmath}
+   - \usepackage{dsfont}
 ---
 
 In this post I will attempt to give an introduction to _conditional normalising flows_, not to be confused with _continuous_ normalising flows, modelling both $$\vec{\theta}$$ and $$\vec{x}$$ in the conditional distribution $$p(\vec{\theta}\vert\vec{x})$$. I was nicely surprised at how simple it is to implement compared to unconditional normalising flows so I thought I'd show this in a straightforward way. Assumes you've read my post on [Building a normalising flow from scratch using PyTorch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/). ***UNDER CONSTRUCTION***
@@ -105,7 +106,7 @@ $$
 with $$\mu$$ and $$\sigma^2$$ being learned by neural networks. For this post I think it will be simpler to implement through the transformations, that would be able to handle the subsequent shifts and dilations anyway, but in real world circumstances may lead to more unstable training.
 
 
-# Practical Implementation (Version 1): One-shot conditional
+# Practical Implementation: One-shot conditional
 
 So the first thing that we want to do is create a dedicated class for _embedding_ the conditional variables. This allows us to have a bit of flexibility later on regarding applications in variational inference, but additionally, allows something within the work to independently learn important features of the data. AND on top of that if you have a large number of these variables that's comparatively larger than the number of variables you are actually constructing the probability density over, this means the inputs to the networks transforming the samples won't be overpowered by the number of conditional variables.
 
@@ -337,7 +338,7 @@ class RealNVP_transform_layer(nn.Module):
 
 
 
-# Example Training (Version 1): One-shot conditional with double moon distribution
+# Example Training: One-shot conditional with double moon distribution
 
 
 Now let's assume that the conditional distribution that we are trying to approximate is a double moon distribution with free parameters:
@@ -458,7 +459,22 @@ $$\begin{align}
 \text{KL}[p\vert\vert q] = \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right].
 \end{align}$$
 
-Putting this into code...
+This however doesn't take into account how we generated our samples from $$\vec{x}$$. All we need to do for that is average over them.
+
+$$\begin{align}
+L^{\text{new!}}(\vec{\varphi}) = \mathbb{E}_{\vec{x}} \left[ L(\vec{\varphi}) \right] = \mathbb{E}_{\vec{x}\sim p(\vec{x})} \left[ \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
+\end{align}$$
+
+
+Or perhaps more simply.
+
+
+$$\begin{align}
+L^{\text{new}\,\text{new}}(\vec{\varphi}) = L^*(\vec{\varphi}) = - \mathbb{E}_{\vec{x}, \vec{\theta} \sim p(\vec{x}, \vec{\theta})}  \left[\log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]
+\end{align}$$
+
+Now the only question is how do we implement this in practice? Well it's almost exactly the same as before once we have our data, just that we need to separate our parameters of interest $$\vec{\theta}$$ and our conditional parameters $$\vec{x}$$, and feed them in!
+
 
 ```python
 import tqdm
@@ -485,10 +501,10 @@ def train(model, data, epochs = 100, batch_size = 256, lr=1e-3, prev_loss = None
                 # Extracting samples
                 theta = training_data_batch[:, :2] # density dist variables
 
-                x = training_data_batch[:, 2:] # conditional variables
+                cond_samples = training_data_batch[:, 2:] # conditional variables
 
                 # Evaluating loss
-                log_prob = model.log_probability(theta, x)
+                log_prob = model.log_probability(theta, cond_samples)
                 loss = - log_prob.mean(0)
 
                 # Neural network backpropagation stuff
@@ -535,60 +551,8 @@ Woo!
 
 
 
-
-# Practical Implementation (Version 2): Conditional Flows for Variational Inference (NPE)
-
-Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data, which often correspond to a single set of hyper-parameters. i.e. We don't have a one-to-one correspondance between samples of $$\vec{\theta}$$ and $$\vec{x}$$. Hence, there is a slight change that we need to make to our loss which is simply the average of the old one with respect to the data samples,
-
-$$\begin{align}
-L^{\text{new!}}(\vec{\varphi}) = \mathbb{E}_{\vec{x}} \left[ L(\vec{\varphi}) \right] = \mathbb{E}_{\vec{x}\sim p(\vec{x})} \left[ \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
-\end{align}$$
-
-Now this doesn't make a whole lot of sense, as we require samples from the unconditional probability distribution $$p(\vec{x})$$ which is basically always intractable/the goal to approximate. However, if we look at the samples of $$\vec{x}$$ and $$\vec{\theta}$$ together you see that through a quick use of Bayes' theorem,
-
-$$\begin{align}
-\vec{x}, \vec{\theta} \sim p(\vec{x}) \cdot p(\vec{\theta} | \vec{x}) = p(\vec{x}, \vec{\theta}) = p(\vec{x}\vert \vec{\theta}) \cdot p(\vec{\theta}).
-\end{align}$$
-
-So the expression would be equivalent to if we swapped the conditionals around in the distribution the expectation values are calculated over (swapping the order around to reflect the new setup).
-
-$$\begin{align}
-L^{\text{new}}(\vec{\varphi}) = \mathbb{E}_{\vec{\theta}\sim \pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x}\sim \mathcal{L}(\vec{x}\vert \vec{\theta})}  \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
-\end{align}$$
-
-At this point we are performing what is known as _Neural Posterior Estimation_ or NPE. You might notice that I didn't provide a reference to it, that is because I cannot find a review article that covers the topic without delving into other (although better) methods. Otherwise, I would recommend the resources I linked above.
-
-Now venturing into the world of Simulation based inference, as we can get our samples of the likelihood by instead working on the forward problem of feeding the prior samples into a simulator to get data, we make one small change to the above, as we often do not have likelihoods for the whole dataset[^nle]. The exact posterior is once again not a function of the parameters we are training $$\vec{\varphi}$$ and thus plays no practical part in the loss.
-
-[^nle]: In fact finding this is the goal of Neural _Likelihood_ Estimation
-
-
-$$\begin{align}
-L^{\text{new}\,\text{new!}}(\vec{\varphi}) =  - \mathbb{E}_{\vec{\theta}\sim \pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x}\sim \mathcal{L}(\vec{x}\vert \vec{\theta})}  \left[\log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
-\end{align}$$
-
-Or perhaps more simply.
-
-
-$$\begin{align}
-L^{\text{new}\,\text{new}}(\vec{\varphi}) = L^*(\vec{\varphi}) = - \mathbb{E}_{\vec{x}, \vec{\theta} \sim p(\vec{x}, \vec{\theta})}  \left[\log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]
-\end{align}$$
-
-Now the only question is how do we implement this in practice?
-
-
-# Example Training (Version 2): Conditional Flows for Variational Inference
-
-
-
-
-
-
-
 # Conclusion
 
-
-
-
+Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data. In which case we can't just sample them willy-nilly and they often depend on the parameters of interest (kind of the point of all this...). This would be fine to approximate a single observation like this which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
 
 
