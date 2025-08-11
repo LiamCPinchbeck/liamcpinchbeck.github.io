@@ -26,7 +26,8 @@ In this post I will attempt to give an introduction to _conditional normalising 
 - [Recent Advances in Simulation-based Inference for Gravitational Wave Data Analysis](https://arxiv.org/abs/2507.11192)
     - The general discussion and what they did have for NPE (effectively conditional flows) was really helpful when figuring out how to structure this
     - Also from what I've read of the references they are also of similar quality
-
+- [Neural posterior estimation for exoplanetary atmospheric retrieval](https://arxiv.org/abs/2301.06575)
+    - Not sure why but the explanations in this also just happened to click a few things into place
 
 ## Table of Contents
 
@@ -451,10 +452,10 @@ plt.show()
 
 The training is then exactly the same as the previous post, except we need to feed in the conditional samples.
 
-Mathematically this looks like minimising,
+Mathematically this looks like minimising the divergence with respect to the parameters of our approximation $$\vec{\varphi}$$,
 
 $$\begin{align}
-\text{KL}[p\vert\vert q] = \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \varphi) \right].
+\text{KL}[p\vert\vert q] = \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right].
 \end{align}$$
 
 Putting this into code...
@@ -535,14 +536,59 @@ Woo!
 
 
 
-# Practical Implementation (Version 2): Conditional Flows for Variational Inference
+# Practical Implementation (Version 2): Conditional Flows for Variational Inference (NPE)
 
+Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data, which often correspond to a single set of hyper-parameters. i.e. We don't have a one-to-one correspondance between samples of $$\vec{\theta}$$ and $$\vec{x}$$. Hence, there is a slight change that we need to make to our loss which is simply the average of the old one with respect to the data samples,
+
+$$\begin{align}
+L^{\text{new!}}(\vec{\varphi}) = \mathbb{E}_{\vec{x}} \left[ L(\vec{\varphi}) \right] = \mathbb{E}_{\vec{x}\sim p(\vec{x})} \left[ \mathbb{E}_{\vec{\theta}\sim p(\vec{\theta}\vert \vec{x})} \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
+\end{align}$$
+
+Now this doesn't make a whole lot of sense, as we require samples from the unconditional probability distribution $$p(\vec{x})$$ which is basically always intractable/the goal to approximate. However, if we look at the samples of $$\vec{x}$$ and $$\vec{\theta}$$ together you see that through a quick use of Bayes' theorem,
+
+$$\begin{align}
+\vec{x}, \vec{\theta} \sim p(\vec{x}) \cdot p(\vec{\theta} | \vec{x}) = p(\vec{x}, \vec{\theta}) = p(\vec{x}\vert \vec{\theta}) \cdot p(\vec{\theta}).
+\end{align}$$
+
+So the expression would be equivalent to if we swapped the conditionals around in the distribution the expectation values are calculated over (swapping the order around to reflect the new setup).
+
+$$\begin{align}
+L^{\text{new}}(\vec{\varphi}) = \mathbb{E}_{\vec{\theta}\sim \pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x}\sim \mathcal{L}(\vec{x}\vert \vec{\theta})}  \left[\log p(\vec{\theta}\vert\vec{x}) - \log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
+\end{align}$$
+
+At this point we are performing what is known as _Neural Posterior Estimation_ or NPE. You might notice that I didn't provide a reference to it, that is because I cannot find a review article that covers the topic without delving into other (although better) methods. Otherwise, I would recommend the resources I linked above.
+
+Now venturing into the world of Simulation based inference, as we can get our samples of the likelihood by instead working on the forward problem of feeding the prior samples into a simulator to get data, we make one small change to the above, as we often do not have likelihoods for the whole dataset[^nle]. The exact posterior is once again not a function of the parameters we are training $$\vec{\varphi}$$ and thus plays no practical part in the loss.
+
+[^nle]: In fact finding this is the goal of Neural _Likelihood_ Estimation
+
+
+$$\begin{align}
+L^{\text{new}\,\text{new!}}(\vec{\varphi}) =  - \mathbb{E}_{\vec{\theta}\sim \pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x}\sim \mathcal{L}(\vec{x}\vert \vec{\theta})}  \left[\log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]\right]
+\end{align}$$
+
+Or perhaps more simply.
+
+
+$$\begin{align}
+L^{\text{new}\,\text{new}}(\vec{\varphi}) = L^*(\vec{\varphi}) = - \mathbb{E}_{\vec{x}, \vec{\theta} \sim p(\vec{x}, \vec{\theta})}  \left[\log q(\vec{\theta}\vert\vec{x} ; \vec{\varphi}) \right]
+\end{align}$$
+
+Now the only question is how do we implement this in practice?
 
 
 # Example Training (Version 2): Conditional Flows for Variational Inference
 
 
 
+
+
+
+
 # Conclusion
+
+
+
+
 
 
