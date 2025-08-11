@@ -553,6 +553,6 @@ Woo!
 
 # Conclusion
 
-Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data. In which case we can't just sample them willy-nilly and they often depend on the parameters of interest (kind of the point of all this...). This would be fine to approximate a single observation like this which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
+Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data. In which case we can't just sample them willy-nilly and they often depend on the parameters of interest (kind of the point of all this...). This would be fine with a couple modifications to approximate a single observation like this which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
 
 
