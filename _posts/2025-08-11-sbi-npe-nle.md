@@ -434,11 +434,198 @@ We'll run this for 2000 iterations and plot the result in steps of $$0.5\sigma$$
 
 <br>
 
-Woo! Our probability distribution is being a good probability distribution (purely as far as probabilities go not necessarily accuracy to the system per say). The one slight hiccup is that it seems our pipeline is over-estimating the width of the distribution for large sigma values. This is likely in fact an artefact of actually not covering the parameter space during training. More modern methods of NPE, e.g. [SNPE](https://arxiv.org/abs/1805.07226), actually focus in on difficult areas of the parameter space during training to exactly get in part solve this.
+Woo! Our probability distribution is being a good probability distribution (purely as far as probabilities go not necessarily accuracy to the system per say). The one slight hiccup is that it seems our pipeline is over-estimating the width of the distribution for large sigma values. This is likely in fact an artefact of actually not covering the parameter space during training. More modern methods of NPE, e.g. [SNPE](https://arxiv.org/abs/1805.07226), actually focus in on difficult areas of the parameter space during training to exactly get in part solve this. This however, introduced a potential bias in the now adjusted hyper-parameter proposal function $$\tilde{p}(\vec{\theta})$$ which is not necessarily equal to $$\pi(\vec{\theta})$$ (our prior) as we are now learning $$p_0(\vec{\theta}\vert\vec{x})=\mathcal{L}(\vec{x}\vert\vec{\theta}) \tilde{p}(\vec{\theta})/C_0$$ instead of $$p(\vec{\theta}\vert\vec{x})=\mathcal{L}(\vec{x}\vert\vec{\theta}) \pi(\vec{\theta})/C$$
 
-But still, I promised you amortised inference, which this definitely does, but restricts us to similarly sized datasets. This is less true for neural _likelihood_ estimation.
+This kind of bias has a much more minimised effect true for neural _likelihood_ estimation.
 
 # Neural Likelihood Estimation
+
+In neural _likelihood_ estimation or NLE, we instead try to approximate the _likelihood_ for a dataset instead of the posterior. This avoids the bias in the prior proposal as it isn't directly involved in the quantity we are trying to find. There are two caveats to taking this route though:
+
+1. If you want the probability of your parameters given the data, the posterior $$p(\vec{\theta}\vert\vec{x})$$, then we need to further run the analysis again using something like MCMC for example. We essentially get a cheap and variable version of the likelhood.
+2. Now our data has to be continuous if we want to use something like a normalising flow to approximate them (although this is not true for [Neural Ratio Estimation](https://arxiv.org/abs/2210.06170))
+    - but now our hyperparameters don't have to be continuous
+
+This setup more closely follows that of my [previous post on conditional normalising flows](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-10-CondNF/) as the number of conditional variables is now smaller than the number of density variables.
+
+So now our data is still the moon distributions, and our parameters will be the same except we'll use our new ability of discrete parameters to look at whether our data came from the upper (=1) or lower moons (=0) re-using our variable name $$d$$. With the same simulator...
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/nle_double_moon_samples.png" 
+      alt="." 
+      title="." 
+      style="width: 100%; height: auto; border-radius: 8px;">
+</div>
+
+
+<br>
+
+With our prior gives us samples that follow:
+
+$$d\sim \text{Bernoulli}(p=0.5)$$ 
+
+$$\sigma_c \sim \log \mathcal{N}(\mu=-3.0, \sigma=0.7)$$
+
+$$t_{\text{shift}} \sim \text{Half}\mathcal{N}(\sigma=2.0)$$
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/nle_prior_samples.png" 
+      alt="." 
+      title="." 
+      style="width: 100%; height: auto; border-radius: 8px;">
+</div>
+
+And using the same conditional embedding network as the post.
+
+```python
+import torch
+import torch.nn as nn
+
+class ConditionEmbedding(nn.Module):
+    def __init__(self, input_dim=2, embedding_size=4, embed_hidden_dim=64):
+        super().__init__()
+        self.point_net = nn.Sequential(
+            nn.Linear(input_dim, embed_hidden_dim), nn.ReLU(),
+            nn.Linear(embed_hidden_dim, embed_hidden_dim), nn.ReLU(),
+            nn.Linear(embed_hidden_dim, embedding_size), nn.ReLU())
+
+    def forward(self, x):
+
+        per_point = self.point_net(x)
+        return per_point
+```
+
+Changing our RealNVP class to use it instead.
+
+```python
+class RealNVPFlow(nn.Module):
+    def __init__(self, num_dim, num_flow_layers, hidden_size, cond_dim, embedding_size):
+        super(RealNVPFlow, self).__init__()
+
+        self.dim = num_dim
+        self.num_flow_layers = num_flow_layers
+
+        self.embedding_size = embedding_size
+
+        ################################################
+        ################################################ 
+        # setup base distribution
+        self.distribution = dist.MultivariateNormal(torch.zeros(self.dim), torch.eye(self.dim))
+
+
+        ################################################
+        ################################################ 
+        # setup conditional variable embedding
+
+
+        self.cond_net = ConditionEmbedding(input_dim=cond_dim, embedding_size=embedding_size, embed_hidden_dim=hidden_size)
+```
+
+With the training objective being the same as the previous section except we switch the dependencies in the density we are trying to fit.
+
+$$\begin{align}
+L^*(\vec{\varphi}) = - \mathbb{E}_{\vec{x}, \vec{\theta} \sim p(\vec{x}, \vec{\theta})}  \left[\log q(\vec{x}\vert\vec{\theta} ; \vec{\varphi}) \right]
+\end{align}$$
+
+And to keep this short, and seeing as I'm literally running the exact same code as the post, I'll refer you to my previous post for training. But let's presume now that we've fit the density, and hence can generate datasets based on the conditional variables/our hyper-parameters.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/nle_dataset_generation_for_conditionals.png" 
+      alt="." 
+      title="." 
+      style="width: 100%; height: auto; border-radius: 8px;">
+</div>
+
+<br>
+
+Where I generated the above by generating the conditional parameters.
+
+```python
+_training_conditional_samples = sample_conditionals(n_samples=1).squeeze()
+```
+
+Generated samples using our approximated likelihood.
+
+```python
+samples = trained_nvp_model.rsample(5000, _training_conditional_samples)
+```
+
+
+And then we can directly look at the probability values for the samples.
+
+```python
+trained_nvp_model.log_probability(
+    torch.tensor(samples), 
+    torch.tensor(_training_conditional_samples)
+    ).sum()
+```
+
+And now that we have this we can throw it into an MCMC or nested sampler for example to get our posterior. I would not recommend doing it this way but it does the job.
+
+
+```python
+from dynesty import NestedSampler
+
+# Sample true values
+_posterior_gen_conditional_samples = sample_conditionals(n_samples=1).squeeze()
+
+# Get data from true values
+_posterior_gen_data_samples = cond_ln_like.rsample(_posterior_gen_conditional_samples, n_samples=500)
+
+with torch.no_grad():
+
+    
+    def prior_transform(u):
+        d_samples = _d_conditional_dist.sample((1,)).squeeze()
+        log10_sigma_samples = _noise_conditional_dist.sample((1,)).squeeze()
+        t_shift_samples = _t_shift_conditional_dist.sample((1,)).squeeze()
+
+        output = np.array([d_samples, log10_sigma_samples, t_shift_samples])
+
+        return output
+
+
+    def ln_like(x):
+
+        # matching shapes with how conditional density was trained
+            # gives it a shape of (500, 3)
+        torched_x = torch.tensor(x).repeat((500, 1))
+        
+        ln_like_val = trained_nvp_model.log_probability(_posterior_gen_data_samples, torched_x)
+
+        ln_like_val = torch.where(torch.isnan(ln_like_val), -torch.inf, ln_like_val)
+
+        return float(ln_like_val.sum())
+
+    sampler = NestedSampler(prior_transform=prior_transform, loglikelihood=ln_like, ndim=3, nlive=300)
+
+    sampler.run_nested(dlogz=0.5, print_progress=True)
+
+    sampler_results = sampler.results()
+
+    ns_sampler_samples = sampler_results.samples_equal()
+```
+
+
+Which gave me the following approximate corner density plot.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/nle_example_posterior.png" 
+      alt="." 
+      title="." 
+      style="width: 70%; height: auto; border-radius: 8px;">
+</div>
+
+<br>
+
+
+I will say that I had to increase the number of training samples of the NLE density to get this to work which brings me to the conclusion.
+
 
 
 # Conclusion
@@ -454,3 +641,16 @@ But still, I promised you amortised inference, which this definitely does, but r
 </div>
 
 <br>
+
+These methods are really interesting but do have a few caveats. Mostly because of the way that I implemented them.
+
+1. The methods both rely on that you've sampled the space of hyper-parameters well enough that they are accurate in the area of interest on real datasets.
+2. The simulators have to realistically represent the data.
+3. Your approximation method is expressive enough to properly represent the given distribution.
+
+The first is solved be sequential methods that localise the training in difficult areas of the hyper-parameter space. And the second is dependent on the given system. 
+
+Additionally, there is a trade off between initial training. The idea of amortised inference is that there is a large initial cost, reducing the overall by reduced computation time for following analyses. 
+
+In the following post I'll tackle the next method mentioned above, Nested Ratio Estimation, which relies on a binary classifier to approximate the likelihood.
+
