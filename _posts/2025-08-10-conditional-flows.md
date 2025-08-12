@@ -13,7 +13,7 @@ header-includes:
    - \usepackage{dsfont}
 ---
 
-In this post I will attempt to give an introduction to _conditional normalising flows_, not to be confused with _continuous_ normalising flows, modelling both $$\vec{\theta}$$ and $$\vec{x}$$ in the conditional distribution $$p(\vec{\theta}\vert\vec{x})$$. I was nicely surprised at how simple it is to implement compared to unconditional normalising flows so I thought I'd show this in a straightforward way. Assumes you've read my post on [Building a normalising flow from scratch using PyTorch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/). ***UNDER CONSTRUCTION***
+In this post I will attempt to give an introduction to _conditional normalising flows_, not to be confused with _continuous_ normalising flows, that model both $$\vec{\theta}$$ and $$\vec{x}$$ in the conditional distribution $$p(\vec{\theta}\vert\vec{x})$$. I was nicely surprised at how simple it is to implement compared to unconditional normalising flows, so I thought I'd show this in a straightforward way. Assumes you've read my post on [Building a normalising flow from scratch using PyTorch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/).
 
 ---
 
@@ -34,8 +34,8 @@ In this post I will attempt to give an introduction to _conditional normalising 
 
 - [Motivation](#motivation)
 - [Mathematical Setup](#mathematical-setup)
-- [Practical Implementation in PyTorch](#practical-implementation-version-1-one-shot-conditional)
-- [Example Training](#example-training-version-1-one-shot-conditional-with-double-moon-distribution)
+- [Practical Implementation in PyTorch](#practical-implementation-one-shot-conditional)
+- [Example Training](#example-training-one-shot-conditional-with-double-moon-distribution)
 - [Conclusion](#conclusion)
 
 
@@ -44,22 +44,23 @@ In this post I will attempt to give an introduction to _conditional normalising 
 
 If you've clicked on this blog post you're likely already interested in conditional flows and/or conditional density estimation but just for the non-believers out there, I'll still lay out the use cases for conditional flows.
 
-The essence of the method is that instead of just learning the probability distribution for a set of parameters $$p(\vec{\theta})$$ you can learn the _conditional_ probability distribution $$p(\vec{\theta}|\vec{x})$$ which allows you thing including but not limited to:
-1. Pre-train a conditional density based on possible realisations of the data and when you want to apply it in real life, it's just a question of plugging the data in. And then if you get more data, you can just plug that in practically without having to redo the analysis. i.e. ___Amortised Inference___
+The essence of the method is that instead of just learning the probability distribution for a set of parameters $$p(\vec{\theta})$$ you can learn the _conditional_ probability distribution $$p(\vec{\theta}|\vec{x})$$ which allows you to do many things including but not limited to:
+1. Pre-train a conditional density based on possible realisations of the data and when you want to apply it in real life, it's just a question of plugging the data in. If you get more data, you can then just plug that in, practically without having to redo the analysis. i.e. ___Amortised Inference___
     - e.g. [Dingo](https://dingo-gw.readthedocs.io/en/latest/) is a gravitational wave analysis tool that in part utilises it for this purpose
 2. Predict future states based on past states, i.e. forecasting
     - If my state _was_ $$x_i$$ what is the probability that the state $$x_{i+1}$$ will be...
 3. Conditional generation of data/parameters/variables
     - e.g. generating high resolution images from low resolution ones. For example [SRFlow: Learning the Super-Resolution Space with Normalizing Flow](https://arxiv.org/abs/2006.14200)
+    - e.g. approximating an expensive generator
 
 Otherwise, I'll try and keep this short and just move on to how they work.
 
 
 # Mathematical Setup
 
-If you have read my other post on [Building a normalising flow from scratch using PyTorch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/) or are already familiar with how RealNVP architectures/normalising flows are constructed then a conditional flow is really not that much more complicated.
+If you have read my other post on [Building a normalising flow from scratch using PyTorch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/), or are already familiar with how RealNVP architectures/normalising flows are constructed, then a conditional flow is really not that much more complicated.
 
-The unconditional flow setup is that it transforms some base distribution variable $$\vec{u}$$ that follows some simple analytical distribution $$p_\vec{u}$$ the we learn to transform into the density that we wish to investigate $$p_\vec{\theta}(\vec{\theta})$$,
+The idea behinds normalising flows is that they transform some base distribution variable $$\vec{u}$$, following some simple analytical distribution $$p_\vec{u}$$, into the density that we wish to investigate $$p_\vec{\theta}(\vec{\theta})$$,
 
 $$
 \begin{align}
@@ -68,7 +69,7 @@ p_\mathbf{\vec{\theta}}(\vec{\theta}) &= p_\vec{u}(\vec{u}) \vert J_T(\vec{u})\v
 \end{align}
 $$
 
-For RealNVP, the transformation is setup with a affine coupling block structure with $$s$$ and $$t$$ being neural networks, for intermediary variable $$\vec{z}^i$$ for the $$i^{\textrm{th}}$$ layer with $$\vec{z}^0 = \vec{u}$$ and for N layers, $$\vec{z}^N = \vec{\theta}$$,
+For RealNVP, the transformation is an affine coupling block structure (with $$s$$ and $$t$$ neural networks) for intermediary variable $$\vec{z}^i$$. With $$i$$ referring to the $$i^{\textrm{th}}$$ layer, with $$\vec{z}^0 = \vec{u}$$ and for N layers, $$\vec{z}^N = \vec{\theta}$$.
 
 $$\begin{align}
 z^{i}_{1:d} &= z^{i-1}_{1:d} \\
@@ -88,7 +89,7 @@ $$
 
 The bulk of this does not change a lick, except that we need to put the dependence on $$\vec{x}$$ somewhere. No deep abstraction here, we just need to put $$\vec{x}$$ somewhere where the neural networks can learn how to transform $$\vec{u}$$ to $$\vec{\theta}$$ using information on $$\vec{x}$$. 
 
-Because of the construction of RealNVP (and flows in general) we can make the neural networks involved as complicated as we like pretty much as the setup doesn't require derivatives over them. So the easiest thing to do, and what is commonly just done, is to just include $$\vec{x}$$ into the inputs of the neural networks,
+Because of the construction of RealNVP (and flows in general) we can make the neural networks involved as complicated as we like (pretty much), as the setup doesn't require derivatives over them. Hence, the easiest thing to do, and what is commonly done, is to just include $$\vec{x}$$ into the inputs of the neural networks,
 
 $$\begin{align}
 z^{i}_{1:d} &= z^{i-1}_{1:d} \\
@@ -103,16 +104,16 @@ p_\vec{u}(\vec{u} | \vec{x}) = \mathcal{N}(\vec{u} \vert \mu(\vec{x}), \sigma^2(
 \end{align}
 $$
 
-with $$\mu$$ and $$\sigma^2$$ being learned by neural networks. For this post I think it will be simpler to implement through the transformations, that would be able to handle the subsequent shifts and dilations anyway, but in real world circumstances may lead to more unstable training.
+with $$\mu$$ and $$\sigma^2$$ being learned by neural networks. For this post I think it will be simpler to implement just through the transformations, that would be able to handle the subsequent shifts and dilations anyway, but in real world circumstances may lead to more unstable training.
 
 
 # Practical Implementation: One-shot conditional
 
-So the first thing that we want to do is create a dedicated class for _embedding_ the conditional variables. This allows us to have a bit of flexibility later on regarding applications in variational inference, but additionally, allows something within the work to independently learn important features of the data. AND on top of that if you have a large number of these variables that's comparatively larger than the number of variables you are actually constructing the probability density over, this means the inputs to the networks transforming the samples won't be overpowered by the number of conditional variables.
+The first thing that we want to do is create a dedicated class for _embedding_ the conditional variables. This allows us to have a bit of flexibility later on regarding applications in variational inference, but additionally, allows something within the work to independently learn important features of the data. AND on top of that if you have a large number of these conditional variables that's comparatively larger than the number of variables you are actually constructing the probability density over, this means the inputs to the networks transforming the samples won't be overpowered by the number of conditional variables.
 
-Overall, it makes the training easier which is the main difficulty for conditional distributions.
+Overall, it makes the training easier, which is much harder when compared to unconditional flows.
 
-Nothing fancy, we'll just make a PyTorch compatible module by inheriting from the nn.Module, specify the dimensionality of our input (number of conditional variables), how large we want our hidden layers to be, and how large we want the output or what will be the inputs to the neural networks representing the conditional variables.
+For the embedding, we won't do anything fancy, we'll just make a PyTorch compatible module by inheriting from the nn.Module, specify the dimensionality of our input (number of conditional variables), how large we want our hidden layers to be, and how large we want the output or what will be the inputs to the neural networks representing the conditional variables.
 
 ```python
 import torch
@@ -133,7 +134,7 @@ class ConditionEmbedding(nn.Module):
 
 ```
 
-We can test that out to just see that it can take in some example inputs. Let's say we wanted to approximate our distributions with 100 samples from our conditioned probability distribution $$p(\vec{\theta}\vert\vec{x})$$ with $$\vec{x}$$ being 3D with 64 nodes in our hidden layers. That would look something like,
+Let's test that out, just to see that it can take in some example inputs. Let's say we wanted to approximate our distributions with 100 samples from our conditioned probability distribution $$p(\vec{\theta}\vert\vec{x})$$ with $$\vec{x}$$ being 3D with 64 nodes in our hidden layers. That would look something like,
 
 ```python
 x = torch.randn(100, 3)
@@ -147,7 +148,7 @@ torch.Size([100, 4])
 
 
 
-And similar to my previous post, starting with the overarching RealNVP class, we need the same information as before plus that needed to intialise our embedding neural network.
+And similar to my previous post, starting with the overarching RealNVP class, we need the same information as before, plus that needed to intialise our embedding neural network.
 
 ```python
 class RealNVPFlow(nn.Module):
@@ -209,7 +210,7 @@ I'll then re-use the code from my previous post to set up the conditional blocks
 ```
 
 
-And then finally, we'll set up the transformation layers almost exactly as before, but they will need to know the size of the output of our embedding network as they will also be taking that as inputs now.
+And then finally, we'll set up the transformation layers almost exactly as before, but they will now need to know the size of the output of our embedding network. As they will also be taking that as inputs now.
 
 ```python
         self.hidden_size = hidden_size
@@ -537,7 +538,7 @@ NVP_model = RealNVPFlow(num_dim=2, num_flow_layers=num_flow_layers, hidden_size=
 trained_nvp_model, loss = train(NVP_model, data_to_train_with, epochs = 500, lr=1e-3)
 ```
 
-With this and some additional training we can get the following. The red dots represent the approximated distribution and the density in the back use the relevant exact sample distribution.
+With this and some additional training, we can get the following. The red dots represent the approximated distribution and the density in the back use the relevant exact sample distribution.
 
 <div style="text-align: center;">
 <img 
@@ -552,6 +553,6 @@ Woo!
 
 # Conclusion
 
-Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis where our conditional variables are data. In which case we can't just sample them willy-nilly and they often depend on the parameters of interest (kind of the point of all this...). This would be fine with a couple modifications to approximate a single observation like this which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
+Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis, where our conditional variables are data. In which case we can't just sample them willy-nilly as above as the inherent order of dependecies is switched. This would be fine with a couple modifications to approximate a single observation like this, which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
 
 
