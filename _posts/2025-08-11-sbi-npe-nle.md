@@ -26,6 +26,8 @@ As usual, here are some of the resources I’m using as references for this post
 - [Recent Advances in Simulation-based Inference for Gravitational Wave Data Analysis](https://arxiv.org/abs/2507.11192) by [Bo Liang](https://www.researchgate.net/profile/Bo-Liang-34) and [He Wang](https://iphysresearch.github.io/-he.wang/author/he-wang-%E7%8E%8B%E8%B5%AB/)
     - Really recommend giving this a read, it's hard to find papers that discuss the general topics without getting into the weeds of the specific implementation that they are trying to advocate for or simply too vague.
 - [Consistency Models for Scalable and Fast Simulation-Based Inference](https://proceedings.neurips.cc/paper_files/paper/2024/file/e58026e2b2929108e1bd24cbfa1c8e4b-Paper-Conference.pdf)
+- [Missing data in amortized simulation-based neural posterior estimation](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1012184)
+    - Only paper I've read that directly and nicely talks about using aggregator networks for variable dataset sizes
 
 ---
 
@@ -69,7 +71,7 @@ posterior from simulated data. NRE and NLE estimate the likelihood ratio and lik
 MCMC for posterior sampling. FMPE uses an ODE solver guided by a neural network to characterize the parameter posterior.
 CMPE fits a probability flow with a neural network to sample from posterior distributions. These approaches leverage neural
 networks to approximate complex posteriors, providing a computationally efficient and flexible alternative to traditional Bayesian
-inference methods. </em></figcaption>
+inference methods." </em></figcaption>
     </div>
 </p>
 
@@ -145,7 +147,305 @@ During training, all that we trying to do is minimise this divergence with respe
 
 $$\begin{align}
 \textrm{L}(\vec{\varphi}) &= \mathbb{E}_{\pi(\vec{\theta})}\left[\mathbb{E}_{\vec{x} \sim \mathcal{L}(\vec{x}\vert \vec{\theta})} \left[ - \log q(\vec{\theta}\vert \vec{x} ; \vec{\varphi}) \right]\right] \\
-&= - \mathbb{E}_{\pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x} \sim \mathcal{L}(\vec{x}\vert \vec{\theta})} \left[\log q(\vec{\theta}\vert \vec{x} ; \vec{\varphi}) \right]\right] \\
+&= - \mathbb{E}_{\vec{\theta} \sim \pi(\vec{\theta})} \left[ \mathbb{E}_{\vec{x} \sim \mathcal{L}(\vec{x}\vert \vec{\theta})} \left[\log q(\vec{\theta}\vert \vec{x} ; \vec{\varphi}) \right]\right] \\
+&= - \mathbb{E}_{\vec{x}, \vec{\theta} \sim p(\vec{x}, \vec{\theta})} \left[\log q(\vec{\theta}\vert \vec{x} ; \vec{\varphi}) \right]
 \end{align}$$
 
+This is no different to what I went through in my post on [conditional normalising flows](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-10-CondNF/), however, the thing that then makes this super-useful for variational inference is that $$\vec{x}$$ doesn't have to represent a single observation, but can be a whole dataset. 
 
+The dependency works in the exact same way, just that instead of a vector $$\vec{x}$$ is more of a matrix, and we average over the dimension corresponding to different realisations of the hyper-parameters.
+
+In essence:
+- If I have a set of hyper-parameters, $$\vec{\theta}_i$$, 
+- then produce a dataset $$\vec{x}_{i,j}$$
+    - the $$i$$ subscript denotes which hyper-parameter the datapoint came from 
+    - the $$j$$ denotes the $$j^\text{th}$$ datapoint for the given hyper-parameter. 
+    - Emphasizing that it is still a "vector", it does not have to be a single value, but I refuse to use tensors in a general audience post even though that's basically what I'm using
+- we aggregate over $$j$$ and the data dimension (I'll touch on this in a second)
+- we then average over $$i$$
+
+
+The complication is that this would be dependent on the size of the datasets that we produce in our simulations during training. If I use 10,000 samples in my training, my posterior representation would only be suitable for $$\sim$$ 10,000 samples, not for $$\lesssim$$ 9,000 or $$\gtrsim$$ 11,000. But I just told you that all this is great at amortised inference where you don't have to redo training for new data?! What gives? Well unfortunately standard NPE as far as I know only deals with fixed input sizes.
+
+In a later post I hope to show how you can train for dataset size using [Deep Set neural networks](https://arxiv.org/abs/1703.06114) and summary statistics. But the fact still remains that we want our setup to be re-useable for different dataset sizes. We don't want to have to rework the whole setup for a different number of observations. For that I will use Deep Set neural networks partly as a primer for when I touch on training with differently sized datasets.
+
+The paper on Deep Set neural networks I've linked above gets a little in the weeds for the purpose of this post. The setup can simply be denoted as three functions: $$\{\vec{y}_i\}_i$$[^y] inputs for $$i\in \{1,..., S\}$$, a single neural network that acts on each data point individually $$\phi$$, some sort of aggregation statistic $$f$$ such as the mean, and a second neural network that takes the output of the aggregated data $$\Phi$$.
+
+[^y]: Using $$y$$ for generality
+
+$$\begin{align}
+\text{DeepSet}(\vec{y}) &= \Phi\left(f(\{\phi(\vec{y}_i)\}_i)\right) \\
+&= \Phi\left(\frac{1}{S} \sum_i \phi(\vec{y}_i)\right)
+\end{align}$$
+
+Putting this into some code.
+
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class DeepSet(nn.Module):
+    def __init__(self, input_dim, output_dim, phi_hidden=32, Phi_hidden=32):
+        super().__init__()
+        
+        self.phi = nn.Sequential(
+            nn.Linear(input_dim, phi_hidden),
+            nn.ReLU(),
+            nn.Linear(phi_hidden, phi_hidden),
+            nn.ReLU(),
+            nn.Linear(phi_hidden, phi_hidden),
+            nn.ReLU(),
+        )
+        
+        self.Phi = nn.Sequential(
+            nn.Linear(phi_hidden, Phi_hidden),
+            nn.ReLU(),
+            nn.Linear(Phi_hidden, Phi_hidden),
+            nn.ReLU(),
+            nn.Linear(Phi_hidden, output_dim),
+        )
+
+
+    def forward(self, x):
+        """
+        x: [batch_size, set_size, input_dim]
+        """
+        phi_x = self.phi(x)  # [batch_size, set_size, phi_hidden]
+        
+        # Aggregate
+        agg = phi_x.mean(dim=1)
+
+        # Apply Phi to aggregated vector
+        out = self.Phi(agg)
+
+        return out
+```
+
+This allows us to create a fixed size output, or embedding, for use in our analysis, and later on can be slightly adjusted to deal with changes in dataset size as part of the training.
+
+To test how this works we'll first generate some data to work with using the `make_moons` function from the `scikit-learn` package where we have 
+- a mixture parameter $$d$$ for what fraction of samples come from the upper moon of the double moon distribution
+- a gaussian noise parameter $$\sigma_c$$
+- a vertical dilation factor $$t_{\text{dil}}$$
+
+
+```python
+# training samples
+n_hyp_samples = 10000
+n_data_samples = 200 # constant dataset sizes for now
+
+training_conditional_samples = sample_conditionals(n_samples=n_hyp_samples).T
+training_n_samples = n_data_samples*torch.ones((n_hyp_samples),)
+_training_data_samples = []
+for train_n_sample, cond_samples in zip(training_n_samples, training_conditional_samples):
+    # print(train_n_sample.dim())
+    _training_data_samples.append(ln_like.rsample(cond_samples, n_samples=train_n_sample))
+
+
+training_data_samples = np.array(_training_data_samples)
+training_data_samples = torch.tensor(training_data_samples).transpose(1, 0).squeeze()
+
+```
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/double_moon_dist_samples.png" 
+    alt="Example data realisations of the double moon distribution for different hyper-parameter values"
+    title="Example data realisations of the double moon distribution for different hyper-parameter values"
+    style="width: 100%; height: auto; border-radius: 32px;">
+</div>
+
+<br>
+
+
+Now we use the _exact same_ RealNVP setup I had in [my previous post]() except for the initialisation which now uses the DeepSet neural network.
+
+
+```python
+class RealNVPFlow(nn.Module):
+    def __init__(self, num_dim, num_flow_layers, hidden_size, cond_dim, embedding_size):
+        super(RealNVPFlow, self).__init__()
+
+        self.dim = num_dim
+        self.num_flow_layers = num_flow_layers
+
+        self.embedding_size = embedding_size
+
+        ################################################
+        ################################################ 
+        # setup base distribution
+        self.distribution = dist.MultivariateNormal(torch.zeros(self.dim), torch.eye(self.dim))
+
+
+        ################################################
+        ################################################ 
+        # setup conditional variable embedding
+
+
+        self.cond_net = DeepSet(input_dim=cond_dim, output_dim=embedding_size, phi_hidden=hidden_size, Phi_hidden=hidden_size)
+        # *[continues after this but there are no changes]*
+```
+
+And the training loop will be a little different as the size of the data samples will be different to the size of the hyperparameter samples. I could add a new axis to them and repeat along it but that would be wasted memory, so the training loop now has two data loaders: one for hyperparameter samples and one for the data samples. Looking like the following.
+
+```python
+import tqdm
+import numpy as np
+from copy import deepcopy
+from torch.utils.data import TensorDataset, DataLoader
+
+
+def train(model, hyp_param_samples, data_samples, epochs = 100, batch_size = 128, lr=1e-3, prev_loss = None):
+    # print(data.shape)
+    train_hyper_loader = torch.utils.data.DataLoader(hyp_param_samples, batch_size=batch_size)
+    train_data_loader = torch.utils.data.DataLoader(data_samples, batch_size=batch_size)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    
+    if prev_loss is None:
+        losses = []
+    else:
+        losses = deepcopy(prev_loss)
+
+    with tqdm.tqdm(range(epochs), unit=' Epoch') as tqdm_bar:
+        epoch_loss = 0
+        for epoch in tqdm_bar:
+            for batch_index, (training_hyper_batch, training_data_batch) in enumerate(zip(train_hyper_loader, train_data_loader)):
+
+                log_prob = model.log_probability(training_hyper_batch, training_data_batch)
+                    
+                # print("final log_prob.shape: ", log_prob.shape)
+                loss = - log_prob.mean(0)
+
+                # Neural network backpropagation stuff
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                epoch_loss += loss
+            epoch_loss /= len(train_hyper_loader)
+            losses.append(np.copy(epoch_loss.detach().numpy()))
+            tqdm_bar.set_postfix(loss=epoch_loss.detach().numpy())
+
+    return model, losses
+```
+
+
+And all that's left is to chuck everything into our model and train.
+
+```python
+torch.manual_seed(2)
+np.random.seed(0)
+
+num_flow_layers = 8
+hidden_size = 16
+
+
+NVP_model = RealNVPFlow(num_dim=3, num_flow_layers=num_flow_layers, hidden_size=hidden_size, cond_dim=2, embedding_size=4)
+trained_nvp_model, loss = train(NVP_model, hyp_param_samples=training_conditional_samples, data_samples=training_data_samples, epochs = 500, lr=1e-3, batch_size=1024)
+```
+
+With a couple extra things regarding the training (which if included would just make the point of this point more cloudy... cloudier?) we arrive at the following loss curve.
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/double_moon_dist_samples.png" 
+    alt="Example data realisations of the double moon distribution for different hyper-parameter values"
+    title="Example data realisations of the double moon distribution for different hyper-parameter values"
+    style="width: 100%; height: auto; border-radius: 32px;">
+</div>
+
+
+Now we have a approximate conditional distribution for our posterior! Meaning that we can give it different realisations of the data and the time it takes to go through the neural networks is the time it takes to get posterior samples. Let's have a look at a few of these.
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/example_npe_posterior_1.png" 
+    alt="Example data realisations of the double moon distribution for different hyper-parameter values"
+    title="Example data realisations of the double moon distribution for different hyper-parameter values"
+    style="width: 70%; height: auto; border-radius: 32px;">
+</div>
+<br>
+
+And another.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/example_npe_posterior_2.png" 
+    alt="Example data realisations of the double moon distribution for different hyper-parameter values"
+    title="Example data realisations of the double moon distribution for different hyper-parameter values"
+    style="width: 70%; height: auto; border-radius: 32px;">
+</div>
+<br>
+
+And another because why not.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/example_npe_posterior_3.png" 
+    alt="Example data realisations of the double moon distribution for different hyper-parameter values"
+    title="Example data realisations of the double moon distribution for different hyper-parameter values"
+    style="width: 70%; height: auto; border-radius: 32px;">
+</div>
+
+<br>
+
+You might be wondering why the second two don't seem to do so well in regards to recovering the true value. Well actually I chose this exactly because they don't, because we are modelling a probability distribution if we recover the true values 100% within the $$1\sigma$$ contour then we are not modelling a probability distribution as the true values should like within $$1\sigma$$ roughly 68% of the time, otherwise it's not a probability distribution. This actually leads into the next subsection.
+
+# Can I trust this?
+
+Each for random realisations of the data given our priors! But the question that should have been and currently is at the back of your mind is "Can I actually trust this?" And the answer to that is not straightforward. 
+
+The two questions that I am asking myself when looking at these are:
+1. Is the simulated data a realistic representation of the actual data?
+    - I can't do that well for this post seeing as I don't have real data however, I'd recommend [this paper](https://arxiv.org/abs/2505.02906) which touches on it.
+2. Have I adequately covered my space of hyperparameters during training?
+
+The second one we can partly tackle here. One way we can test this is through a standard [Simulation-Based Calibration](https://mc-stan.org/docs/stan-users-guide/simulation-based-calibration.html#:~:text=A%20Bayesian%20posterior%20is%20calibrated,parameter%2080%25%20of%20the%20time.) test.  This is basically checking that if you have a known set of true hyperparameters and you simulate data from them, that the analysis setup/posterior recover these true values within $$1\sigma$$ 68% of the time, within $$2\sigma$$ 95% of the time and so on.
+
+Seeing as generating data and analysing it is real quick we can just 
+1. randomly sample our prior, 
+2. generate data, 
+3. run this data through our conditional density estimator, 
+4. store how far the true value for the hyperparameter is to the recovered mean of the relevant samples
+5. create a simple distribution for what fraction of runs had the true value within $$1\sigma$$, $$1.1\sigma$$ and $$2\sigma$$ and so on comparing it to the expected values[^gauss]
+
+[^gauss]: I'm assuming gaussian-like marginal here, which is not necessarily true, but it should be far off.
+
+We'll run this for 2000 iterations and plot the result in steps of $$0.5\sigma$$.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/npe_linear_scaled_cov_map.png" 
+      alt="." 
+      title="." 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-08-sbi/npe_log_scaled_cov_map.png" 
+      alt="." 
+      title="." 
+      style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+
+<br>
+
+Woo! Our probability distribution is being a good probability distribution (purely as far as probabilities go not necessarily accuracy to the system per say).
+
+# Conclusion
+
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-08-sbi/nemo_now_what.png" 
+    alt="https://tenor.com/view/finding-nemo-bags-floating-stuck-now-what-gif-5473087"
+    title="Thanks for getting to the end of the post!"
+    style="width: 50%; height: auto; border-radius: 32px;">
+</div>
+
+<br>
