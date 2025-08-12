@@ -21,16 +21,16 @@ As usual, here are some of the resources I’m using as references for this post
 
 - [Neural Ordinary Differential Equations](https://arxiv.org/abs/1806.07366)
     - Original paper that introduced the underpinning theory for continuous normalising flows and subsequently flow matching
-    - I broadly follow the paper skipping some bits on the utility of pure application of the neural ODEs instead of neural networks
+    - I broadly follow the paper skipping some bits on the utility on the application of just the neural ODEs instead of neural networks
 - [torchdiffeq cnf example](https://github.com/rtqichen/torchdiffeq/blob/master/examples/cnf.py)
-    - The construction of the continuous normalising flow in this example is basically the same as my own example as every time I made an example this one was just better and simpler. Thanks Dr Chen
+    - The construction of the continuous normalising flow in this example is basically the same as my own example. As every time I made my own example this one was just better and simpler. Thanks Dr Chen
 - [Wikipedia's Residual Neural Network page](https://en.wikipedia.org/wiki/Residual_neural_network)
     - For a quick ref if you're unfamiliar
 - [Vai Patel's](https://vaipatel.com/) post on [Deriving the Adjoint Equation for Neural ODEs using Lagrange Multipliers](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms)
     - I honestly didn't really get how the adjoint method came about before writing this post and reading this for reference. I actually recommend you read this later on, so maybe just open it now?
 - My other posts on normalising flows, just because I reference them a couple times for examples or basic theory.
 - [Wikpedia's page on Jacobi's formula](https://en.wikipedia.org/wiki/Jacobi%27s_formula) 
-    - The proof of within I reproduce in the appendix for my post for completeness, and so that I actually write it down and hopefully not forget it
+    - The proof within I reproduce in the appendix for my post for completeness, and so that I actually write it down and hopefully not forget it
 
 
 ---
@@ -41,7 +41,7 @@ As usual, here are some of the resources I’m using as references for this post
 - ['Ground Up' Continuous Normalising Flow](#ground-up-cnf)
 - [Training our CNF](#training-our-cnf)
 - [Proof of the determinant-jacobian trace-derivative formula](#proof-of-det-jacobian-trace-derivative)
-- [The Adjoint Method](#the-adjoint-method-and-derivatives)
+- [The Adjoint Method](#the-adjoint-method)
 - [Conclusion](#conclusion)
 
 ---
@@ -49,11 +49,11 @@ As usual, here are some of the resources I’m using as references for this post
 
 # Motivation
 
-Normalising flows as discussed in my other posts ([intro]() and [making one from scratch]()) tout how wonderful normalising flows are: they have the ability to not only efficiently explore high dimensional distributions and sample them all while generating a functional representation for them. However, if you want to model a really complex distribution with many modes and non-gaussian behaviour you may want a more complex transformation behind your normalising flow, but the calculation of the jacobian can be quite arduous because of the need to calculate the determinant of the transformations' jacobian. Or maybe you want to nicer way to train a conditional normalising flow[^1] which is notoriously hard for traditional normalising flows?
+Normalising flows as discussed in my other posts ([intro]() and [making one from scratch]()) tout how wonderful normalising flows are. They have the ability to not only efficiently explore high dimensional distributions, and sample them all, but also create a functional representation for them. However, if you want to model a really complex distribution with many modes and non-gaussian behaviour you may want a more complex transformation behind your normalising flow. _However_, the calculation can be quite arduous because of the need to calculate the determinant of the transformations' jacobian. Or maybe you want to nicer way to train a conditional normalising flow[^1] which is notoriously hard for traditional normalising flows?
 
 [^1]: a type of flow that can produce $$p(y\vert x)$$. Modelling both $$y$$ and $$x$$
 
-One possible answer to that is to use [Flow Matching](https://arxiv.org/abs/2210.02747) a kind of algorithm between normalising flows and [diffusion models](https://arxiv.org/abs/2404.07771). The basic idea of flow matching is to model the vector field describing how samples from simple base distribution into some more complicated distribution. The basic idea is shown in the GIF below which I stole from ["An introduction to Flow Matching"](https://mlg.eng.cam.ac.uk/blog/2024/01/20/flow-matching.html) by [Tor Fjelde](https://retiredparkingguard.com/about.html), [Emile Mathieu](https://mlg.eng.cam.ac.uk/blog/2024/01/20/www.emilemathieu.fr), and [Vincent Dutordoir](https://vdutor.github.io/).
+One possible answer to that is to use [Flow Matching](https://arxiv.org/abs/2210.02747), a kind of algorithm between normalising flows and [diffusion models](https://arxiv.org/abs/2404.07771). The TLDR of flow matching is to model the vector field describing how samples go from a simple base distribution into some more complicated distribution. The basic idea is shown in the GIF below which I stole from ["An introduction to Flow Matching"](https://mlg.eng.cam.ac.uk/blog/2024/01/20/flow-matching.html) by [Tor Fjelde](https://retiredparkingguard.com/about.html), [Emile Mathieu](https://mlg.eng.cam.ac.uk/blog/2024/01/20/www.emilemathieu.fr), and [Vincent Dutordoir](https://vdutor.github.io/).
 
 
 <div style="text-align: center;">
@@ -77,7 +77,7 @@ Following the same logical flow as the original continous normalising flows pape
 
 [^3]: Not actually annoying because the key concept was to replace traditional neural networks with these kinds of systems.
 
-Residual neural networks are neural networks were sequential layers trying to model additive changes to the output of the previous layer rather than strictly just taking the previous layer as an input and pumping out a new output. e.g.
+Residual neural networks are networks were sequential layers try to model additive changes to the output of the previous layer rather than strictly just taking the previous layer as an input and pumping out a new output. e.g.
 
 $$\begin{align}
 \mathbf{h}_{t+1} = \mathbf{h}_t + f(\mathbf{h_t}, \mathbf{\theta}_t),
@@ -87,18 +87,18 @@ where $$t$$ is some discrete value that indicates the depth of the network. Addi
 
 $$\begin{align}z_{t+1}^i = z_t^i + f(\mathbf{z_t}^{1:d}, \mathbf{\theta}_t),\end{align}$$
 
-for $$i>d$$. The amazing thing that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) noticed is that this is extremely similar to an Euler discretised solution to some continuous transformation. Taking the number of the steps to infinity/take smaller steps we can image that in the limit we recover some quasi-[ODE](https://en.wikipedia.org/wiki/Ordinary_differential_equation) of the form,
+for $$i>d$$. The amazing thing that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) noticed is that this is extremely similar to an Euler discretised solution to some continuous transformation. Taking the number of the steps to infinity/take smaller steps we can imagine that in the limit we recover some quasi-[ODE](https://en.wikipedia.org/wiki/Ordinary_differential_equation) of the form,
 
 $$\begin{align}
 \frac{d\mathbf{z}(t)}{dt} = f(\mathbf{z}(t), t, \mathbf{\theta}).
 \end{align}$$
 
-Applying this directly to our flow, we can image that time $$t=0$$ is the distribution of samples or probability under our base distribution (e.g. normal) and our final time, which we'll just denote as $$t_f$$, as the distribution of samples/probability under our target distribution. Once we have it in this form we can then just chuck our favourite black box [ODE solver](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods) at.  
+Applying this directly to our flow, we can view time $$t=0$$ as the distribution of samples or probability under our base distribution (e.g. normal) and our final time, which we'll just denote as $$t_f$$, as the distribution of samples/probability under our target distribution. Once we have it in this form we can then just chuck our favourite black box [ODE solver](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods) at it.  
 
 There are many fantastic things about this, the three ones that are of interest to me are:
-1. __Memory efficiency__. Unlike a traditional normalising flow, increasing the "complexity" of our transformations does not increase our memory cost, just possible training time. i.e. we get a constant memory cost (not something you get from deep neural networks)
+1. __Memory efficiency__. Unlike a traditional normalising flow, increasing the "complexity" of our transformations does not increase our memory cost, just possible training time. i.e. we get a constant memory cost necessarily (not something you get from deep neural networks)
 2. __Adaptive computation__. Using an ODE solver to solve our transformation allows adaptive computation of the accuracy and tolerance of our solution with many modern ODE solvers being able to adaptively adjust step-size to manage error.
-3. __Normalising flow scalability__. On top of the constant memory cost, reparameterising our problem into this form means that our jacobians/change of variables is easier/quicker to compute and the forward and reverse directions of evaluating our flow become roughly equal in cost unlike methods such as autoregressive models that have a particular direction with faster computation while still having great flexibility.
+3. __Normalising flow scalability__. On top of the roughly constant memory cost, reparameterising our problem into this form means that our jacobians/change of variables is easier/quicker to compute and the forward and reverse directions of evaluating our flow become roughly equal in cost unlike methods, such as autoregressive models, that have a particular direction with faster computation, while still having great flexibility.
 
 
 
@@ -109,7 +109,7 @@ I'm going to skip some of the details relating to the backpropagation of the par
 
 [^rchen]: First author for the original [Neural Ordinary Differential Equations](https://arxiv.org/pdf/1806.07366)
 
-Analogous to a _planar normalising flow_,
+Analogous to a _planar normalising flow_, described as,
 
 $$\begin{align}
 \mathbf{z}(t+1) &= \mathbf{z}(t) + h\left(w^T \mathbf{z}(t) + b \right), \\
@@ -123,11 +123,11 @@ $$\begin{align}
 \end{align}$$
 
 
-So our parameters that we need to learn as a function of $$t$$ and $$u$$, $$w$$ and $$b$$ that are a function of just $$t$$. 
+So the parameters that we need to learn are those of $$u$$, $$w$$ and $$b$$, that are a functions of just $$t$$. 
 
 ---
 
-Just to get some boring stuff out of the way here are most of imports for the post.
+Just to get some boring stuff out of the way, here are most of imports for the post.
 
 ```python
 import os
@@ -155,7 +155,7 @@ For the actual code for the continuous normalising flow, which from now on I'll 
         logp_z = states[1]
 ```
 
-Then because of the ODE solver that we will be using later on from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) require it for some internals basically, we're going to forcibly require gradient tracking.
+Then because of the ODE solver that we will be using later on from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) requires it for some internals basically, we're going to enforce gradient tracking.
 
 ```python
         with torch.set_grad_enabled(True):
@@ -189,13 +189,13 @@ We then do what we came for and calculate $$\frac{dz}{dt}$$ using $$\tanh$$ for 
             dz_dt = torch.matmul(h, U).mean(0)
 ```
 
-Then we want to calculate the derivative of the probability with respect to time so that we can get a functional form of our probabilities as we usually do with flows, noting that,
+Then we want to calculate the derivative of the probability with respect to time so that we can get a functional form of our probabilities, as we usually do with flows, noting that,
 
 $$\begin{align}
-\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left( \frac{df}{d\mathbf{z}(t)}\right),
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left( \frac{df}{d\mathbf{z}(t)}\right).
 \end{align}$$
 
-which proving right now will get in the way of the result so I'll just promise to prove that later and you're just gonna have to trust me for now.
+Which proving right now will get in the way of the result, so I'll just promise to prove that later, and you're just gonna have to trust me for now.
 
 <div style="text-align: center;">
 <img 
@@ -205,10 +205,10 @@ which proving right now will get in the way of the result so I'll just promise t
     style="width: 60%; height: auto; border-radius: 16px;">
 </div>
 
-Our starting point for all this was $$\frac{d\mathbf{z}}{dt} = f(\mathbf{z}(t), t, \mathbf{\theta})$$, using this we can see $$\frac{\partial f}{\partial \mathbf{z}(t)} = \frac{\partial}{\partial \mathbf{z}(t)} \frac{d\mathbf{z}}{dt}$$. We can manually do this with [`torch.autograd.grad`](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad.html) which is broadly plug-n-chug. I'll however note that,
+Our starting point for all this was $$\frac{d\mathbf{z}}{dt} = f(\mathbf{z}(t), t, \mathbf{\theta})$$, using this we can see $$\frac{\partial f}{\partial \mathbf{z}(t)} = \frac{\partial}{\partial \mathbf{z}(t)} \frac{d\mathbf{z}}{dt}$$. We can do this with [`torch.autograd.grad`](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad.html) which is broadly plug-n-chug. I'll however note that,
 - the `create_graph=True` option allows higher order derivatives to be calculated later on 
 - that you can think of the jacobian as an outer product of the vector input and vector derivative, and hence we single out each dimension of $$z$$ when taking the derivative `dz_dt[:, i]` but later on slice into this to get the diagonal term(s) `...aph=True)[0][:, i]`
-- remember that the first dim of `dz_dt` is over the number of samples, for which we need to do these calculations for each of them independently
+- remember that the first dim of `dz_dt` is over the number of samples, for which we need to do these calculations for each independently
 
 ```python
             trace_df_dz = 0.
@@ -307,7 +307,7 @@ class HyperNetwork(nn.Module):
 
 # Training our CNF
 
-To make the loss simpler, as I showed in my post on [building a normalising flow from scratch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/), we'll presume that we're trying to estimate the probability distribution from a set of samples from some target distribution, which reduces our loss to effectively being,
+To make the loss simpler, as I showed in my post on [building a normalising flow from scratch](https://liamcpinchbeck.github.io/posts/2025/08/2025-08-04-flow-from-scratch/), we'll presume that we're trying to estimate the probability distribution from a set of samples from some target distribution. Reducing our loss to effectively being,
 
 $$\begin{align}
 \mathcal{L}(\mathbf{\theta}) \approx -\frac{1}{N} \sum_i^N \log q_{\mathbf{z}}(\mathbf{z}_i\vert\mathbf{\theta}).
@@ -337,7 +337,7 @@ z, logp_diff_t1 = get_dist_samples(num_samples=100000)
 </div>
 
 
-We'll then use an ODE solver/integrator from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) called [`odeint_adjoint'](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py), and all it does (at least as far as we'll discuss for now) is take some input $$\frac{df}{dt}$$ and integrates it over $$t$$.
+We will use an ODE solver/integrator from [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) called [`odeint_adjoint`](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py). All it does (at least as far as we'll discuss for now) is take some input $$\frac{df}{dt}$$ and integrates it over $$t$$.
 
 ```python
 from torchdiffeq import odeint_adjoint as odeint
@@ -366,7 +366,7 @@ p_z0 = torch.distributions.MultivariateNormal(
 loss_meter = RunningAverageMeter()
 ```
 
-So for our training we'll specify the number of iterations we want...iterating over them. We'll turn off the gradients so that we have control over specifically where we'll track gradients otherwise we'll get some inefficiencies pop up.
+For our training we'll specify the number of iterations we want...iterating over them. We'll turn off the gradients so that we have control over specifically where we'll track gradients otherwise some inefficiencies may pop up.
 
 ```python
     niters = 1000
@@ -374,7 +374,7 @@ So for our training we'll specify the number of iterations we want...iterating o
         optimizer.zero_grad()
 ```
 
-We'll grab some samples from our target distribution, specifically 300, because from some of my own testing, that's as many I could use before I couldn't be bothered waiting for the training to finish, and it outputs an empty array that we can use for tracking the derivatives of the log probabilities.
+We'll grab some samples from our target distribution, specifically 300, because from some of my own testing, that's as many I could use before I couldn't be bothered waiting for the training to finish. Also outputting an empty array that we can use for tracking the derivatives of the log probabilities.
 
 ```python
         x, logp_diff_t1 = get_dist_samples(num_samples=300)
@@ -382,7 +382,7 @@ We'll grab some samples from our target distribution, specifically 300, because 
 
 We then chuck our
 - CNF function/model
-- distribution samples and dummy probability to transform (backwards)
+- distribution samples and dummy probability to transform
 - our end and start times
 - our tolerances for the accuracy of the ODE solver (`rtol` and `atol`)
 - and the general method that we want the ODE solver to use, which I'm picking to be the [Runge-Kutta-Fehlberg method](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)
@@ -426,7 +426,7 @@ And then backwards propagate the model parameters and take a step with our optim
         losses.append(loss_meter.avg)
 ```
 
-In total looking like this with some division between actual mathematical steps and general neural network training.
+In total, the training looks like this, with some division between actual mathematical steps and general neural network training.
 
 ```python
 niters = 1000
@@ -500,7 +500,7 @@ And I would just like to emphasize, this is not a training animation, this is ac
 
 [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) also produce this proof but put it into one of the appendices, but personally I would have liked it in the main body, as to me it really came out of left field. Hence...
 
-What we want to prove (in less rigour than the original paper, so head on over there if you want more of that) is that for a ODE defined as (omitting transformation variables $$\mathbf{\theta}$$ )
+What we want to prove (in less rigour than the original paper, so head on over there if you want more of that) is that for am ODE defined as (omitting transformation variables $$\mathbf{\theta}$$ )
 
 $$\begin{align}
 \frac{d\mathbf{z}}{dt} = f(\mathbf{z}(t), t)
@@ -510,7 +510,7 @@ with $$\mathbf{z}$$ being a continuous random variable with probability density 
 
 
 $$\begin{align}
-\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left(\frac{df}{d\mathbf{z}}(t)\right)
+\frac{\partial \log p(\mathbf{z}(t))}{\partial t} = -\textrm{tr}\left(\frac{df}{d\mathbf{z}}(t)\right).
 \end{align}$$
 
 
@@ -520,7 +520,7 @@ $$\begin{align}
 \mathbf{z}(t+\epsilon) = T_\epsilon(\mathbf{z}(t))
 \end{align}$$
 
-Assuming nothing about $$f$$, $$T_\epsilon$$ or $$\frac{\partial}{\partial \mathbf{z}}T_\epsilon$$ then we can say among other things (possibly somewhat obviously),
+Assuming nothing about $$f$$, $$T_\epsilon$$ or $$\frac{\partial}{\partial \mathbf{z}}T_\epsilon$$, we can say among other things (probably somewhat obviously),
 
 $$\begin{align}
 \frac{\partial}{\partial \mathbf{z}} \mathbf{z}(t) &= 1 \\
@@ -586,26 +586,26 @@ $$\begin{align}
 
 # The Adjoint Method
 
-The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight in this method is backpropagating our derivatives through this kind of system. So debatably the main achievement of the paper is to introduce the use of adjoint method for "reverse-mode" automatic differentiation/backpropagation that alleviates some of the introduced inefficiencies regardless of the ODE solver used[^bb].
+The key difficulty that [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) highlight for this method, is backpropagating our derivatives through this kind of system. Debatably the main achievement of the paper is to introduce the use of the adjoint method for "reverse-mode" automatic differentiation/backpropagation that alleviates some of the introduced inefficiencies regardless of the ODE solver used[^bb].
 
 [^bb]: Or in their own words for "black box" ODE solvers. Referring to the fact that you don't need to know about the internals of the ODE solver to use this method.
 
-So, we treat the ODE solver as just some function $$\textrm{ODESolve}$$ that takes in the initial state $$z(t_0)$$, the initial time $$t_0$$, final time $$t_1$$ and parameters of $$f$$, $$\mathbf{\theta}$$. Looking at the loss which is calculated based on the final state this translate into,
+We treat the ODE solver as just some function $$\textrm{ODESolve}$$ that takes in the initial state $$z(t_0)$$, the initial time $$t_0$$, final time $$t_1$$ and parameters of $$f$$, $$\mathbf{\theta}$$. The loss which is calculated based on the final state this translates to,
 
 $$\begin{align}
 L(\mathbf{z}(t_1)) &= L\left(\mathbf{z}(t_0) + \int_{t_0}^{t_1} f(\mathbf{z}(t), t, \theta) dt \right) \\
-&= L\left(\textrm{ODESolve}(\mathbf{z}(t_0), f, t_0, t_1, \mathbf{\theta})\right)
+&= L\left(\textrm{ODESolve}(\mathbf{z}(t_0), f, t_0, t_1, \mathbf{\theta})\right).
 \end{align}$$
 
 Normally, we would then blindly apply automatic differentiation of our loss $$L$$ with respect to the parameters being trained $$\mathbf{\theta}$$ but again, this would have to go through the solver. The key idea of the adjoint method is that instead of this, you get the derivatives by solving for the dynamics of a separate quantity $$a(t)$$ and it will give you,
 
 $$\begin{align}
-\frac{dL}{d\theta} = - \int_{t_0}^{t_1} a(t)^T \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{\theta}} dt,
+\frac{dL}{d\theta} = - \int_{t_0}^{t_1} a(t)^T \frac{\partial f(\mathbf{z}(t), t, \theta)}{\partial \mathbf{\theta}} dt.
 \end{align}$$
 
-which can be done simultaneously to $$\mathbf{z}(t)$$ by the same solver as it requires the same information as is required for $$\mathbf{z}(t)$$. 
+This can be done simultaneously to $$\mathbf{z}(t)$$ by the same solver as it requires the same information as is required for $$\mathbf{z}(t)$$. 
 
-Thank you so much [Vaibhav Patel](https://vaipatel.com/)[^SF] for their post on [Deriving the Adjoint Equation for Neural ODEs using Lagrange Multipliers](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/) for helping me with the following. We can set up our system as finding the set of values $$\mathbf{\theta}$$ that minimise our loss subject to the constraint,
+Thank you so much [Vaibhav Patel](https://vaipatel.com/)[^SF] for their post on [Deriving the Adjoint Equation for Neural ODEs using Lagrange Multipliers](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/) for helping me with the following. We can set up our system as finding the set of values $$\mathbf{\theta}$$ that minimise our loss, subject to the constraint,
 
 [^SF]: And thank you [Sam Foster](https://www.linkedin.com/in/sam-foster-820096234/?trk=public_profile_browsemap&originalSubdomain=au) you magnificent beast for your help as well.
 
@@ -625,8 +625,7 @@ $$\begin{align}
 \frac{d\psi}{d\theta} = \frac{dL(\mathbf{z}(t_1))}{d\theta},
 \end{align}$$
 
-as we know by construction that $$F=0$$. The benefit to doing all this is to choose $$\mathbf{a}(t)$$ to eliminate computationally difficult to calculate terms in $$dL/d\mathbf{\theta}$$. e.g. the largest derivative we could take $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$. I'm going to tell you to jumpy over to [Patel's post](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms)
- for the following,
+as we know by construction that $$F=0$$. The benefit to doing all this is to choose $$\mathbf{a}(t)$$ to eliminate computationally difficult terms in $$dL/d\mathbf{\theta}$$. e.g. the most complicated derivative we could take $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$. I'm going to tell you to jump over to [Patel's post](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms) for the following,
 
 $$\begin{align}
 \frac{dL}{d\theta} &= \left[\frac{\partial L}{\partial \mathbf{z}(t_1)} - \mathbf{a}(t_1)\right]\frac{d\mathbf{z}(t_1)}{d\mathbf{\theta}}\\
@@ -634,7 +633,7 @@ $$\begin{align}
 & + \int_{t_0}^{t_1} \mathbf{a}(t)\frac{\partial f}{\partial \mathbf{\theta}} dt .
 \end{align}$$
 
-So based on the fact that we don't want to have to evaluate $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$, we want to get rid of both of the first terms. This means that we want,
+Based on the fact that we don't want to have to evaluate $$d\mathbf{z}(t_1)/d\mathbf{\theta}$$, we want to get rid of both of the first terms. This means that we want,
 
 $$\begin{align}
 a(t_1) = \frac{\partial L}{\partial \mathbf{z}(t_1)}
@@ -646,13 +645,13 @@ $$\begin{align}
 &\frac{da(t)}{dt}= -a(t)\frac{\partial f}{\partial \mathbf{z}}. \\
 \end{align}$$
 
-Then once the first two terms are cancelled out and flip the direction of the integral, you arrive at Equation 5 of [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) allowing us to efficiently calculate derivatives of the loss with respect to our training parameters regardless of the specifics of the ODE solver,
+Then once the first two terms are cancelled out, and additionally flipping the direction of the integral, you arrive at Equation 5 of [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) allowing us to efficiently calculate derivatives of the loss with respect to our training parameters regardless of the specifics of the ODE solver,
 
 $$\begin{align}
 \frac{dL}{dt} = - \int_{t_1}^{t_0} \mathbf{a}(t)\frac{\partial f(\mathbf{z}(t), t, \mathbf{\theta})}{\partial \mathbf{\theta}} dt.
 \end{align}$$
 
-And thankfully, at least as a user, we never have to worry about this as various python packages including [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq) which I used for my above code examples have solvers with this baked in (e.g. torchdiffeq's [`odeint_adjoint`](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py)).
+And thankfully, at least as a user, we never have to worry about this as various python packages including [`torchdiffeq`](https://github.com/rtqichen/torchdiffeq), which I used for my above code examples, have solvers with this baked in (e.g. torchdiffeq's [`odeint_adjoint`](https://github.com/rtqichen/torchdiffeq/blob/master/torchdiffeq/_impl/adjoint.py)).
 
 
 ---
@@ -661,7 +660,7 @@ And thankfully, at least as a user, we never have to worry about this as various
 
 # Conclusion
 
-So hopefully you better understand continuous normalising flows for variational inference now, for a follow up I would recommend directly reading through [Patel's post on the adjoint method](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms), and [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) (should be easier to read now).
+Hopefully you now better understand continuous normalising flows for variational inference, for a follow up I would recommend directly reading through [Patel's post on the adjoint method](https://vaipatel.com/posts/deriving-the-adjoint-equation-for-neural-odes-using-lagrange-multipliers/#simplify-terms), and [Chen et al. 2019](https://arxiv.org/pdf/1806.07366) (should be easier to read now).
 
 ___EDIT___: 09/08/2025
 
@@ -701,7 +700,7 @@ $$\begin{align}
  &= \sum_j \frac{\partial A_{ik}}{\partial A_{ij}} \, \textrm{adj}^T(A)_{ik}  + \sum_j  A_{ik} \, \frac{\partial}{\partial A_{ij}} \left( \textrm{adj}^T(A)_{ik} \right) \\
 \end{align}$$
 
-The adjoint $$ \textrm{adj}^T(A)_{ik}$$ can be derived as the determinant of the parts of the matrix not in the row $$i$$ or column $$k$$ and thus if $$j=k$$ then $$ \textrm{adj}^T(A)_{ik}$$ will by pretty much definition not involve $$A_{ij}$$ (as they will either share $$i$$ or $$j$$), hence,
+The adjoint $$ \textrm{adj}^T(A)_{ik}$$ can be derived as the determinant of the parts of the matrix not in the row $$i$$ or column $$k$$, and thus if $$j=k$$ then $$ \textrm{adj}^T(A)_{ik}$$ will by pretty much by definition not involve $$A_{ij}$$ (as they will either share $$i$$ or $$j$$), hence,
 
 $$\begin{align}
 \frac{\partial \textrm{adj}^T(A)_{ik}}{\partial A_{ij}} = 0.
@@ -710,10 +709,10 @@ $$\begin{align}
 Simplifying our formula to,
 
 $$\begin{align}
-\frac{\partial \det(A)}{\partial A_{ij}} &= \sum_j \frac{\partial A_{ik}}{\partial A_{ij}} \, \textrm{adj}^T(A)_{ik},
+\frac{\partial \det(A)}{\partial A_{ij}} &= \sum_j \frac{\partial A_{ik}}{\partial A_{ij}} \, \textrm{adj}^T(A)_{ik}.
 \end{align}$$
 
-which can be seen to easily be simplified as $$\frac{\partial A_{ik}}{\partial A_{ij}}$$ can only be non-zero if $$A_{ik} = A_{ij}$$ otherwise you're just taking derivatives with respect to unrelated quantities. Hence,
+This can further be simplified as $$\frac{\partial A_{ik}}{\partial A_{ij}}$$ can only be non-zero if $$A_{ik} = A_{ij}$$ otherwise you're just taking derivatives with respect to unrelated quantities. Hence,
 
 $$\begin{align}
 \frac{\partial \det(A)}{\partial A_{ij}} = \sum_j \delta_{jk} \textrm{adj}^T(A)_{ik} = \textrm{adj}^T(A)_{ij}.
