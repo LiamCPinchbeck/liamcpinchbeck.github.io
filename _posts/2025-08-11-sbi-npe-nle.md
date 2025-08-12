@@ -395,7 +395,7 @@ And another because why not.
 
 You might be wondering why the second two don't seem to do so well in regards to recovering the true value. Well actually I chose this exactly because they don't, because we are modelling a probability distribution if we recover the true values 100% within the $$1\sigma$$ contour then we are not modelling a probability distribution as the true values should like within $$1\sigma$$ roughly 68% of the time, otherwise it's not a probability distribution. This actually leads into the next subsection.
 
-# Can I trust this?
+## Can I trust this?
 
 Each for random realisations of the data given our priors! But the question that should have been and currently is at the back of your mind is "Can I actually trust this?" And the answer to that is not straightforward. 
 
@@ -434,7 +434,12 @@ We'll run this for 2000 iterations and plot the result in steps of $$0.5\sigma$$
 
 <br>
 
-Woo! Our probability distribution is being a good probability distribution (purely as far as probabilities go not necessarily accuracy to the system per say).
+Woo! Our probability distribution is being a good probability distribution (purely as far as probabilities go not necessarily accuracy to the system per say). The one slight hiccup is that it seems our pipeline is over-estimating the width of the distribution for large sigma values. This is likely in fact an artefact of actually not covering the parameter space during training. More modern methods of NPE, e.g. [SNPE](https://arxiv.org/abs/1805.07226), actually focus in on difficult areas of the parameter space during training to exactly get in part solve this.
+
+But still, I promised you amortised inference, which this definitely does, but restricts us to similarly sized datasets. This is less true for neural _likelihood_ estimation.
+
+# Neural Likelihood Estimation
+
 
 # Conclusion
 
