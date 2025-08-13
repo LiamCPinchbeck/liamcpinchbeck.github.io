@@ -453,7 +453,7 @@ This kind of bias has a much more minimised effect for neural _likelihood_ estim
 
 # Neural Likelihood Estimation
 
-In neural _likelihood_ estimation or NLE, we instead try to approximate the _likelihood_ for a dataset instead of the posterior. This avoids the bias in the prior proposal as it isn't directly involved in the quantity we are trying to find. There are two caveats to taking this route though:
+In neural _likelihood_ estimation or NLE, we instead try to approximate the _likelihood_ for data instead of the posterior. This avoids the bias in the prior proposal as it isn't directly involved in the quantity we are trying to find. I will focus on training it for a single datapoint as we couldn't really do that for NPE, but know that you could do a very similar thing as we did above for whole datasets. There are two caveats to taking this route though:
 
 1. If you want the probability of your parameters given the data, the posterior $$p(\vec{\theta}\vert\vec{x})$$, then we need to further run the analysis again using something like MCMC for example. We essentially get a cheap and variable version of the likelhood where 
     - however in this new likelihood we potentially don't have to care about some unknown nuisance parameters anymore
