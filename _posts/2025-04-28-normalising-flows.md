@@ -257,7 +257,9 @@ $$
 
 ## Autoregressive Flows
 
-General autoregressive models outside of just normalising flows describe the probability of a given event or variable as some sort of function on previous events/variables. i.e. If I have a variable $$x=(x_1, x_2, ..., x_d)$$ then an autoregressive model might describe the probability as,
+General autoregressive models outside of just normalising flows describe the probability of a given event or variable as some sort of function on previous events/variables. i.e. If I have a variable $$x=(x_1, x_2, ..., x_d)$$ then an autoregressive model might describe the probability as[^cr],
+
+[^cr]: This is just a direct application of the [chain rule of probability](https://en.wikipedia.org/wiki/Chain_rule_(probability))
 
 $$ p(x) = p(x_1)\cdot p(x_2\mid x_1)\cdot p(x_3\mid x_1, x_2) \cdot \dots \cdot p(x_d\mid x_1, ..., x_{d-1}) $$
 
