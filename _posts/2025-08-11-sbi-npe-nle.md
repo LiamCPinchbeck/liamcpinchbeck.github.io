@@ -1,5 +1,5 @@
 ---
-title: 'An introduction to Simulation-Based Inference with NPE and NLE'
+title: 'An introduction to Simulation-Based Inference Part I: NPE and NLE'
 date: 2025-08-11
 permalink: /posts/2025/08/2025-08-11-SBI-w-NPE-NLE/
 tags:
