@@ -50,9 +50,21 @@ The training and setup is now so simple I personally wasted a lot of time trying
 
 # Core Idea
 
+Flow matching is inherently a simulation-based approach that requires samples from the target distribution. The first step in developing a flow representation of this target is to investigate the _conditional_ paths of the samples. Where all the samples from the base distribution flow into a single sample in the target. Mathematically, if we assume that our base distribution is a normal distribution with mean $$\mu_0$$ and covariance $$\Sigma_0$$, we can describe the probability of a given point during the transform at time $$t$$, $$x_t$$, for a given point in the target distribution $$x_1$$ as,
+
+$$\begin{align}
+p_t(x_t | x_1) = \mathcal{N}(x_t | \mu_0 + t \cdot (x_1 - \mu_0), (1-t)^2 \cdot \Sigma_0).
+\end{align}$$
+
+Or more simply we can imagine transforming a given point in the base distribution $$x_0$$,
 
 
-For a visualisation of this you can look at the below figure.
+$$\begin{align}
+x_t = x_0 + t \cdot (x_1 - x_0).
+\end{align}$$
+
+
+For a visualisation of this you can look at the below GIFs with the given target sample highlighted in red.
 
 
 <div style="text-align: center;">
@@ -79,36 +91,22 @@ For a visualisation of this you can look at the below figure.
 </div>
 
 
-Based on this you can imagine there an underlying vector field which would transport all samples to the given point as shown below.
+The probability path satisfied the conditions,
 
-<div style="text-align: center;">
-  <img 
-      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_0.gif" 
-      alt="Nothing to see here." 
-      title="Nothing to see here." 
-      style="width: 49%; height: auto; border-radius: 0px;">
-  <img 
-      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_100.gif" 
-      alt="Nothing to see here." 
-      title="Nothing to see here." 
-      style="width: 49%; height: auto; border-radius: 0px;">
-</div>
- 
-<div style="text-align: center; margin-top: 16px">
-  <img 
-      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_300.gif" 
-      alt="Nothing to see here." 
-      title="Nothing to see here." 
-      style="width: 49%; height: auto; border-radius: 0px;">
-  <img 
-      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_400.gif" 
-      alt="Nothing to see here." 
-      title="Nothing to see here." 
-      style="width: 49%; height: auto; border-radius: 0px;">
-</div>
+$$\begin{align}
+p_t(x_t | x_1) =\begin{cases}
+			\mathcal{N}(x_t | \mu_0, \Sigma_0), & \text{if }t\text{ = 0} \\
+            \delta(x_t - x_1), & \text{if }t\text{ = 1}
+		 \end{cases}
+\end{align}$$
 
-This doesn't take into account the samples from the base distribution however, so if we want to investigate this directly we would image the path that all the samples would have to take to go from the base distribution to the give sample.
+The underlying vector field $$u_t$$ that is driving this is then just,
 
+$$\begin{align}
+u_t(x_t ; t, x_1) = \frac{x_1 - x_t}{1-t}
+\end{align}$$
+
+This just means that all the points are following straight lines are more simply given via the transform equation above.
 
 <div style="text-align: center;">
   <img 
@@ -136,7 +134,59 @@ This doesn't take into account the samples from the base distribution however, s
       style="width: 49%; height: auto; border-radius: 0px;">
 </div>
 
-If we then image that each timestep has a given probability if we imagine the first distribution to be known, let's assume it's a gaussian for now, then we can create what is called a _probability path_... 
+If we directly look at the vector field and normalise the lengths so we can look at the directions, you can see that everywhere is just pointing towards the target distribution sample.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_0.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 49%; height: auto; border-radius: 0px;">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_100.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 49%; height: auto; border-radius: 0px;">
+</div>
+ 
+<div style="text-align: center; margin-top: 16px">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_300.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 49%; height: auto; border-radius: 0px;">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/point_convergence_w_vec_field_gifs/points_animation_400.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 49%; height: auto; border-radius: 0px;">
+</div>
+
+
+This doesn't take into account the samples from the base distribution? The vector field we want is of course $$u_t(x_t)$$ not conditioned with respect to a specific target sample. We can take out this dependence by marginalising it out with respect to the probability path we defined above,
+
+$$\begin{align}
+u_t(x_t ; t) &= \int dx_1 u_t(x_t ; t, x_1) p(x_1 | x_t) \\
+&= \int dx_1 u_t(x_t ; t, x_1) \frac{p(x_t | x_1)p(x_1)}{p(x_t)} \\
+\end{align}$$
+
+Which we can estimate with a couple rounds of monte carlo integration,
+
+$$\begin{align}
+u_t(x_t ; t) &= \int dx_1 u_t(x_t ; t, x_1) \frac{p(x_t | x_1)p(x_1)}{p(x_t)} \\
+&\approx \frac{1}{N_i} \sum_s^{N_i} u_t(x_t ; t, x_1) \frac{p(x_t | x_1^i)}{p(x_t)}, \\
+\end{align}$$
+
+and with the same set of samples from the target distribution,
+
+$$\begin{align}
+p(x_t) &= \int dx_1 p(x_t | x_1)p(x_1) \\
+&\approx \frac{1}{N_i} \sum_i^{N_i} p(x_t | x_1^i).
+\end{align}$$
+
+This gives us the following estimates for the vector field that transforms our base distribution to our target distribution.
+
 
 <div style="text-align: center; margin-top: 16px">
   <img 
@@ -163,7 +213,7 @@ If we then image that each timestep has a given probability if we imagine the fi
 </div>
 
 
-Then look at how the vector field is directly acting on the points themselves.
+And we can look at how the vector field is directly acting on the points themselves.
 
 <div style="text-align: center; margin-top: 8px">
   <img 
@@ -173,7 +223,11 @@ Then look at how the vector field is directly acting on the points themselves.
       style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
 </div>
 
-But mathematically the points on the left aren't even in the same space as the right. Although they look that way because of the way that I've put them in the gifs. What we're actually doing under the hood is transforming the space itself. So we can also imagine that the transformation actually follows the space deforming not the other way around as more correctly shown below.
+But mathematically the points on the left aren't even in the same space as the right. Although they look that way because of the way that I've put them in the gifs. What we're actually doing under the hood is transforming the space itself. Kind of like we're interested in how a surfer is riding a wave (the samples), that were originally standing on a surfboard (space being transformed), and the wave (vector field) is pushing the board (space the samples inhabit) not exactly the surfer (samples)[^surfer].
+
+[^surfer]: You can tell that I'm a surf dude...(sarcasm)
+
+So we can also look at how the samples actual follow how the space deforming not the other way around as more correctly shown below.
 
 <div style="text-align: center; margin-top: 8px">
   <img 
@@ -193,8 +247,7 @@ But mathematically the points on the left aren't even in the same space as the r
       style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
 </div>
 
-
-
+But this would not be feasible for large dimensions or really pathologically shaped distributions. So instead, we try to represent the vector field with a neural network. And boom, that's flow matching.
 
 And here's one I prepared earlier.
 
@@ -206,7 +259,7 @@ And here's one I prepared earlier.
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
-
+But if we want to avoid the monte carlo estimation, then how do we tell the network how to improve, i.e. what should we make the loss?
 
 
 
