@@ -341,9 +341,107 @@ And the second term here doesn't depende on $$\varphi$$ so $$\nabla_\varphi L_{C
 
 # Checkerboard density: Dimensionality and modal scaling behaviour
 
+Now let's look at a full example. Let's say that for whatever reason we want to create a flow representation of the following sample distribution.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/checkerboard/CheckerBoard_Samples_8x8.png" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 79%; height: auto; border-radius: 8px;">
+</div>
+
+With typical approaches, they would not have great time due to the high modality of the distribution. But to a flow matching model, this is pretty simple. The actual object that we are modelling is the vector field, and that is just a function that we need to approximate with inputs and outputs. So we can throw a pretty standard MLP network in as our approximate vector field.
 
 
-An example of what this looks like is then below.
+```python
+from torch import nn
+import torch
+
+class Block(nn.Module):
+    def __init__(self, channels=512):
+        super().__init__()
+        self.ff = nn.Linear(channels, channels)
+        self.act = nn.ReLU()
+
+    def forward(self, x):
+        return self.act(self.ff(x))
+
+class FlowMLP(nn.Module):
+    def __init__(self, channels_data=2, layers=5, channels=512, channels_t=512):
+        super().__init__()
+        self.channels_t = channels_t
+        self.in_projection = nn.Linear(channels_data, channels)
+        self.t_projection = nn.Linear(channels_t, channels)
+        self.blocks = nn.Sequential(*[
+            Block(channels) for _ in range(layers)
+        ])
+        self.out_projection = nn.Linear(channels, channels_data)
+
+    def gen_t_embedding(self, t, max_positions=torch.tensor(10000)):
+        t = t * max_positions
+        half_dim = self.channels_t // 2
+        emb = torch.log(max_positions) / (half_dim - 1)
+        emb = torch.arange(half_dim, device=t.device).float().mul(-emb).exp()
+        emb = t[:, None] * emb[None, :]
+        emb = torch.cat([emb.sin(), emb.cos()], dim=1)
+        if self.channels_t % 2 == 1:  # zero pad
+            emb = nn.functional.pad(emb, (0, 1), mode='constant')
+        return emb
+
+    def forward(self, x, t):
+        x = self.in_projection(x)
+        t = self.gen_t_embedding(t)
+        t = self.t_projection(t)
+        x = x + t 
+        x = self.blocks(x)
+        x = self.out_projection(x)
+        return x
+```
+
+
+Our training loop is then just implementing the loss that we have above for the `checkerboard_samples`.
+
+```python
+from tqdm.notebook import tqdm, trange
+
+training_steps = 2_000
+
+optim = torch.optim.AdamW(model.parameters(), lr=1e-3)
+batch_size = 256
+pbar = trange(training_steps)
+losses = []
+for i in pbar:
+    # Selecting random batches of our target distribution to lower 
+        # the computational cost
+    x1 = checkerboard_samples[torch.randint(data.size(0), (batch_size,))]
+
+    # Sampling the same number samples from the base distribution 
+    x0 = torch.randn_like(x1) 
+
+    # Calculating x_1 - x_0
+    target = x1 - x0
+
+    # Sampling time
+    t = torch.rand(x1.size(0))
+
+    # Sample paths / generating X_t
+    xt = (1 - t[:, None]) * x0 + t[:, None] * x1
+
+    # Getting out v(x_t;t)
+    pred = model(xt, t)  # also add t here
+
+    # Implementing our loss
+    loss = ((target - pred)**2).mean()
+    loss.backward()
+    optim.step()
+    optim.zero_grad()
+    if (i +1)% 100==0:
+        pbar.set_postfix(loss=loss.item())
+    losses.append(loss.item())
+```
+
+After training for a few thousand steps I get the following (plus a bonus).
 
 <div style="text-align: center;">
   <img 
@@ -358,7 +456,15 @@ An example of what this looks like is then below.
       style="width: 49%; height: auto; border-radius: 8px;">
 </div>
 
+Now it's not perfect but that's just because I couldn't be bothered training for any longer. But it does allow us to now investigate how the training costs of this kind of approach scales for different aspects of this distribution. 
 
+Due to the strict nature of the distribution here we can create a very clear training target of the fraction of samples outside the relevant squares and how evenly distributed the samples are among the squares. For my sanity, we'll say that we want the same level of quality as in the above figures which came to the fraction outside the squares being XX and the average fraction of samples within the squares to be YY.
+
+*** Insert really cool figure showing how many more training steps it takes to go from 8 --> 72 modes ***
+
+*** Insert really cool figure showing how many more training steps it takes to go from 2 --> 8 dimensions ***
+
+*** Insert really cool figures showing how many more training steps it takes to go from 2 --> 8 dimensions as a function of the modes ***
 
 
 
