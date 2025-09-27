@@ -223,9 +223,9 @@ And we can look at how the vector field is directly acting on the points themsel
       style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
 </div>
 
-But mathematically the points on the left aren't even in the same space as the right. Although they look that way because of the way that I've put them in the gifs. What we're actually doing under the hood is transforming the space itself. Kind of like we're interested in how a surfer is riding a wave (the samples), that were originally standing on a surfboard (space being transformed), and the wave (vector field) is pushing the board (space the samples inhabit) not exactly the surfer (samples)[^surfer].
+But mathematically the points on the left aren't even in the same space as the right. Although they look that way because of the way that I've put them in the gifs. What we're actually doing under the hood is transforming the space itself. Kind of like we're interested in how a surfer is riding a wave (the samples), that were originally standing on a surfboard (space being transformed), and the wave (vector field) is pushing the board (space the samples inhabit) not exactly the surfer (samples)[^surfer]. And the surfer (samples) are in the exact same position relative to the board (base distribution sample space).
 
-[^surfer]: You can tell that I'm a surf dude...(sarcasm)
+[^surfer]: You can tell that I'm a surfer dude...(sarcasm)
 
 So we can also look at how the samples actual follow how the space deforming not the other way around as more correctly shown below.
 
