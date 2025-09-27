@@ -24,6 +24,7 @@ As usual, here are some of the resources I’m using as references for this post
 
 - [Motivation](#motivationtraditional-autoencoders)
 - [Core Idea](#core-idea)
+- [Constructing the loss](#construction-of-the-conditional-flow-matching-loss)
 - [Checkerboard density dimensional and modal scaling behaviour](#checkerboard-density-dimensional-and-modal-scaling-behaviour)
 - [Generating MNIST-like images](#generating-mnist-like-images)
 - [Conclusion](#conclusion)
@@ -134,7 +135,7 @@ This just means that all the points are following straight lines are more simply
       style="width: 49%; height: auto; border-radius: 0px;">
 </div>
 
-If we directly look at the vector field and normalise the lengths so we can look at the directions, you can see that everywhere is just pointing towards the target distribution sample.
+If we directly look at the vector field, you can see that everywhere is just pointing towards the target distribution sample.
 
 
 <div style="text-align: center;">
@@ -261,6 +262,80 @@ And here's one I prepared earlier.
 
 But if we want to avoid the monte carlo estimation, then how do we tell the network how to improve, i.e. what should we make the loss?
 
+# Construction of the conditional flow matching loss
+
+So what we would want to do is called the flow matching loss. We sample in time, the base distribution samples and the target distribution samples, and minimise the difference between our approximated vector field $$v_t^\varphi$$ and the exact vector field $$u_t$$.
+
+$$\begin{align}
+L_{FM}(\varphi) = \mathbb{E}_{t, X_t}||v(x_t; t, \varphi) - u_t(x_t;t)||^2
+\end{align}$$
+
+
+Where the double bars and square denote the 2-norm. But this requires that we have $$u_t$$, which kind of defeats the point of making an approximate version...
+
+And now instead of going through the full derivation[^fmgac] I'm just going to motivate what will essentially be an Ansatz. The following is called the conditional flow matching loss.
+
+[^fmgac]: Again, I recommend Meta's paper on the topic [https://arxiv.org/abs/2412.06264](https://arxiv.org/abs/2412.06264) if you want something more in-depth.
+
+$$\begin{align}
+L_{CFM}(\varphi) = \mathbb{E}_{t, X_t, X_1}\vert\vert v(x_t; t, \varphi) - u_t(x|x_1;t)\vert\vert^2
+\end{align}$$
+
+We can then simplify this by plugging in our version of $$u_t(x\vert x_1;t)$$,
+
+$$\begin{align}
+L_{CFM}(\varphi) &= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) - u_t(x|x_1;t)||^2 \\
+&= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) - \frac{x_1-x_t}{1-t}||^2 \\
+&= \mathbb{E}_{t, X_0, X_1}||v(x_t; t, \varphi) - \frac{x_1-(x_0 + t(x_1-x_0))}{1-t}||^2 \\
+&= \mathbb{E}_{t, X_0, X_1}||v(x_t; t, \varphi) - \frac{(1-t)x_1 - (1-t)x_0}{1-t}||^2 \\
+&= \mathbb{E}_{t, X_0, X_1}||v(x_t; t, \varphi) - (x_1 - x_0)||^2.
+\end{align}$$
+
+For the above this comes from the fact that if we have a given $$x_0$$ and a given $$x_1$$ then the vector field between them should literally just be the vector from one to the other $$u = x_1 - x_0$$. We'll stick to the original for ease-of-derivations.
+
+
+And it actually turns out the gradient of $$L_{FM}$$ and $$L_{CFM}$$ with respect to $$\varphi$$ are the same. Which if so, means that they are effectively the same thing, at least to us. During training we use the gradients, not strictly the value of the loss. We can show this by a little algebraic magic with the flow matching loss.
+
+First I'll just again note that the average of the vector field with respect to $$p_t(x_t\vert x_1)$$ would theoretically give us the exact transformation vector field.
+
+$$\begin{align}
+u_t(x_t;t) = \mathbb{E}_{X_1}\left[u_t(x|x_1;t) \right]
+\end{align}$$
+
+We can expand the squared norm using some the inner product identity.  
+
+$$\begin{align}
+|| A -B ||^2 &= || A -C + C- B ||^2 \\
+&= \langle (A - C) + (C - B), (A - C) + (C - B) \rangle \\
+&= || A - C ||^2  + 2 \langle A - C, C - B\rangle + || C - B ||^2 \\
+\end{align}$$
+
+And a little thing with expectations over inner products where $$C$$ is not a function of $$A$$.
+
+$$\begin{align}
+\mathbb{E}_{A} \langle C, f(A) \rangle &= \mathbb{E}_{A} \sum_i C_i \cdot (f(A))_i \\
+&=  \sum_i C_i \cdot \mathbb{E}_{A}(f(A))_i \\
+&=  \langle C,  \mathbb{E}_{A}(f(A))\rangle \\
+\end{align}$$
+
+
+Using these, we can expand the conditional flow matching loss.
+
+
+$$\begin{align}
+L_{CFM}(\varphi) &= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) - u_t(x_t|x_1;t)||^2 \\
+&= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) -u_t(x_t;t) + u_t(x_t;t)- u_t(x|x_1;t)||^2 \\
+&= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) -u_t(x_t;t)||^2 + 2 \langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- u_t(x|x_1;t)\rangle  + ||u_t(x_t;t)- u_t(x_t|x_1;t)||^2 \\
+&= \mathbb{E}_{t, X_t, X_1}\left[||v(x_t; t, \varphi) -u_t(x_t|x_1;t)||^2\right] \\
+&\;\; + 2\mathbb{E}_{t, X_t, X_1}\left[\langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- u_t(x_t|x_1;t)\rangle\right] \\
+&\;\; + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
+&= L_{FM}(\varphi) \\
+&\;\; + 2\mathbb{E}_{t, X_t}\left[\langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- \mathbb{E}_{X_1|X_t}u_t(x_t|x_1;t)\rangle\right] \\
+&\;\; + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
+&= L_{FM}(\varphi) + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
+\end{align}$$
+
+And the second term here doesn't depende on $$\varphi$$ so $$\nabla_\varphi L_{CFM}(\varphi) =\nabla_\varphi L_{FM}(\varphi)$$.
 
 
 
