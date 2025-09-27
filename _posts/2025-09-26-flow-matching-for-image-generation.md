@@ -163,6 +163,39 @@ If we then image that each timestep has a given probability if we imagine the fi
 </div>
 
 
+Then look at how the vector field is directly acting on the points themselves.
+
+<div style="text-align: center; margin-top: 8px">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/simple_mapping_GIFs/real_dynamic_vector_field_follow.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
+</div>
+
+But mathematically the points on the left aren't even in the same space as the right. Although they look that way because of the way that I've put them in the gifs. What we're actually doing under the hood is transforming the space itself. So we can also imagine that the transformation actually follows the space deforming not the other way around as more correctly shown below.
+
+<div style="text-align: center; margin-top: 8px">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/simple_mapping_GIFs/real_dynamic_vector_field_grid.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/simple_mapping_GIFs/real_dynamic_vector_field_grid_fine.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/simple_mapping_GIFs/real_dynamic_vector_field_grid_with_samples.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 99%; height: auto; border-radius: 0px; margin-bottom: 16px">
+</div>
+
+
+
+
 And here's one I prepared earlier.
 
 <div style="text-align: center; margin-top: 16px">
