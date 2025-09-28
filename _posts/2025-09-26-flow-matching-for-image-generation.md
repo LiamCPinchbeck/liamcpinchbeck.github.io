@@ -335,7 +335,7 @@ L_{CFM}(\varphi) &= \mathbb{E}_{t, X_t, X_1}||v(x_t; t, \varphi) - u_t(x_t|x_1;t
 &= L_{FM}(\varphi) + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
 \end{align}$$
 
-And the second term here doesn't depende on $$\varphi$$ so $$\nabla_\varphi L_{CFM}(\varphi) =\nabla_\varphi L_{FM}(\varphi)$$.
+And the second term here doesn't depend on $$\varphi$$ so $$\nabla_\varphi L_{CFM}(\varphi) =\nabla_\varphi L_{FM}(\varphi)$$.
 
 
 
