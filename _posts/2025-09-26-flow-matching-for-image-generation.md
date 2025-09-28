@@ -458,7 +458,18 @@ After training for a few thousand steps I get the following (plus a bonus).
 
 Now it's not perfect but that's just because I couldn't be bothered training for any longer. But it does allow us to now investigate how the training costs of this kind of approach scales for different aspects of this distribution. 
 
-Due to the strict nature of the distribution here we can create a very clear training target of the fraction of samples outside the relevant squares and how evenly distributed the samples are among the squares. For my sanity, we'll say that we want the same level of quality as in the above figures which came to the fraction outside the squares being XX and the average fraction of samples within the squares to be YY.
+Due to the strict nature of the distribution here we can create a very clear training target of the fraction of samples inside the relevant squares. For my sanity, we'll say that we want the same level of quality as in the above figures. Meaning that the minimum fraction of samples contained with a given square compared to the fraction it should have was XX. 
+
+For reference, this is how the samples look in 3D.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-09-fmfig/checkerboard/combined_checkerboard_full_3d.gif" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 120%; height: auto; border-radius: 0px;">
+</div>
+
 
 *** Insert really cool figure showing how many more training steps it takes to go from 8 --> 72 modes ***
 
