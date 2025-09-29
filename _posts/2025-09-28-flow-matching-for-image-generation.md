@@ -1,7 +1,7 @@
 ---
 title: 'Flow matching for multi-modal density estimation and image generation'
-date: 2025-09-23
-permalink: /posts/2025/09/2025-09-23-FM-ImageGen/
+date: 2025-09-28
+permalink: /posts/2025/09/2025-09-28-FM-ImageGen/
 tags:
   - PyTorch
   - Variational Inference
