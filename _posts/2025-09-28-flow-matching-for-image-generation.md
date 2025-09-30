@@ -334,18 +334,18 @@ Using these, we can expand the conditional flow matching loss.
 
 
 $$\begin{align}
-L_{CFM}(\varphi) = \mathbb{E}_{t, X_t, X_1}&||v(x_t; t, \varphi) - u_t(x_t|x_1;t)||^2 \\
-= \mathbb{E}_{t, X_t, X_1}&||v(x_t; t, \varphi) -u_t(x_t;t) + u_t(x_t;t)- u_t(x|x_1;t)||^2 \\
-= \mathbb{E}_{t, X_t, X_1}& \left[ v(x_t; t, \varphi) -u_t(x_t;t)||^2 \right. \\
+L_{CFM}(\varphi) = \mathbb{E}&_{t, X_t, X_1}||v(x_t; t, \varphi) - u_t(x_t|x_1;t)||^2 \\
+= \mathbb{E}&_{t, X_t, X_1}||v(x_t; t, \varphi) -u_t(x_t;t) + u_t(x_t;t)- u_t(x|x_1;t)||^2 \\
+= \mathbb{E}&_{t, X_t, X_1} \left[ v(x_t; t, \varphi) -u_t(x_t;t)||^2 \right. \\
 &\left. + 2 \langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- u_t(x|x_1;t)\rangle \right. \\
 &\left. + ||u_t(x_t;t)- u_t(x_t|x_1;t)^2 \right] \\
-= \mathbb{E}_{t, X_t, X_1}&\left[||v(x_t; t, \varphi) -u_t(x_t|x_1;t)||^2\right] \\
+= \mathbb{E}&_{t, X_t, X_1}\left[||v(x_t; t, \varphi) -u_t(x_t;t)||^2\right] \\
 &\;\; + 2\mathbb{E}_{t, X_t, X_1}\left[\langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- u_t(x_t|x_1;t)\rangle\right] \\
 &\;\; + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
-= L_{FM}(\varphi&)\\
+= L&_{FM}(\varphi)\\
 &\;\; + 2\mathbb{E}_{t, X_t}\left[\langle v(x_t; t, \varphi) -u_t(x_t;t), u_t(x_t;t)- \mathbb{E}_{X_1|X_t}u_t(x_t|x_1;t)\rangle\right] \\
 &\;\; + \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
-= L_{FM}(\varphi&)+ \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
+= L&_{FM}(\varphi)+ \mathbb{E}_{t, X_t, X_1}\left[||u_t(x_t;t)- u_t(x_t|x_1;t)||^2\right] \\
 \end{align}$$
 
 And the second term here doesn't depend on $$\varphi$$ so $$\nabla_\varphi L_{CFM}(\varphi) =\nabla_\varphi L_{FM}(\varphi)$$.
