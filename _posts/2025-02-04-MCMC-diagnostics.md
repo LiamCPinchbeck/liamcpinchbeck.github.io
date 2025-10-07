@@ -72,6 +72,13 @@ I would also say that I use these more in practice to make my results _more cert
 5. Adequacy of the chosen burn-in period
     - We want to maximise the number of accurate samples we produce so we want to make the burn-in as small as possible without contaminating our results with non-representative samples
 
+### DISCLAIMER DISCLAIMER DISCLAIMER
+
+Sometimes in this post I may accidentally apply that these tests are exhaustive and will show problems if they arise. I try to show obvious problems and when you can see if that is the case but this doesn't mean at all that you can always tell that these metrics have actually told you that your MCMC has converged to the proper solution. 
+
+In fact it is not possible to know with 100% certainty _ever_ in a real world situation that your MCMC has converged properly. E.G. A simple example where none of these (or basically any other tests) will accurately tell you whether you've find the right answer or not is when the distribution of interest (posterior) may have two modes, one at $$(0,0)$$ and then another at $$(10^10, 10^10)$$ with variance ~1. It should be obvious in this situation that due to a number of reasons, if MCMC finds one, it is absolutely not guaranteed to find the other unless you have _prior_ knowledge on the locations.
+
+For this reason it is better to think of these tests as something that _may_ tell you something has gone _wrong_, in which case, then you can fix it. But not that things have gone _right_. But to show how they work, I emphasize when the plots show what they're meant to show and hence may have lead to some confusion.
 
 
 ## Traceplots
@@ -109,7 +116,7 @@ sampler_results = sampler.run_mcmc(p0, 10000)
     style="width: 75%; height: auto; border-radius: 8px;">
 </div>
 
-Just as promised, a simple bimodal probability density distribution. Because we know exactly what we put in we know that these samples match what we expected, but we basically never now the exact form of our posterior density, otherwise why are we using MCMC? So if we didn't know _if_ this was what this was meant to look like we could try and figure out if the sampler seems to have converged or not. We can possibly do this by analysing the trace. 
+Just as promised, a simple bimodal probability density distribution. Because we know exactly what we put in we know that these samples match what we expected, but we basically never now the exact form of our posterior density, otherwise why are we using MCMC? So if we didn't know _if_ this was what this was meant to look like, we could try and figure out if the sampler seems to have not converged. We can possibly do this by analysing the trace. 
 
 I'm using the [ArviZ](https://python.arviz.org/en/stable/index.html) python package to do this analysis.
 
@@ -226,7 +233,10 @@ So, I've increased the distance between the peaks, made it so that the proposal 
 </div>
 
 
-So unfortunately I had to switch to a non-ensembler sampler so we can't use the left plot for much, but the right is extremely informative. If the distribution was in fact uniform within two bounds then we would expected the trace to show fluctuations within those bounds, but what we have is the sample values seem to be increasing at every iteration i.e. they haven't started fluctuating about a single set of values (e.g. like the two gaussian centres in the traceplot above) so it hasn't converged. This would indicate that either we should broaden our proposal distribution and/or run the code for longer (in practice the proposal distribution is handled by the given package though). If we do both of these we find the following.
+So unfortunately, I had to switch to a non-ensembler sampler so we can't use the left plot for much, but the right is extremely informative. If the distribution was in fact uniform within two bounds then we would expected the trace to show fluctuations within those bounds, but what we have is the sample values seem to be increasing at every iteration i.e. they haven't started fluctuating about a single set of values (e.g. like the two gaussian centres in the traceplot above) so it hasn't converged[^HMC]. This would indicate that either we should broaden our proposal distribution and/or run the code for longer (in practice the proposal distribution is handled by the given package though). If we do both of these we find the following.
+
+[^HMC]: With some exceptions such as Hamiltonian Markov Chain Monte Carlo being mostly converged but the walkers are just within a particular area of the energy contours and seemingly continuously changing values and not fluctuating about a given value. So from the above rule of thumb it seems like it hasn't converged, when it has actually has.
+
 
 <details>
     <summary>Code</summary>
@@ -255,7 +265,7 @@ symmetric_samples, sym_accept_rate = metropolis_hastings(
     style="width: 100%; height: auto; border-radius: 8px;">
 </div>
 
-You can see that the sampler converges much faster and that the samples eventually start fluctuating about one point. I'll get rid of the burn-in samples so that this is easier to see.
+You can see that the sampler seems to converge much faster and that the samples eventually start fluctuating about one point. I'll get rid of the burn-in samples so that this is easier to see.
 
 <div style="text-align: center;">
 <img 
@@ -280,7 +290,9 @@ And here's an example of a more typical case where the trace hasn't converged, I
 
 ## Running mean / statistical moment
 
-A distribution as a whole always has a single mean, it might have multiple modes, but it will always have a single mean. What we do with a running mean is further use the traceplots described above, but as in the name, take a running mean of the samples. If you're sampler has converged then this mean should start to converge on a single value. That's it! Let's look at a couple of examples.
+A distribution as a whole always has a single mean, it might have multiple modes, but it will always have a single mean. What we do with a running mean is further use the traceplots described above, but as in the name, take a running mean of the samples. If you're sampler has converged then this mean _should_ start to converge on a single value[^exceptions]. That's it! Let's look at a couple of examples.
+
+[^exceptions]: Except as stated in the disclaimer we can never truly know if we don't know what the answers should be apriori.
 
 Let's look at the trace of the nice example of the two gaussians first.
 <div style="text-align: center;">
@@ -395,9 +407,9 @@ And the running mean.
     style="width: 100%; height: auto; border-radius: 8px;">
 </div>
 
-Now we can see by comparing the corner plot to the plot I calculated directly that this MCMC has pretty much converged. From the trace this might not be clear, seeing as the y variable seems to be switching between modes, so it's hard to tell if it's actually centring around modes or mode switching (similar to [label switching](https://mc-stan.org/docs/2_20/stan-users-guide/label-switching-problematic-section.html)). However, with the running mean, you can see that we have converged to a singular value, despite the multi-modality of the problem!
+Now we can see by comparing the corner plot to the plot I calculated directly, that this MCMC has seems to have pretty much converged. From the trace this might not be clear, seeing as the y variable seems to be switching between modes, so it's hard to tell if it's actually centring around modes or mode switching (similar to [label switching](https://mc-stan.org/docs/2_20/stan-users-guide/label-switching-problematic-section.html)). However, with the running mean, you can see that we have converged to a singular value, despite the multi-modality of the problem!
 
-Another key thing to note here is that I've done this for the mean, but you could just as well do this for any statistical measure e.g. running variance, running median, or the running mean of any function of your samples that outputs a singular value.
+Another key thing to note here is that I've done this for the mean, but you could just as well do this for many other statistical measures e.g. running variance, or the running mean of any function of your samples that outputs a singular value.
 
 
 ## Autocorrelation is not your friend
@@ -407,7 +419,7 @@ MCMC samples are autocorrelated[^2], but how autocorrelated are they? If not a l
 [^2]: "Autocorrelation" might sound a bit strange if you are unfamiliar. The difference between "correlation" and "autocorrelation" is that _correlation_ refers to the dependencies between two __separate__ variables and [_autocorrelation_](https://en.wikipedia.org/wiki/Autocorrelation) refers to dependencies to itself.
 
 
-Autocorrelation in simple terms is how related a variable's current value with it's past values.
+Autocorrelation in simple terms is how related a variable's current value is with it's past values.
 
 The calculation of autocorrelation is nicely expressed as a combination of the _autocovariance_ and _variance_.
 
@@ -441,7 +453,7 @@ Starting with the minimal, 0 autocorrelation relates to completely random values
     style="width: 100%; height: auto; border-radius: 8px;">
 </div>
 
-The lines in the gif show the range of samples that are used for the calculation for the different lags on the right. Different lags look for behaviours over shorter ranges for shorter lags and larger ranges for larger lags. When analysing MCMC samples we generally prioritise shorters lags as if we presume that the "good" chains were they have found the target density and are approximately independent ("well mixed") the autocorrelation should decline rapidly. However, long lags may tell you about long term behaviour such as getting trapped in certain areas of the parameter space. 
+The lines in the gif show the range of samples that are used for the calculation for the different lags on the right. Different lags look for behaviours over shorter ranges for shorter lags and larger ranges for larger lags. When analysing MCMC samples we generally prioritise shorter lags, as if we presume that the "good" chains have found the target density and are approximately independent ("well mixed") the autocorrelation should decline rapidly. However, long lags may tell you about long term behaviour such as getting trapped in certain areas of the parameter space. 
 
 Best thing to do is similar to the above, look at the autocorrelation for multiple lag values. 
 
@@ -546,7 +558,7 @@ ___Unconverged___
     title="Progression of IACT for unconverged example" 
     style="width: 80%; height: auto; border-radius: 8px;">
 </div>
-For the unconverged IACT you can see that the value _increases_ after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the IACT value is not close not small indicating that the algorithm hadn't converged.
+For the unconverged IACT you can see that the value _increases_ after around the 40,000th iteration which is strange and additionally when the MCMC algorithm finishes the IACT value is not close to being small, indicating that the algorithm hadn't converged.
 
 ___Converged___
 <div style="text-align: center;">
@@ -557,7 +569,7 @@ ___Converged___
     style="width: 80%; height: auto; border-radius: 8px;">
 </div>
 
-For the converged MCMC algorithm you can see that the IACT drops over time but the IACT for the Y is quite large meaning that it takes a much longer time to generate independent samples but has stabilised. While X is much much smaller meaning that it takes much less time to get independent samples. This matches the compleixty of the repsective marginals.
+For the (seemingly) converged MCMC algorithm, you can see that the IACT drops over time but the IACT for the Y is quite large meaning that it takes a much longer time to generate independent samples but has stabilised. While X is much much smaller meaning that it takes much less time to get independent samples. This matches the compleixty of the repsective marginals.
 
 
 
@@ -598,7 +610,7 @@ For the converged MCMC algorithm you can see that the ESS increases over time fo
 
 ## Toy modelling - You've got a friend
 
-One of the key skills that I've developed as a statistician/physicist is being able to create perfectly representative values of how I believe the data is generated so that I have a clean dataset to test my framework on. I would do an example of this but it's in pretty much every single post I make, but I'm particularly proud of the one I made for the [normalising flows post](https://liamcpinchbeck.github.io/posts/2025/04/2025-04-28-normalising-flows/).
+One of the key skills that I've developed as a statistician/physicist is being able to create representative values of how I believe the data is generated so that I have a clean dataset to test my framework on. I would do an example of this but it's in pretty much every single post I make, but I'm particularly proud of the one I made for the [normalising flows post](https://liamcpinchbeck.github.io/posts/2025/04/2025-04-28-normalising-flows/).
 
 
 
@@ -606,13 +618,12 @@ One of the key skills that I've developed as a statistician/physicist is being a
 
 <!-- *Insert summary table here with each diagnostic and what it can show you* -->
 
-And one final note. I've tried to show that all of these methods are incomplete, they show you some things but not others per se. So, when doing any kind of diagnostics, more is better. This includes diagnostics but also just the number of samples. If you are unsure of whether a sampler has converged, just run it for longer if you can.
+And one final note. I've tried to show that all of these methods are incomplete, they show you some things but not others per se. So, when doing any kind of diagnostics, more is better. This includes diagnostics but also just the number of samples. If you are unsure of whether a sampler has converged, just run it for longer if you can. And a particular key note, I haven't coverged the most common metric the [Gelman-Rubin statistic](https://en.wikipedia.org/wiki/Gelman-Rubin_statistic) simply because I didn't have enough time while writing this.
+
+And keep in mind that even if you do all this is doesn't mean that your MCMC has 100% converged to the right answer, just that it hasn't converged to the wrong answers that would show up in these kind of plots. 
 
 ## Next Steps
 
-Next I'll try and detail some more commonly used MCMC methods starting with [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo) then [Gibbs Sampling](https://en.wikipedia.org/wiki/Gibbs_sampling), [Metropolis-Adjusted Langevin Algorithm](https://en.wikipedia.org/wiki/Metropolis-adjusted_Langevin_algorithm) then finally [Slice Sampling](https://en.wikipedia.org/wiki/Slice_sampling). 
+In the future I'll try and detail some more commonly used "pure" MCMC methods including [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo), [Gibbs Sampling](https://en.wikipedia.org/wiki/Gibbs_sampling), [Metropolis-Adjusted Langevin Algorithm](https://en.wikipedia.org/wiki/Metropolis-adjusted_Langevin_algorithm) and [Slice Sampling](https://en.wikipedia.org/wiki/Slice_sampling). 
 
-
-## TBD 
-- Gelman-Rubin Diagnostic
-- MSE
+Future Me Note (07/10/2025): I in fact likely will not get to many of these within the forseeable future due to my work in [Variational Inference](https://liamcpinchbeck.github.io/posts/2025/05/2025-05-10-variational-inference/) methods of which I have quite a few posts on now.
