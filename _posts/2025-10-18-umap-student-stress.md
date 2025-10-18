@@ -69,7 +69,7 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 
 ## Constructing the graphical representation of the data
 
-For me the hardest part of the algorithm to understand was the construction of the initial graph. 
+<!-- For me the hardest part of the algorithm to understand was the construction of the initial graph.  -->
 
 
 #### Constructing a simplicial complex between neighbours within radius
@@ -82,7 +82,7 @@ For me the hardest part of the algorithm to understand was the construction of t
 
 
 
-## Projecting the graph into the lower dimensional space
+## Optimising the graph in the lower dimensional space
 
 
 
