@@ -119,4 +119,4 @@ Unfortunately, one logistical issue with a template theme like Academic Pages th
 </div>
 
 
-bundle exec jekyll serve   
+bundle exec jekyll serve
