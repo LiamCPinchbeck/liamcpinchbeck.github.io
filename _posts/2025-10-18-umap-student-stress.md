@@ -72,7 +72,7 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 <!-- For me the hardest part of the algorithm to understand was the construction of the initial graph.  -->
 
 
-#### Constructing a simplicial complex between neighbours within radius
+#### Constructing a complex between neighbours within radius
 
 
 <iframe 
@@ -95,9 +95,26 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 
 
 
-#### Constructing a simplicial complex between k-nearest neighbours
+#### Constructing a complex between k-nearest neighbours
 
-
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours_single_point.html" 
+        width="89%" 
+        height="600px" 
+        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe>
+    <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours.html" 
+        width="89%" 
+        height="600px" 
+        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe>
+</div>
 
 
 #### Constructing a new metric between k-nearest neighbours
