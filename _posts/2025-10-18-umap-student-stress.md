@@ -74,9 +74,36 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 
 #### Constructing a simplicial complex between neighbours within radius
 
+
+<iframe 
+    src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/sine_with_radii_and_lines.html" 
+    width="99%" 
+    height="600px" 
+    style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+    sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+    allow="fullscreen"
+></iframe>
+
+<iframe 
+    src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_radii_and_lines.html" 
+    width="99%" 
+    height="800px" 
+    style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+    sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+    allow="fullscreen"
+></iframe>
+
+
+
 #### Constructing a simplicial complex between k-nearest neighbours
 
+
+
+
 #### Constructing a new metric between k-nearest neighbours
+
+
+
 
 #### Constructing a fuzzy simplicial complex between k-nearest neighbours
 
