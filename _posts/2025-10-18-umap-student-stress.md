@@ -26,6 +26,7 @@ As usual, here are some of the resources I’m using as references for this post
 - [UMAP: Mathematical Details (clearly explained!!!)](https://youtu.be/jth4kEvJ3P8) - [StatQuest with Josh Starmer](https://www.youtube.com/@statquest)
 - [Uniform Manifold Approximation and Projection (UMAP) \| Dimensionality Reduction Techniques (5/5)](https://youtu.be/iPV7mLaFWyE?si=4k7SQDNw-O9O3C1Z) - [DeepFindr](https://www.youtube.com/@DeepFindr)
 - [Understanding UMAP](https://pair-code.github.io/understanding-umap/) - Andy Coenen, Adam Pearce \| Google PAIR
+- [The mathematics of UMAP](https://adelejackson.com/files/Maths_of_UMAP.pdf) - [Adele Jackson](https://adelejackson.com/)
 - [](https://giotto-ai.github.io/gtda-docs/0.5.1/notebooks/persistent_homology_graphs.html#id8)
 
 ## Table of Contents
@@ -120,7 +121,24 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 #### Constructing a new metric between k-nearest neighbours
 
 
-
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+    <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_k_neighbour_metric_single_point.html" 
+        width="89%" 
+        height="600px" 
+        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe>
+    <!-- <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours.html" 
+        width="89%" 
+        height="600px" 
+        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe> -->
+</div>
 
 #### Constructing a fuzzy simplicial complex between k-nearest neighbours
 
