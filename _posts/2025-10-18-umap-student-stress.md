@@ -221,10 +221,12 @@ You can see these kind of graphs for $$\sigma=1$$ (I'm lazy and couldn't be both
     ></iframe>
 </div>
 
-We then encode this information into an adjacency matrix that contains the weights between the points.  
+We then encode this information into an adjacency matrix that contains the weights between the points, which we now represent as $$A$$ ($$x_j \in A$$ or $$A = \{x_1, x_2, ..., x_n\}$$). for later.  
+
+<br>
 
 $$\begin{align}
-\begin{bmatrix}
+\textrm{Adj}(A) = \begin{bmatrix}
 0 & p(x_1, x_2) & p(x_1, x_3) & \cdots & p(x_1, x_{n-1}) & p(x_1, x_n)\\
 p(x_2, x_1) & 0 & p(x_2, x_3) & \cdots & p(x_2, x_{n-1}) & p(x_2, x_n)\\
 p(x_3, x_1) & p(x_3, x_2) & 0 & \cdots & p(x_3, x_{n-1}) & p(x_3, x_n)\\
@@ -234,6 +236,8 @@ p(x_n, x_1) & p(x_n, x_2) & p(x_{n}, x_3) & \cdots & p(x_{n}, x_{n-1}) & 0\\
 
 \end{bmatrix}
 \end{align}$$
+
+<br>
 
 The weights are symmetric though and the weights between points and themselves is 0, so we only need the lower triangle of information and the matrix will be pretty sparse as we will only care about the closest $$K$$ points to any given point.
 
@@ -245,10 +249,65 @@ The weights are symmetric though and the weights between points and themselves i
 
 ## Optimising the graph in the lower dimensional space
 
+You can see that the above result (adjacency matrix) doesn't explicitly imply anything about the dimensionality of the original high-dimensional space, just the distances between the points. 
+
+So, we can initialise the same number of points in the lower dimensional space, $$y_j$$ corresponding to $$x_j$$, construct the relevant graph. The weights can use the same method or a different distance/weighting one  (e.g. see Equations 4 and 5 in [ArXiv:2109.02508](https://arxiv.org/abs/2109.02508)). 
+
+The key thing is, that we imagine that we construct the relevant adjacency matrix for the points in the lower dimensional space $$B$$ ($$y_j \in B$$ or $$B = \{y_1, y_2, ..., y_n\}$$).
+
+<br>
+
+$$\begin{align}
+\textrm{Adj}(B) = \begin{bmatrix}
+0 & p(y_1, y_2) & p(y_1, y_3) & \cdots & p(y_1, y_{n-1}) & p(y_1, y_n)\\
+p(y_2, y_1) & 0 & p(y_2, y_3) & \cdots & p(y_2, y_{n-1}) & p(y_2, y_n)\\
+p(y_3, y_1) & p(y_3, y_2) & 0 & \cdots & p(y_3, y_{n-1}) & p(y_3, y_n)\\
+\vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+p(y_{n-1}, y_1) & p(y_{n-1}, y_2) & p(y_{n-1}, y_3) & \cdots & 0 & p(y_{n-1}, y_{n})\\
+p(y_n, y_1) & p(y_n, y_2) & p(y_{n}, y_3) & \cdots & p(y_{n}, y_{n-1}) & 0\\
+\end{bmatrix}
+\end{align}$$
+
+<br>
+
+Given this, all that we then want to do is make this matrix $$\textrm{Adj}(B)$$ as similar to the other $$\textrm{Adj}(A)$$ as possible. Further leaning into the probability interpretation of the weights, we can imagine them as the probability existing between two points, we can create a loss using the [binary cross entropy](https://www.geeksforgeeks.org/deep-learning/binary-cross-entropy-log-loss-for-binary-classification/). Remembering that the thing we're optimising are the locations of the points, encoded using $$p(y_{ij})$$ (using short-hand for $$p(y_i, y_j)$$) this can be written up to a constant multipler as,
+
+$$\begin{align}
+\textrm{BCE}(\{y_j\}_{j\in [1, n]}) = \sum_{i=1}^n \sum_{j=1, j\neq i}^n p(x_{ij}) \log\left(\frac{p(x_{ij})}{p(y_{ij})}\right) + (1- p(x_{ij})) \log\left(\frac{1-p(x_{ij})}{1-p(y_{ij})}\right) .
+\end{align}$$
+
+We can then expand this and remove any terms that don't involve $$p(y_{ij})$$, as again, these are values that we are going to optimise, not the positions of the original points, $$p(x_{ij})$$. This leads to the following,
+
+$$\begin{align}
+\textrm{BCE}^{'}(\{y_j\}_{j\in [1, n]}) = -\sum_{i=1}^n \sum_{j=1, j\neq i}^n   p(x_{ij}) \log\left(p(y_{ij})\right) + (1- p(x_{ij})) \log\left(1-p(y_{ij})\right) .
+\end{align}$$
+
+
+If you want a bit more rigour in motivating this loss then you can head over to the [original paper](https://arxiv.org/abs/1802.03426) or I'd recommend [Uniform Manifold Approximation and Projection (UMAP) and its Variants: Tutorial and Survey](https://arxiv.org/abs/2109.02508).
+
+What this leaves us with is something extremely similar to a [_force_ _directed_ _graph_](https://en.wikipedia.org/wiki/Force-directed_graph_drawing) which is basically where you imagine that all the points have a repulsive force, corresponding to the second term that forces dissimilar to points further away from each other, and an attractive force, corresponding to the first term that wants similar points to be close to each other. More graphically you can just imagine a bunch of balls with repulsive forces between them connected by springs.
+
+
+<br>
+
+<div style="text-align: center;">
+  <img 
+      src="https://user-images.githubusercontent.com/57335825/81270806-d9f14180-907d-11ea-8aa1-cda0a3f8b1ef.gif" 
+      alt="https://user-images.githubusercontent.com/57335825/81270806-d9f14180-907d-11ea-8aa1-cda0a3f8b1ef.gif" 
+      title="https://user-images.githubusercontent.com/57335825/81270806-d9f14180-907d-11ea-8aa1-cda0a3f8b1ef.gif" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+</div>
 
 
 
 
+<br>
+<br>
+
+
+## Quick Note before examples
+
+There are other hyperparameters that we control in a practical algorithm, or at least how it's implemented in the `UMAP` package. I'd head there for more information about that, [UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction (Documentation)](https://umap-learn.readthedocs.io/en/latest/).
 
 
 
@@ -256,16 +315,45 @@ The weights are symmetric though and the weights between points and themselves i
 
 Before getting into the examples, the dataset is available here [mdsultanulislamovi/student-stress-monitoring-datasets](https://www.kaggle.com/datasets/mdsultanulislamovi/student-stress-monitoring-datasets).
 
+From here, we're just going to apply UMAP to our student stress indicator dataset, but I'm not going to attempt to build one from scratch (despite getting a solid amount of the way there above). So, we're instead going to just use the easily named `UMAP` which you can install very easily via `pip install umap`. Presuming that you have `pandas` already installed then we do the following.
 
 ## 2D UMAP Projection
+
+So the high dimensional space are the values of the variables contained in the Student Stress Dataset, we pick the number of neighbours that we want to use and the dimensionality of the lower dimensional space, which we will say is 2 for now.
+
+
+```python
+import pandas as pd
+import umap
+from sklearn.preprocessing import StandardScaler
+from matplotlib import pyplot as plt
+
+stresslevel_data = pd.read_csv("StressLevelDataset.csv")
+
+
+num_neighbors = 15 # Default value
+
+reducer = umap.UMAP(n_components=2, n_neighbors=num_neighbors)
+
+scaled_stresslevel_data = StandardScaler().fit_transform(stresslevel_data)
+
+embedding = reducer.fit_transform(scaled_stresslevel_data)
+```
+
+That gives us the positions of the points in the lower dimensional space, and then we can either perform [clustering](https://en.wikipedia.org/wiki/Cluster_analysis) to categorise the points or simply colour-code them based on the values of the points in the original dataset.
+
 
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/2025-10-StudentStressUMAP/2dUMAP_Projections/StressLevel2DUMAP_Projection.png" 
       alt="Nothing to see here." 
       title="Nothing to see here." 
-      style="width: 49%; height: auto; border-radius: 8px;">
+      style="width: 79%; height: auto; border-radius: 8px;">
 </div>
+
+So the three groups seem to be separated by low/no stress (left group), high stress (lower right) and mixed (upper right). The smart thing to do would then to make a histogram of the fraction of each column contained in the three clusters, but that's too much work at this point so I'll just show each variable and we can formulate the reasons for why certain variables are causing the clusters to be separate/shaped as they are. 
+
+Some particularly interesting ones to me are: mental health history (1,3), blood pressure (2,3), breathing problems (3, 2), living conditions (4, 1), and social support (6, 2).
 
 <div style="text-align: center;">
 
@@ -276,11 +364,39 @@ Before getting into the examples, the dataset is available here [mdsultanulislam
       style="width: 99%; height: auto; border-radius: 8px;">
 </div>
 
+___NOTE___: 
+We can theorise about why certain points are clustered as they are, but not about the distances between the sets per say. Just because one cluster is further away than another doesn't mean it's less similar. 
+
+You can actually imagine this situation with the figures above as an example. If we pick the 15 nearest neighbours to construct the graph, very few of the other points are going to have non-zero distances. So the position of them relative to each other will not be any different in terms of the weights whether they're separated by 100 million units or in the case above ~5. 
+
+They're nicely packed as they are due to the few small connections that do exist between the clusters (although grain of salt with this, as that's really peaking more under the hood than I have so far).
+
 
 ## 3D UMAP Projection
 
 (Below plots are all interactive, and annoyingly I couldn't pick the initial camera position)
 
+We can then also just look at these points in 3D by swapping the 2 for a 3.
+
+```python
+import pandas as pd
+import umap
+from sklearn.preprocessing import StandardScaler
+from matplotlib import pyplot as plt
+
+stresslevel_data = pd.read_csv("StressLevelDataset.csv")
+
+
+num_neighbors = 15 # Default value
+
+reducer = umap.UMAP(n_components=3, n_neighbors=num_neighbors)
+
+scaled_stresslevel_data = StandardScaler().fit_transform(stresslevel_data)
+
+embedding = reducer.fit_transform(scaled_stresslevel_data)
+```
+
+And boom, basically the same graph but in 3D! In this case it doesn't provide much more information but in more complex systems, you can imagine the closer the size to the original dimension the easier it'd be to reproduce the exact same distribution of points.
 
 <iframe 
     src="/files/BlogPostData/2025-10-StudentStressUMAP/3DUMAP_Projections/stress_level_3D_UMAP.html" 
@@ -288,9 +404,9 @@ Before getting into the examples, the dataset is available here [mdsultanulislam
     height="400px"
     title="Embedded Content"
     style="border:none;"
-    ></iframe>
+></iframe>
 
-
+Now just picking out a few choice variables.
 
 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
 
@@ -329,7 +445,38 @@ Before getting into the examples, the dataset is available here [mdsultanulislam
         sandbox="allow-scripts allow-pointer-lock allow-same-origin"
         allow="fullscreen"
     ></iframe>
+    <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/3DUMAP_Projections/blood_pressure_3D_UMAP.html" 
+        width="49%" 
+        height="400px" 
+        style="border:none; margin-bottom: 20px;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe>
+
+    <iframe 
+        src="/files/BlogPostData/2025-10-StudentStressUMAP/3DUMAP_Projections/social_support_3D_UMAP.html" 
+        width="49%" 
+        height="400px" 
+        style="border:none; margin-bottom: 20px;"
+        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+        allow="fullscreen"
+    ></iframe>
 
 </div>
 
 # Conclusion
+
+Hopefully in this post I've conveyed how simple yet cool UMAP is as a dimensionality reduction tool. Further extensions to UMAP exists that make it even more useful, for example [Parametric-UMAP](https://umap-learn.readthedocs.io/en/latest/parametric_umap.html), which is a trained neural network that can construct a consistent low dimensional representation for a given input that you can use in a machine learning context to reduce over input volume for example. 
+
+I leave you with a figure from the UMAP documentation comparing the computational complexity relationship for data size for various algorithms.
+
+
+<div style="text-align: center;">
+
+  <img 
+      src="/files/BlogPostData/2025-10-StudentStressUMAP/speed_comparisons.png" 
+      alt="Nothing to see here." 
+      title="Nothing to see here." 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
