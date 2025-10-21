@@ -1,7 +1,7 @@
 ---
 title: 'Investigating student stress indicators using UMAP (Kaggle Dataset)'
-date: 2025-10-18
-permalink: /posts/2025/10/2025-10-18-Student-Stress-UMAP/
+date: 2025-10-21
+permalink: /posts/2025/10/2025-10-21-Student-Stress-UMAP/
 tags:
   - Introductory
   - Dimensional Reduction
