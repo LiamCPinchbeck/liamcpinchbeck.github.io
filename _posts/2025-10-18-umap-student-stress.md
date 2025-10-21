@@ -82,11 +82,14 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
 
 ## Constructing the graphical representation of the data
 
-<!-- For me the hardest part of the algorithm to understand was the construction of the initial graph.  -->
+For me the hardest part of the algorithm to understand was the construction of the initial graph. And from the references you can see it's theoretical underpinnings are way more complex/rigorous than I may be able to properly convey. I'll try and break down the fundamental steps of the final algorithm from an intuitive perspective and then afterwards try and go through some of underpinning math.
 
 
 #### Constructing a complex between neighbours within radius
 
+The main idea behind UMAP is that we want to construct a graph in the higher dimensional space and reproduce a similar graph (specifically an approximate [Homotopy](https://en.wikipedia.org/wiki/Homotopy)) in the lower dimensional space of our choosing. In the case of high dimensions and large data though (pretty common in ML context like thousands of images) building connections between every single point and recording the vector distance between them would be very computationally difficult. 
+
+So, we might want to limit the number of points we consider, by setting a parameter such as a max distance after which we don't care about any other points anymore. This is demonstrated in the interactive plots below.
 
 <iframe 
     src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/sine_with_radii_and_lines.html" 
@@ -106,31 +109,63 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
     allow="fullscreen"
 ></iframe>
 
+You can see that both of these datasets' information/shape can be encoded on a simpler lower dimensional shape, in fancy math speak a lower dimensional [manifold](https://en.wikipedia.org/wiki/Topological_manifold). If unfamiliar with the concept this just refers to a shape or volume particularly in higher dimensions. In the sine wave case if the data didn't have noise it would be perfectly distributed according to the sine wave, and our manifold would be a straight line. So most of our 2D information could be equivalently represented in a 1-dimensional manner.
+
+This however, has a few issues. One of the main ones is that we inherently assume that the points are distributed _uniformly_ about the manifold. e.g. With the concept of a fixed distance function, this is not inducive to common real world datasets. You can see this issue yourself by fixing the radii for the above figures and seeing that many points can be connected for a given radius, but often we introduce clumps when there really shouldn't be (e.g. sine at ~0.5 and swirl at ~2). And if we make the radius too large then too many points would be connected and we'd lose the sub-structures of our data (you can see this by just maxing out the radii for either plot). 
+
+So either we have to really fine tune the value of this parameter or go about it in a different way.
 
 
 #### Constructing a complex between k-nearest neighbours
 
-<div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
-    <iframe 
-        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours_single_point.html" 
-        width="89%" 
-        height="600px" 
-        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
-        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
-        allow="fullscreen"
-    ></iframe>
-    <iframe 
-        src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours.html" 
-        width="89%" 
-        height="600px" 
-        style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
-        sandbox="allow-scripts allow-pointer-lock allow-same-origin"
-        allow="fullscreen"
-    ></iframe>
-</div>
+So what we do is play with the concept of distance a little bit. We first instead ask what are the $$K$$ nearest neighbours to every point. You can see this demonstrated in the below figure.
+
+<iframe 
+    src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours_single_point.html" 
+    width="89%" 
+    height="600px" 
+    style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+    sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+    allow="fullscreen"
+></iframe>
+
+So we have a similar concept to a radius, where increasing it leads to more points being connected, but now under-dense regions can still be well connected because now we're just asking what points are closest. Leading to less clumps and less sensitivity to random noise. 
+
+We can now construct a graph between the first $$K$$ points closest to any given point. You can play around with this in the below plot.
+
+<iframe 
+    src="/files/BlogPostData/2025-10-StudentStressUMAP/interactive_plots/swiss_roll_with_neighbours.html" 
+    width="89%" 
+    height="600px" 
+    style="border:none; margin-bottom: 0px; margin-left: auto; margin-right: auto;"
+    sandbox="allow-scripts allow-pointer-lock allow-same-origin"
+    allow="fullscreen"
+></iframe>
 
 
 #### Constructing a new metric between k-nearest neighbours
+
+This is great, we've constructed a graph that is less sensitive to noise perturbations. But now also less sensitive to actual distance values. All of the $$K$$ nearest points are no different to any other contained point so we may still lose some important small scale structure. So, what we do is weight the connections of the $$K$$ nearest neighbours based on the distances between them and the reference point (that we used for the $$K$$-nearest neighbours). 
+
+The specific formula for calculating what we can think of as modified distance is as follows,
+
+$$\begin{align}
+D(x_j \vert x_{\textrm{ref}}) = \begin{cases}
+			-\frac{dist(x_j, x_{\textrm{ref}}) - \rho^{\textrm{min}}_\textrm{ref}}{\sigma_\textrm{ref}} , & \text{if $x_j$ is one of the K nearest neighbours of $x_{\textrm{ref}}$}\\
+            \infty, & \text{otherwise}
+		 \end{cases}
+\end{align}$$
+
+where $$\rho^{\textrm{min}}_\textrm{ref}$$ is the closest distance of the neighbours to $$x_{\textrm{ref}}$$. The weight of a given conditional connection is simply given by,
+
+$$\begin{align}
+p(x_j \vert x_{\textrm{ref}}) = \exp\left( - D(x_j \vert x_{\textrm{ref}})\right) .
+\end{align}$$
+
+
+The weights of the connections are represented like a conditional probability, which they aren't, but are close enough that it makes thinking of the situation easier. So 🤷. 
+
+You can see what these conditional weights look like for different $$K$$ values below. The larger circle is the distance to the furtherest neighbour and the inner circle $$\rho^\textrm{min}_\textrm{ref}$$.
 
 
 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
@@ -144,9 +179,28 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
     ></iframe>
 </div>
 
+You may have noticed that I didn't say what $$\sigma_\textrm{ref}$$ was. Strictly, it is a normalisation factor such that the following is satisfied,
+
+$$\begin{align}
+\log_2(K) &=\sum_j^K \exp\left(D(x_j \vert x_{\textrm{ref}}) \right) \\
+&= \sum_j^K \exp\left(-\frac{dist(x_j, x_{\textrm{ref}}) - \rho^{\textrm{min}}_\textrm{ref}}{\sigma_\textrm{ref}}\right).
+\end{align}$$
+
+Where $$K$$ is still representing the choice of $$K$$ nearest neighbours. Specifically why the normalisation is the way it is eludes me. Intuitively, I think of it as purely a regularisation factor that accounts for the effective increase in radii as $$K$$ increases.
+
 #### Constructing a fuzzy simplicial complex between k-nearest neighbours
 
+The above just encodes the directional weights of the graph, but we actually an undirected graph where the points only have at most a single connection between them. For a given connection between $$x_i$$ and $$x_j$$, then the weight of the edge connecting them is,
 
+$$\begin{align}
+p(x_i, x_j) = p(x_i|x_j) + p(x_j|x_i) - p(x_i|x_j) \cdot p(x_j|x_i).
+\end{align}$$
+
+There's an anology between the weights and conditional probabilities here but I'll let you find that as I don't like actually treating the weights as probabilities.
+
+This new graph now leads to an efficiently stored representation of the graph because we only store those $$K$$ nearest neighbours, but also still have a notion of distance or that points closer together are more important than those further away that is stupid quick and easy to calculate.
+
+You can see these kind of graphs for $$\sigma=1$$ (I'm lazy and couldn't be bothered coding up the normalisation) below.
 
 <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
     <iframe 
@@ -166,6 +220,22 @@ UMAP is composed of two steps: the creation of a fuzzy fiducial simplicial map (
         allow="fullscreen"
     ></iframe>
 </div>
+
+We then encode this information into an adjacency matrix that contains the weights between the points.  
+
+$$\begin{align}
+\begin{bmatrix}
+0 & p(x_1, x_2) & p(x_1, x_3) & \cdots & p(x_1, x_{n-1}) & p(x_1, x_n)\\
+p(x_2, x_1) & 0 & p(x_2, x_3) & \cdots & p(x_2, x_{n-1}) & p(x_2, x_n)\\
+p(x_3, x_1) & p(x_3, x_2) & 0 & \cdots & p(x_3, x_{n-1}) & p(x_3, x_n)\\
+\vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
+p(x_{n-1}, x_1) & p(x_{n-1}, x_2) & p(x_{n-1}, x_3) & \cdots & 0 & p(x_{n-1}, x_{n})\\
+p(x_n, x_1) & p(x_n, x_2) & p(x_{n}, x_3) & \cdots & p(x_{n}, x_{n-1}) & 0\\
+
+\end{bmatrix}
+\end{align}$$
+
+The weights are symmetric though and the weights between points and themselves is 0, so we only need the lower triangle of information and the matrix will be pretty sparse as we will only care about the closest $$K$$ points to any given point.
 
 
 #### A quick aside on the fundamental math going on
