@@ -469,7 +469,7 @@ Now just picking out a few choice variables.
 
 Hopefully in this post I've conveyed how simple yet cool UMAP is as a dimensionality reduction tool. Further extensions to UMAP exists that make it even more useful, for example [Parametric-UMAP](https://umap-learn.readthedocs.io/en/latest/parametric_umap.html), which is a trained neural network that can construct a consistent low dimensional representation for a given input that you can use in a machine learning context to reduce over input volume for example. 
 
-I leave you with a figure from the UMAP documentation comparing the computational complexity relationship for data size for various algorithms.
+I leave you with a figure from the UMAP documentation comparing the computational complexity relationship for data size for various dimensional reduction algorithms.
 
 
 <div style="text-align: center;">
