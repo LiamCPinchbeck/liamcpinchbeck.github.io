@@ -745,7 +745,7 @@ Now we can make arbitrary GIFs for whatever numbers we want. The below use the s
 </div>
 
 
-
+I have to take quite a large average of my values to get these images, which may or may not be related to the reason that DDPM models add extra noise during their training so that they don't condense onto only a small portion of the overall distribution. But I'm going to leave that for an eventual post on DDPM. If you're wondering what I'm talking about head on over to [Welch Labs video](https://youtu.be/iv-5mZ_9CPY?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi) on the topic.
 
 # Conclusion
 
