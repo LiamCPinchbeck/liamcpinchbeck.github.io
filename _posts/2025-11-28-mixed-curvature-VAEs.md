@@ -1,5 +1,5 @@
 ---
-title: 'Image Classification and Molecular Property Prediction with Fixed and Mixed Curvature VAEs'
+title: 'Image Classification and Molecular Property Prediction with Constant Curvature VAEs and Mixed Curvature VAEs'
 date: 2025-11-27
 permalink: /posts/2025/08/2025-11-27-mixed-curvature-VAEs/
 tags:
@@ -15,7 +15,7 @@ header-includes:
 ---
 
 
-In this post, I’ll go through Fixed Curvature VAEs and Mixed Curvature VAEs for data image classification and molecular property prediction.
+In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs for data image classification and molecular property prediction.
 
 
 ---
@@ -211,7 +211,7 @@ The indistinguishability in the centre is actually pretty typical in VAEs as the
 
 # A sneak peek at Hyperspherical VAEs
 
-In this section I want to show a little of why we are interested in mixed curavture VAEs by looking at the above MNIST example with a hyperspherical (example of _fixed_ curvature) VAE. 
+In this section I want to show a little of why we are interested in mixed curavture VAEs by looking at the above MNIST example with a hyperspherical (example of _constant_ curvature) VAE. 
 
 The basic idea is that the normal distribution priors used in the standard VAE above have a tendency to pull representations towards 0. This is true for all the clusters of datapoints and thus inherently they are pulled together and often overlap quite significantly in this region. 
 
@@ -262,10 +262,9 @@ So, because we want to learn a distribution on spheres or other surfaces in high
 It might seem like a bit of an abstraction, and cards on the table oh boi it is, but you likely already think somewhat in terms of surfaces and curves already. e.g.
 
 - You're driving on the road, technically the houses on the side of the street are on the surface you reside on, but while you're driving, they _shouldn't_ exist. 
-- You exist on a sphere (although idk, if I have any readers that are astronauts hit me up). You technically reside in 3D space however, if a person is flying a plane a very long distance (say Melbourne to Sapporo) you won't tell them the downwards coordinate to go straight through the Earth! (we are thinking in terms of _spherical_ spaces here)
-- When playing a video game, e.g. Super Mario, that world to the player exists as a 2D space, although to Mario and co. I'm sure they would think they're going in a straight line.
-- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces)
-- I'm sure you get the point by now.
+- To a very close approximation, you exist on a sphere (although idk, if I have any readers that are astronauts hit me up). You technically reside in 3D space however, if a person is flying a plane a very long distance (say Melbourne to Sapporo) you won't tell them the downwards coordinate to go straight through the Earth! (we are thinking in terms of _spherical_ spaces here)
+- When playing a video game, e.g. Super Mario, that world to the player exists as a 2D space, although to Mario and co, I'm sure they would think they're going in a straight line. So to them, they are moving in a 2D embedding in a 3D ambient space.
+- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces).
 
 <div style="text-align: center;">
 
@@ -278,7 +277,39 @@ It might seem like a bit of an abstraction, and cards on the table oh boi it is,
 </div>
 <br>
 
-So we already have concepts of what we call _non-euclidean spaces_, what we need to do is translate these ideas into more rigorous mathematical concepts.
+Basically any examples where notions of concepts like distance, movement, curvature can be represented very nicely through the language of differential geometry. So we already have concepts of what we call _non-euclidean spaces_, what we need to do is translate these ideas into more rigorous mathematical concepts.
+
+
+<br>
+
+## Some quick prereqs
+
+There are some little concepts that I think that even if someone is generally familiar with lin alg, but maybe don't use day-to-day, or that I'm going to touch on quite a bit so it'll be handy to just have the definition here. 
+
+### Span
+
+
+
+### Row Space and Column Space
+
+
+
+### Rank
+
+
+
+### Nullspace
+
+
+
+### Nullspace
+
+
+### Rank-Nullity Theorem
+
+
+
+
 
 
 
@@ -289,7 +320,7 @@ So we already have concepts of what we call _non-euclidean spaces_, what we need
 
 <br>
 
-## Tagent Spaces
+## Tangent Spaces
 
 
 <br>
