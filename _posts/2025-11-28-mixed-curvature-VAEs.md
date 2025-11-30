@@ -26,12 +26,9 @@ In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs
 
 - [Variational Autoencoder Recap: Coolness and Limitations](#variational-autoencoder-recap-coolness-and-limitations)
 - [A sneak peek at Hyperspherical VAEs](#a-sneak-peek-at-hyperspherical-vaes)
-- [Differential Geometry Primer](#differential-geometry-primer)
-    - [Curvature, Hyperspheres and Hyperboloids](#curvature-hyperspheres-and-hyperboloids)
-    - [Charts, Geodesics and Transport Maps](#charts-geodesics-and-transport-maps)
-- [Putting the Geometry in the Latent Space](#putting-the-geometry-in-the-latent-space)
-    - [Hyperspherical VAEs](#hyperspherical-vaes)
-    - [Hyperbolic VAEs](#hyperbolic-vaes)
+- [Hyperspherical VAE](#hyperspherical-vae)
+    - [von Mises-Fisher distribution](#von-mises-fisher-distribution)
+- [Hyperbolic VAE](#hyperbolic-vae)
 - [Mixed Curvature VAEs](#mixed-curvature-vaes)
 - [Image Classification and Generation with MNIST and CelebA](#image-classification-and-generation-with-mnist-and-celeba)
 - [Molecular Property Prediction with QM9](#molecular-property-prediction-with-qm9)
@@ -239,34 +236,34 @@ So we can try to learn a conditional distribution on the latent parameters on th
 
 <br>
 
-# Differential Geometry Primer
+<!-- # Differential Geometry Primer -->
 
-(For those already familiar with charts, atlases, Riemannian manifolds you can skip to the [Putting the Geometry in the Latent Space](#putting-the-geometry-in-the-latent-space) section)
-
-
-So, because we want to learn a distribution on spheres or other surfaces in higher dimensions, we are heading into the area of [_differential geometry_](https://en.wikipedia.org/wiki/Differential_geometry), specifically [_Riemannian Geometry_](https://en.wikipedia.org/wiki/Riemannian_geometry). This sounds fancy, and tbh, sometimes is, but is just the math of smooth (in the literal sense) geometry in higher dimensions.
+<!-- (For those already familiar with charts, atlases, Riemannian manifolds you can skip to the [Putting the Geometry in the Latent Space](#putting-the-geometry-in-the-latent-space) section) -->
 
 
-<div style="text-align: center;">
+<!-- So, because we want to learn a distribution on spheres or other surfaces in higher dimensions, we are heading into the area of [_differential geometry_](https://en.wikipedia.org/wiki/Differential_geometry), specifically [_Riemannian Geometry_](https://en.wikipedia.org/wiki/Riemannian_geometry). This sounds fancy, and tbh, sometimes is, but is just the math of smooth (in the literal sense) geometry in higher dimensions. -->
+
+
+<!-- <div style="text-align: center;">
 
   <img 
       src="/files/BlogPostData/2025-mixed-curvature-vaes/morning_star_image.png" 
       alt="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mittelalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890" 
-      title="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mittelalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890." 
+      title="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mitte lalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890." 
       style="width: 69%; height: auto; border-radius: 8px;">
 <figcaption>Examples of surfaces that are not Riemannian manifolds/not smooth surfaces, for which we don't want to model our distribution on.</figcaption>
 </div>
-<br>
+<br> -->
 
 
-It might seem like a bit of an abstraction, and cards on the table oh boi it is, but you likely already think somewhat in terms of surfaces and curves already. e.g.
+<!-- It might seem like a bit of an abstraction, and cards on the table oh boi it is, but you likely already think somewhat in terms of surfaces and curves already. e.g.
 
 - You're driving on the road, technically the houses on the side of the street are on the surface you reside on, but while you're driving, they _shouldn't_ exist. 
 - To a very close approximation, you exist on a sphere (although idk, if I have any readers that are astronauts hit me up). You technically reside in 3D space however, if a person is flying a plane a very long distance (say Melbourne to Sapporo) you won't tell them the downwards coordinate to go straight through the Earth! (we are thinking in terms of _spherical_ spaces here)
 - When playing a video game, e.g. Super Mario, that world to the player exists as a 2D space, although to Mario and co, I'm sure they would think they're going in a straight line. So to them, they are moving in a 2D embedding in a 3D ambient space.
-- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces).
+- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces). -->
 
-<div style="text-align: center;">
+<!-- <div style="text-align: center;">
 
   <img 
       src="/files/BlogPostData/2025-mixed-curvature-vaes/Sapporo_Melbourne_circle_example.png" 
@@ -275,87 +272,165 @@ It might seem like a bit of an abstraction, and cards on the table oh boi it is,
       style="width: 79%; height: auto; border-radius: 8px;">
 <figcaption>Diagram showing different paths between Melbourne and Sapporo one of them is a little harder in practice.</figcaption>
 </div>
+<br> -->
+
+<!-- Basically any examples where notions of concepts like distance, movement, curvature can be represented very nicely through the language of differential geometry. So we already have concepts of what we call _non-euclidean spaces_, what we need to do is translate these ideas into more rigorous mathematical concepts. -->
+
+
+
+# Hyperspherical VAE
+
+## von Mises-Fisher Distribution
+
+
+The [von Mises-Fisher distribution](https://en.wikipedia.org/wiki/Von_Mises%E2%80%93Fisher_distribution) is essentially the replacement distribution in the VAE instead of a traditional normal distribution. It is described as the normal distribution on a sphere and has the following PDF,
+
+$$\begin{align}
+f_{vMF}(\vec{x} | \vec{\mu}, \kappa) = \frac{\kappa^{p/2-1}}{(2\pi)^{p/2}I_{p/2-1}(\kappa)} \exp(\kappa \vec{\mu}^T\vec{x}).
+\end{align}$$
+
+This to me, makes no sense on the face of things. 
+
+
+### von Mises Distribution
+
+So let's first look at the simpler case where $$p=2$$, i.e. the circle, called the [von-Mises distribution](https://en.wikipedia.org/wiki/Von_Mises_distribution). It has the following PDF,
+
+$$\begin{align}
+f_{vM}(\vec{x} | \vec{\mu}, \kappa) = C(\kappa) \exp(\kappa  \vec{\mu}^T\vec{x}).
+\end{align}$$
+
+Where $$C(\kappa)$$ will just be a normalisation factor to us for now. In the case where $$\vec{\mu}$$ and $$\vec{x}$$ have unit length (which we will presume they do as they exist on the unit circle), then the dot product inside the exponential simplifies to the cosine of the angle between the two vectors, $$\theta_{x\mu}$$.
+
+$$\begin{align}
+f_{vM}(\vec{x} | \vec{\mu}, \kappa) = C(\kappa) \exp(\kappa  \cos(\theta_{x\mu})).
+\end{align}$$
+
+So $$ \cos(\theta_{x\mu})$$ will take a maximal value of 1 when the two vectors are parallel and minimal value of -1 when they are anti-parallel. Because $$\vert \cos(\theta_{x\mu})\vert \leq 1$$ then the exponent will always be less than or equal to 1 as well. So the absolute difference in angle is similar to how the normal distribution is only dependent on the absolute difference between two values, with $$\kappa$$ acting much like the variance in a traditional normal distribution. 
+
+It also turns out that the normalisation factor has a bessel function in it, but for now we don't need to worry about that.
+
+$$\begin{align}
+C(\kappa) = \int_{-\pi}^{\pi} \exp(\kappa \cos(x)) dx = 2\pi I_0(\kappa),
+\end{align}$$
+
+where $$I_0(\kappa)$$ is the modified [Bessel function](https://en.wikipedia.org/wiki/Bessel_function#Bessel_functions_of_the_first_kind:_J%CE%B1) of the first kind of order 0.
+
+
+Let's have a look at this distribution as a function of angle as well as on the actual circle.
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.1.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_1.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_10.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+
+
+
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.1.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_1.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_10.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.1.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_1.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_10.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+
+
+</div>
+
+
+## Back to the von Mises-Fisher Distribution
+
+
+
+
+<div style="text-align: center;">
+<iframe 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_3d_scatter.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_corner.png" 
+    style="width: 79%; height: auto; border-radius: 0px;">
+</div>
+
+
+
+
+<div style="text-align: center;">
+<iframe 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_3d_scatter.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_corner.png" 
+    style="width: 79%; height: auto; border-radius: 0px;">
+</div>
+
+
+
+
+<div style="text-align: center;">
+<iframe 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_3d_scatter.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
+<img 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_corner.png" 
+    style="width: 79%; height: auto; border-radius: 0px;">
+</div>
+
+
+
+
+
 <br>
 
-Basically any examples where notions of concepts like distance, movement, curvature can be represented very nicely through the language of differential geometry. So we already have concepts of what we call _non-euclidean spaces_, what we need to do is translate these ideas into more rigorous mathematical concepts.
-
-
-<br>
-
-## Some quick prereqs
-
-There are some little concepts that I think that even if someone is generally familiar with lin alg, but maybe don't use day-to-day, or that I'm going to touch on quite a bit so it'll be handy to just have the definition here. 
-
-### Span
-
-
-
-### Row Space and Column Space
-
-
-
-### Rank
-
-
-
-### Nullspace
-
-
-
-### Nullspace
-
-
-### Rank-Nullity Theorem
-
-
-
-
 
 
 
 <br>
 
-## Charts and Atlases
-
-
-<br>
-
-## Tangent Spaces
-
-
-<br>
-
-## The Riemannian metric and manifolds
-
-
-<br>
-
-## Curvature, Hyperspheres and Hyperboloids
-
-
+# Hyperbolic VAE
 
 
 
 <br>
 
-# Putting the Geometry in the Latent Space
-
-
-<br>
-
-## Hyperspherical VAEs
-
-
-
-<br>
-
-## Hyperbolic VAEs
-
-
-
-<br>
-
-# Mixed Curvature VAEs
+# Mixed Curvature VAE
 
 
 
