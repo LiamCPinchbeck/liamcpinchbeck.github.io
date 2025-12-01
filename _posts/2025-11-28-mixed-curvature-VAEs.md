@@ -369,56 +369,70 @@ Let's have a look at this distribution as a function of angle as well as on the 
 
 ## Back to the von Mises-Fisher Distribution
 
+So back to the full distribution, I'll actually explain it in detail now.
+
+$$\begin{align}
+f_{vMF}(\vec{x} | \vec{\mu}, \kappa) = \frac{\kappa^{p/2-1}}{(2\pi)^{p/2}I_{p/2-1}(\kappa)} \exp(\kappa \vec{\mu}^T\vec{x}).
+\end{align}$$
+
+The $$p$$ denotes the dimension of the sphere +1. So for a sphere in 3D ambient space then $$p=3$$.
+
+Once again, let's have a look at what the distribution implies for different parameters, particularly $$p=3$$ and $$\mu=[1, 0, 0]$$. (i.e. we'll be looking at how the spread parameter $$\kappa$$ works)
+
+<br>
 
 
-
-<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
+
+Starting off with $$\kappa=0$$, this once again gives us the uniform distribution on the sphere.
+
 <img 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
-</div>
+
+<br>
 
 
 
-
-<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
+Then $$\kappa=1.0$$, it's a little hard to see on the interactive plot but the samples are converging around $$x=+1$$.
+
 <img 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
-</div>
 
 
+<br>
+<br>
 
 
-<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
+And finally $$\kappa=100.0$$, where the samples are very obviously centred about the direction vector $$\mu=[1,0,0]$$. 
+
 <img 
     src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
-</div>
 
 
 
 
 
-<br>
+
 
 
 
