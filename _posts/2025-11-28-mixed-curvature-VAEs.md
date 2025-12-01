@@ -38,7 +38,7 @@ In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs
 
 - Strong foundation of multivariable calc, linear algebra, and nerdiness
 
-
+<!-- https://github.com/Gazler/githug -->
 
 ## General Resources
 
@@ -46,6 +46,7 @@ In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs
 - [Directional Statistics](https://en.wikipedia.org/wiki/Directional_statistics)
 - [Data Compression and generation with Variational Autoencoders](https://liamcpinchbeck.github.io/posts/2025/08/2025-09-08-VAEs/)
 - [Hyperspherical VAE - Nicola De Cao Blog Post](https://nicola-decao.github.io/s-vae.html)
+- [GitHub Repo for Hyperspherical VAE implementation](https://github.com/nicola-decao/s-vae-pytorch)
 
 Papers
 
