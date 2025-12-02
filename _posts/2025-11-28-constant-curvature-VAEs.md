@@ -575,17 +575,18 @@ There's a tonne of useful videos and lectures notes on this that I'd recommend f
 <div style="text-align: center;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder1.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
+    style="width: 48%; height: auto; border-radius: 1px;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder2.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
+    style="width: 48%; height: auto; border-radius: 1px;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder3.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
+    style="width: 48%; height: auto; border-radius: 1px;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder4.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
-<figcaption>Diagram showing example of Householder transform construction. *Top Left*: Example setup, green is the mean vector and purple the e1 vector. *Top Right*: Construction of e1-mean vector. *Bottom Left*: Construction of reflection plane with normal vector e1-mean. *Bottom Right*: Example transformation of vector reflected about the reflection plane.</figcaption>
+    style="width: 48%; height: auto; border-radius: 1px;">
+
+<figcaption>Should be a diagram showing example of Householder transform construction. Top Left: Example setup, green is the mean vector and purple the e1 vector. Top Right: Construction of e1-mean vector. Bottom Left: Construction of reflection plane with normal vector e1-mean. Bottom Right: Example transformation of vector reflected about the reflection plane.</figcaption>
 </div>
 
 
