@@ -385,8 +385,6 @@ Let's have a look at this distribution as a function of angle as well as on the 
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_10.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
-
-
 </div>
 
 
@@ -404,53 +402,62 @@ Once again, let's have a look at what the distribution implies for different par
 
 <br>
 
-
+<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1e-05_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
+<figcaption> Starting off with \(\kappa=0\), this once again gives us the uniform distribution on the sphere. </figcaption>
 
-Starting off with $$\kappa=0$$, this once again gives us the uniform distribution on the sphere.
+</div>
 
+
+<div style="text-align: center;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1e-05_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
+    <figcaption> Starting off with \(\kappa=0\), this once again gives us the uniform distribution on the sphere. </figcaption>
+</div>
 
-<br>
 
-
-
+<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1.0_3d_scatter.html" 
-    width="89%" 
+    width="99%" 
     height="500px"
     style="border:none;"
 ></iframe>
-Then $$\kappa=1.0$$, it's a little hard to see on the interactive plot but the samples are converging around $$x=+1$$.
+<figcaption> Then \(\kappa=1.0\) it's a little hard to see on the interactive plot but the samples are converging around \(x=+1\).</figcaption>
 
+</div>
+
+<div style="text-align: center;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
+    <figcaption> Then \(\kappa=1.0\) it's a little hard to see on the interactive plot but the samples are converging around \(x=+1\).</figcaption>
+</div>
 
-
-<br>
-<br>
-
-
+<div style="text-align: center;">
 <iframe 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/100.0_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
-And finally $$\kappa=100.0$$, where the samples are very obviously centred about the direction vector $$\mu=[1,0,0]$$. 
+<figcaption> And finally \(\kappa=100.0\), where the samples are very obviously centred about the direction vector \(\mu=[1,0,0]\). </figcaption>
 
+</div>
+
+<div style="text-align: center;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/100.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
-
+    <figcaption> And finally \(\kappa=100.0\), where the samples are very obviously centred about the direction vector \(\mu=[1,0,0]\). </figcaption>
+</div>
+<br>
 
 So broadly the von Mises-Fisher distribution boils down to,
 
@@ -458,7 +465,11 @@ $$\begin{align}
 f_{vMF}(\vec{x}\vert\vec{\mu}, \kappa) \propto \kappa^{p/2 - 1} \exp(\kappa \vec{\mu} \cdot \vec{x}),
 \end{align}$$
 
-where again we can make the comparisons to the traditional normal distribution. $$\kappa$$ works similar to inverse variance, and instead of asking how similar a vector is to the mean by finding the absolute norm squared we asked $$\vert\vert \vec{x} - \vec{\mu}\vert\vert^2$$ we ask this through cosine similarity or simply the dot product $$\vec{\mu} \cdot \vec{x}$$. We just get something weird in the normalisation constant because of the form of our distribution.
+where again we can make the comparisons to the traditional normal distribution. $$\kappa$$ works similar to inverse variance, 
+and instead of asking how similar a vector is to the mean by finding the absolute norm squared $$\vert\vert \vec{x} - \vec{\mu}\vert\vert^2$$, 
+we quantify the similarity through the [_cosine similarity_](https://en.wikipedia.org/wiki/Cosine_similarity) 
+or simply the dot product $$\vec{\mu} \cdot \vec{x}$$ when the two vectors have unit magnitude. 
+We just get something weird in the normalisation constant because of the form of our distribution.
 
 
 ## Reparameterisation Trick with the von Mises-Fisher distribution
