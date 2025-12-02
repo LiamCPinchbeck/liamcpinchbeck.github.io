@@ -28,6 +28,8 @@ In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspher
 - [A sneak peek at Hyperspherical VAEs](#a-sneak-peek-at-hyperspherical-vaes)
 - [Hyperspherical VAE](#hyperspherical-vae)
     - [von Mises-Fisher distribution](#von-mises-fisher-distribution)
+    - [Back to the von Mises-Fisher distribution](#back-to-the-von-mises-fisher-distribution)
+    - [Reparameterisation trick with the von Mises-Fisher distribution](#reparameterisation-trick-with-the-von-mises-fisher-distribution)
 - [Hyperbolic VAE](#hyperbolic-vae)
 - [Image Classification and Generation with MNIST and CelebA](#image-classification-and-generation-with-mnist-and-celeba)
 - [Molecular Property Prediction with QM9](#molecular-property-prediction-with-qm9)
@@ -483,7 +485,7 @@ But how do we do this for the von Mises-Fisher distribution...? We can't use the
 
 One of the main results of the paper [Hyperspherical Variational Auto-Encoders by Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) was basically this trick for the hypersphere. 
 
-It basically comes down to using the symmetry of the vMF (von Mises-Fisher) distribution, in that if you just rotate the sphere you can always make it so that the samples around the mean vector are centred around the vector in the first dimension $$\vec{e}_1 = [1,0,0,...,0]$$ and then some 1D [rejection sampling](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/). 
+It basically comes down to using the symmetry of the vMF (von Mises-Fisher) distribution. If you just rotate the sphere (/change your perspective) you can always make it so that the samples around the mean vector are centred around the vector in the first dimension $$\vec{e}_1 = [1,0,0,...,0]$$. We can then sample some 1D [rejection sampling](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/) distribution about this direction to encode the spread.
 
 
 The basic idea of the sampling is shown in the below figure which I took from [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891), which shouldn't make complete sense yet.
@@ -497,6 +499,117 @@ from the curse of dimensionality." </figcaption>
 
 </div>
 
+If you're alright with the picture so far, that we have a spherical distribution, and we have some method to do something similar to the reparameterisation trick with this distribution, you can move on to the next section. For the rest of this section we'll try and learn how this trick actually works.
+
+
+<div style="float: right; width: 50%; margin-left: 20px;">
+    <img 
+        src="/files/BlogPostData/2025-constant-curvature-vaes/DavidsonAlgorithm1.png" 
+        style="width: 100%; height: auto; border-radius: 0px;">
+    <figcaption style="text-align: center;">Algorithm 1 from Davidson et al. (2018)</figcaption>
+</div>
+
+### The deets
+
+To sample the vMF distribution with something like the reparameterisation trick, there are only four steps (plain english version of Algorithm 1 from [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891)).
+
+1. Generate samples on the unit sphere 1-dimension less than the dimension you want (we'll refer to this as $$\vec{v} \sim U(\mathcal{S}^{m-2})$$)
+2. Sample the spread due to $$\kappa$$ (where we sample the equivalent $$\vec{\epsilon}$$) in the first dimension from some weird distribution $$g(\omega, \kappa)$$
+3. Scale the previously uniform samples to add the first dimension of samples to get samples on the full sphere $$z' = (\omega;(\sqrt{1-\omega^2})\vec{v}^T)^T$$
+4. Rotate the distribution so that the samples are centred around the mean vector $$\vec{\mu}$$ (using the [Householder transform](https://en.wikipedia.org/wiki/Householder_transformation))
+
+
+This is encapsulated in the below function `sample_vMF`.
+
+```python
+from scipy.stats import uniform_direction
+import numpy as np
+
+
+def sample_vMF(mean_vec, k, num=10):
+
+    m = len(mean_vec)
+
+    e1vec = np.zeros(m)
+    e1vec[0] = 1.
+
+    uniform_sphere_samples = uniform_direction(dim=m-1).rvs(num)
+    
+    W = sample_vMF_mixture(k, m, num=num)
+
+    adjusted_u_sphere_samples = (np.sqrt(1-W**2) * uniform_sphere_samples.T).T
+
+    zprime = np.concatenate((W[:, None], adjusted_u_sphere_samples), axis=1)
+
+    U = householder(mean_vec, e1vec)
+
+    return (zprime @ U)
+```
+
+The first step, getting $$\vec{v}\sim U(\mathcal{S}^{m-2})$$, is pretty easy actually. You can sample any rotationally symmetric distribution and scale the samples to be on the unit sphere. 
+e.g. The multivariate normal distribution with 0 mean and covariance. For us we'll just use the `scipy.stats.uniform_direction` distribution for simplicity.
+
+The second step was by far the hardest to wrap my head around, so I'll cover the other two first.
+
+Presuming that you have samples about the first dimension that represent the spread from $$\kappa$$, we need to modify the other uniform samples on the sphere such that together, everything is still on the sphere.
+By some simple algebra you can see that 
+
+$$\begin{align}
+z' \cdot z' &= \omega^2 + (1-\omega^2) \vec{v} \cdot \vec{v} \\
+&=  \omega^2 + (1-\omega^2)  \\
+&= 1 \text{  }.
+\end{align}$$
+
+
+The final step that constructs $$U$$ that transforms our samples about $$\vec{e}_1$$ to $$\vec{\mu}$$ is done by the [householder transform or reflection](https://en.wikipedia.org/wiki/Householder_transformation). 
+Essentially creates a plane between the direction vector $$\vec{\mu}$$ and $$\vec{e}_1$$ such that if you reflect about it, $$\vec{e}_1$$ turns into $$\vec{\mu}$$. The actual transform is given as,
+
+$$\begin{align}
+U = I - \hat{u} \, \hat{u}^T,
+\end{align}$$
+
+where $$\hat{u}$$ is the unit vector in the direction of $$\vec{e}_1 - \vec{\mu}$$.
+
+There's a tonne of useful videos and lectures notes on this that I'd recommend for a more rigorous take on this operation 
+([this YouTube video](https://www.youtube.com/watch?v=pOiOH3yESPM) seemed pretty good but I'd put them on 2x speed) but I include a little diagram for some quick visual intuition below.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder1.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder2.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder3.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagram/Householder4.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<figcaption>Diagram showing example of Householder transform construction. *Top Left*: Example setup, green is the mean vector and purple the e1 vector. *Top Right*: Construction of e1-mean vector. *Bottom Left*: Construction of reflection plane with normal vector e1-mean. *Bottom Right*: Example transformation of vector reflected about the reflection plane.</figcaption>
+</div>
+
+
+<br>
+
+
+The operation is encoded in the `householder` function below.
+
+```python
+def householder(dirvec, e1vec):
+
+    uprime = e1vec - dirvec
+
+    uprime /= np.linalg.norm(uprime)
+
+    U = np.eye(len(e1vec)) - 2*uprime[:, None]*uprime[None, :]
+
+    return U
+```
+
+### Sampling the mixture distribution
+
+Now let's circle back to the second step.
 
 ```python
 from scipy.stats import beta, uniform, uniform_direction
@@ -527,44 +640,14 @@ def sample_vMF_mixture(k, m, num=10):
 
 
 
-```python
-e1vec = np.zeros_like(dirvec)
-e1vec[0] = 1.
 
-def householder(dirvec):
 
-    uprime = e1vec - dirvec
 
-    uprime /= np.linalg.norm(uprime)
-
-    U = np.eye(len(e1vec)) - 2*uprime[:, None]*uprime[None, :]
-
-    return U
-```
-
-```python
-def sample_vMF(mean_vec, k, num=10):
-
-    m = len(mean_vec)
-
-    uniform_sphere_samples = uniform_direction(dim=m-1).rvs(num)
-    
-    W = sample_vMF_mixture(k, m, num=num)
-
-    adjusted_u_sphere_samples = (np.sqrt(1-W**2) * uniform_sphere_samples.T).T
-
-    zprime = np.concatenate((W[:, None], adjusted_u_sphere_samples), axis=1)
-
-    U = householder(mean_vec)
-
-    return (zprime @ U)
-```
-
+We can then put this into action with something like the below.
 
 ```python
 custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
 ```
-
 <iframe 
     src="/files/BlogPostData/2025-constant-curvature-vaes/SVAE_custom_vMF_3d_scatter_with_sphere.html" 
     width="89%" 
