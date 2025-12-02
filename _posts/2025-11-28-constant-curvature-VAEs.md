@@ -53,7 +53,13 @@ Papers
 
 - [An Introduction to Variational Autoencoders](https://arxiv.org/abs/1906.02691)
 - [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+
 - [Hyperspherical Variational Auto-Encoders - Davidson et al. 2022](https://arxiv.org/abs/1804.00891)
+    - Main reference for hyperspherical VAEs
+- [Continuous Hierarchical Representations with Poincaré Variational Auto-Encoders](https://arxiv.org/pdf/1901.06033)
+    - Main reference for hyperbolic VAEs
+
+
 - [Geometric deep learning: going beyond Euclidean data - Bronstein et al. 2017](https://arxiv.org/abs/1611.08097)
 - [Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval](https://arxiv.org/abs/1802.09662)
 - [Mixed-Curvature Variational Autoencoders - Skopek et al. 2020](https://arxiv.org/abs/1911.08411)
@@ -206,7 +212,7 @@ Overall, a little better. The 4 doesn't transform to a 4 this time but to an 8, 
 
 The indistinguishability in the centre is actually pretty typical in low latent dimensional VAEs as the prior on the distributions is centred at 0 so the groups are pulled in this direction. If you wanted to get rid of this you would need to use some uncentred/uninformative prior, but that only really gives us the uniform distribution, which won't regularise our space. 
 
-And it turns out for high dimensional VAEs, samples from the normal distribution really start to look like uniform samples on the sphere. e.g. For the two plots below, which one do you think is a set of samples from a high dimensional normal distribution, and which is from a high dimensional sphere? (And I assure you there is in fact one of each here.)
+And it turns out for high dimensional VAEs, samples from the normal distribution really start to look like uniform samples on the sphere (the so called 'soap bubble effect'). e.g. For the two plots below, which one do you think is a set of samples from a high dimensional normal distribution, and which is from a high dimensional sphere? (And I assure you there is in fact one of each here.)
 
 
 <div style="text-align: center;">
@@ -258,36 +264,12 @@ This looks much better! (separation wise)
 So we can try to learn a conditional distribution on the latent parameters on the sphere which mitigates the pull of the 'centre' but still regularise the space using distributions defined on the sphere. The next few sections will be dedicated to exploring this idea. 
 
 
-<br>
+It might seem like a bit of an abstraction, and cards on the table oh boi it is, but you likely already think somewhat in terms of non-euclidean spaces already. e.g.
 
-<!-- # Differential Geometry Primer -->
-
-<!-- (For those already familiar with charts, atlases, Riemannian manifolds you can skip to the [Putting the Geometry in the Latent Space](#putting-the-geometry-in-the-latent-space) section) -->
-
-
-<!-- So, because we want to learn a distribution on spheres or other surfaces in higher dimensions, we are heading into the area of [_differential geometry_](https://en.wikipedia.org/wiki/Differential_geometry), specifically [_Riemannian Geometry_](https://en.wikipedia.org/wiki/Riemannian_geometry). This sounds fancy, and tbh, sometimes is, but is just the math of smooth (in the literal sense) geometry in higher dimensions. -->
-
-
-<!-- <div style="text-align: center;">
-
-  <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/morning_star_image.png" 
-      alt="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mittelalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890" 
-      title="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mitte lalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890." 
-      style="width: 69%; height: auto; border-radius: 8px;">
-<figcaption>Examples of surfaces that are not Riemannian manifolds/not smooth surfaces, for which we don't want to model our distribution on.</figcaption>
-</div>
-<br> -->
-
-
-<!-- It might seem like a bit of an abstraction, and cards on the table oh boi it is, but you likely already think somewhat in terms of surfaces and curves already. e.g.
-
-- You're driving on the road, technically the houses on the side of the street are on the surface you reside on, but while you're driving, they _shouldn't_ exist. 
 - To a very close approximation, you exist on a sphere (although idk, if I have any readers that are astronauts hit me up). You technically reside in 3D space however, if a person is flying a plane a very long distance (say Melbourne to Sapporo) you won't tell them the downwards coordinate to go straight through the Earth! (we are thinking in terms of _spherical_ spaces here)
-- When playing a video game, e.g. Super Mario, that world to the player exists as a 2D space, although to Mario and co, I'm sure they would think they're going in a straight line. So to them, they are moving in a 2D embedding in a 3D ambient space.
-- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces). -->
+- You can imagine navigating social media as some weird object. Everyone is friends or follows Obama, so you can think that Obama is close to everyone. But just because two people follow Obama, doesn't mean that they are friends or follow each other at all (this is a behaviour that is common in _hyperbolic_ spaces).
 
-<!-- <div style="text-align: center;">
+<div style="text-align: center;">
 
   <img 
       src="/files/BlogPostData/2025-constant-curvature-vaes/Sapporo_Melbourne_circle_example.png" 
@@ -296,11 +278,9 @@ So we can try to learn a conditional distribution on the latent parameters on th
       style="width: 79%; height: auto; border-radius: 8px;">
 <figcaption>Diagram showing different paths between Melbourne and Sapporo one of them is a little harder in practice.</figcaption>
 </div>
-<br> -->
+<br>
 
-<!-- Basically any examples where notions of concepts like distance, movement, curvature can be represented very nicely through the language of differential geometry. So we already have concepts of what we call _non-euclidean spaces_, what we need to do is translate these ideas into more rigorous mathematical concepts. -->
-
-
+And it turns out that some data _is_ better represented in these spaces e.g. as shown in [Bronstein et al. 2017](https://arxiv.org/abs/1611.08097).
 
 # Hyperspherical VAE
 
@@ -510,7 +490,7 @@ from the curse of dimensionality." </figcaption>
 
 </div>
 
-If you're alright with the picture so far, that we have a spherical distribution, and we have some method to do something similar to the reparameterisation trick with this distribution, you can move on to the next section. For the rest of this section we'll try and learn how this trick actually works.
+If you're alright with the picture so far, that we have a spherical distribution, and we have some method to do something similar to the reparameterisation trick with this distribution, you can move on to the next section. For the rest of _this_ section we'll try and learn how this trick actually works.
 
 
 <div style="float: right; width: 50%; margin-left: 20px;">
@@ -544,17 +524,25 @@ def sample_vMF(mean_vec, k, num=10):
     e1vec = np.zeros(m)
     e1vec[0] = 1.
 
+    # Step 1
     uniform_sphere_samples = uniform_direction(dim=m-1).rvs(num)
-    
+    #-----
+
+    # Step 2
     W = sample_vMF_mixture(k, m, num=num)
+    #-----
 
+    # Step 3
     adjusted_u_sphere_samples = (np.sqrt(1-W**2) * uniform_sphere_samples.T).T
-
     zprime = np.concatenate((W[:, None], adjusted_u_sphere_samples), axis=1)
+    #-----
 
+    # Step 4
     U = householder(mean_vec, e1vec)
+    z = (zprime @ U)
+    #-----
 
-    return (zprime @ U)
+    return z
 ```
 
 The first step, getting $$\vec{v}\sim U(\mathcal{S}^{m-2})$$, is pretty easy actually. You can sample any rotationally symmetric distribution and scale the samples to be on the unit sphere. 
@@ -666,6 +654,10 @@ custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
     style="border:none;"
 ></iframe>
 
+
+<br>
+
+### Taking Derivatives
 
 
 
