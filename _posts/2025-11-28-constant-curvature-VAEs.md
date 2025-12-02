@@ -1,7 +1,7 @@
 ---
-title: 'Image Classification and Molecular Property Prediction with Constant Curvature VAEs and Mixed Curvature VAEs'
+title: 'Image Classification and Molecular Property Prediction with Constant Curvature VAEs'
 date: 2025-11-27
-permalink: /posts/2025/08/2025-11-27-mixed-curvature-VAEs/
+permalink: /posts/2025/08/2025-11-27-constant-curvature-VAEs/
 tags:
   - PyTorch
   - Variational Inference
@@ -15,7 +15,7 @@ header-includes:
 ---
 
 
-In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs for data image classification and molecular property prediction.
+In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspherical, and hyperbolic) for image data classification and molecular property prediction.
 
 
 ---
@@ -29,7 +29,6 @@ In this post, I’ll go through Constant Curvature VAEs and Mixed Curvature VAEs
 - [Hyperspherical VAE](#hyperspherical-vae)
     - [von Mises-Fisher distribution](#von-mises-fisher-distribution)
 - [Hyperbolic VAE](#hyperbolic-vae)
-- [Mixed Curvature VAEs](#mixed-curvature-vaes)
 - [Image Classification and Generation with MNIST and CelebA](#image-classification-and-generation-with-mnist-and-celeba)
 - [Molecular Property Prediction with QM9](#molecular-property-prediction-with-qm9)
 - [Conclusions](#conclusions)
@@ -76,7 +75,7 @@ One easy and common way to do this is with the [MNIST dataset](https://en.wikipe
 <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/MNIST_Images.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/MNIST_Images.png" 
       alt="MNIST Digits." 
       title="MNIST Digits." 
       style="width: 89%; height: auto; border-radius: 8px;">
@@ -92,7 +91,7 @@ First the ___Autoencoder___ takes in the data, $$\vec{x}_i$$, uses an __encoder_
 <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/autoencoder_diagram.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/autoencoder_diagram.png" 
       alt="Diagram showing the general structure of an autoencoder." 
       title="Diagram showing the general structure of an autoencoder." 
       style="width: 89%; height: auto; border-radius: 8px;">
@@ -106,7 +105,7 @@ The ___Variational Autoencoder___ takes in the data, $$\vec{x}_i$$, uses an __en
 <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_diagram.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_diagram.png" 
       alt="Diagram showing the general structure of a variational autoencoder." 
       title="Diagram showing the general structure of a variational autoencoder." 
       style="width: 99%; height: auto; border-radius: 8px;">
@@ -122,16 +121,16 @@ First we'll have a look at the standard autoencoder reconstructions and latent s
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/2_ae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/2_ae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/7_ae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/7_ae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/4_ae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/4_ae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/6_ae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/6_ae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
 <figcaption>MNIST data (left digits) and Standard Autoencoder MNIST digit reconstructions (right digits) using `afmhot` maptlotlib colour map to make it easier to visualise/distinguish features.</figcaption>
 </div>
@@ -141,10 +140,10 @@ First thing we can notice is that it completely messed up the 4, and the digits 
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/combined_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/combined_latent_dim.png" 
       style="width: 89%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/separated_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/separated_latent_dim.png" 
       style="width: 99%; height: auto; border-radius: 0px;">
 <figcaption>Standard Autoencoder MNIST 2D latent dimension combined for all digits (top) and for each digit (bottom)</figcaption>
 </div>
@@ -156,7 +155,7 @@ If we uniformly grid this space and see what the decoder tries to reconstruct we
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/AE_MNIST_Reconstructions/transformed_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/AE_MNIST_Reconstructions/transformed_latent_dim.png" 
       style="width: 100%; height: auto; border-radius: 0px;">
 <figcaption>Uniformly gridded coordinates in AE latent space transformed into the data space by the decoder</figcaption>
 </div>
@@ -168,16 +167,16 @@ Now let's compare the above with VAEs.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/2_vae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/2_vae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/7_vae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/7_vae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/4_vae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/4_vae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/6_vae_reconstruction.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/6_vae_reconstruction.png" 
       style="width: 49%; height: auto; border-radius: 0px;">
 <figcaption>MNIST data (left digits) and Standard VAE MNIST digit reconstructions (right digits) using `afmhot` maptlotlib colour map to make it easier to visualise/distinguish features.</figcaption>
 </div>
@@ -185,17 +184,17 @@ Now let's compare the above with VAEs.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/combined_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/combined_latent_dim.png" 
       style="width: 89%; height: auto; border-radius: 0px;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/separated_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/separated_latent_dim.png" 
       style="width: 99%; height: auto; border-radius: 0px;">
 <figcaption>Standard VAE MNIST 2D latent dimension combined for all digits (top) and for each digit (bottom)</figcaption>
 </div>
 <br>
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/VAE_MNIST_Reconstructions/transformed_latent_dim.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/VAE_MNIST_Reconstructions/transformed_latent_dim.png" 
       style="width: 100%; height: auto; border-radius: 0px;">
 <figcaption>Uniformly gridded coordinates in VAE latent space transformed into the data space by the decoder</figcaption>
 </div>
@@ -210,17 +209,17 @@ And it turns out for high dimensional VAEs, samples from the normal distribution
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/HighDNormal/500D_multivariatenormal_corner.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/HighDNormal/500D_multivariatenormal_corner.png" 
       style="width: 49%; height: auto; border-radius: 0px;"
       alt="Are you trying to cheat?" 
       title="Are you trying to cheat?" >
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/HighDNormal/500D_uniform_on_sphere_corner.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/HighDNormal/500D_uniform_on_sphere_corner.png" 
       style="width: 49%; height: auto; border-radius: 0px;"
       alt="Are you trying to cheat again?!" 
       title="Are you trying to cheat again?!" >
 
-<figcaption>Standard VAE MNIST 2D latent dimension combined for all digits (top) and for each digit (bottom)</figcaption>
+<figcaption>Comparison of a sample distribution on a uniform sphere and normal distribution in 500-dimensional space (not necessarily in that order)</figcaption>
 </div>
 
 Not any easy game is it? 
@@ -244,7 +243,7 @@ So if the issue is that they all pulled towards some central region for regulari
 <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/davidson_hyperspherical_VAE_MNIST_example.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/davidson_hyperspherical_VAE_MNIST_example.png" 
       alt="Comparison of VAE on euclidean vs spherical space from Davidson et al. 2022." 
       title="Comparison of VAE on euclidean vs spherical space from Davidson et al. 2022." 
       style="width: 99%; height: auto; border-radius: 8px;">
@@ -270,7 +269,7 @@ So we can try to learn a conditional distribution on the latent parameters on th
 <!-- <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/morning_star_image.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/morning_star_image.png" 
       alt="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mittelalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890" 
       title="Morgenstern (middle) - illustration from a book 'Handbuch der Waffenkunde' Das Waffenwesen in seiner historischen Entwicklung vom Beginn des Mitte lalters bis zum Ende des 18 Jahrhunderts by Wendelin Boeheim, Leipzig, 1890." 
       style="width: 69%; height: auto; border-radius: 8px;">
@@ -289,7 +288,7 @@ So we can try to learn a conditional distribution on the latent parameters on th
 <!-- <div style="text-align: center;">
 
   <img 
-      src="/files/BlogPostData/2025-mixed-curvature-vaes/Sapporo_Melbourne_circle_example.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Sapporo_Melbourne_circle_example.png" 
       alt="Diagram showing different paths between Melbourne and Sapporo" 
       title="Diagram showing different paths between Melbourne and Sapporo" 
       style="width: 79%; height: auto; border-radius: 8px;">
@@ -345,44 +344,44 @@ Let's have a look at this distribution as a function of angle as well as on the 
 
 <div style="text-align: center;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.1.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_0.1.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_1.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_1.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_10.0.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
-
-
-
-<img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.0.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
-<img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.1.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
-<img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_1.0.png" 
-    style="width: 49%; height: auto; border-radius: 0px;">
-<img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_10.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0_1_kappa_10.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 
+
+
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.1.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_0.1.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_1.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_1.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_10.0.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_0.707_0.707_kappa_10.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_0.1.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_1.0.png" 
+    style="width: 49%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vM_distribution_figures/mu_1_0_kappa_10.0.png" 
     style="width: 49%; height: auto; border-radius: 0px;">
 
 
@@ -405,7 +404,7 @@ Once again, let's have a look at what the distribution implies for different par
 
 
 <iframe 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_3d_scatter.html" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1e-05_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
@@ -414,7 +413,7 @@ Once again, let's have a look at what the distribution implies for different par
 Starting off with $$\kappa=0$$, this once again gives us the uniform distribution on the sphere.
 
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1e-05_corner.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1e-05_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
 
 <br>
@@ -422,7 +421,7 @@ Starting off with $$\kappa=0$$, this once again gives us the uniform distributio
 
 
 <iframe 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_3d_scatter.html" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1.0_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
@@ -430,7 +429,7 @@ Starting off with $$\kappa=0$$, this once again gives us the uniform distributio
 Then $$\kappa=1.0$$, it's a little hard to see on the interactive plot but the samples are converging around $$x=+1$$.
 
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/1.0_corner.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/1.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
 
 
@@ -439,7 +438,7 @@ Then $$\kappa=1.0$$, it's a little hard to see on the interactive plot but the s
 
 
 <iframe 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_3d_scatter.html" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/100.0_3d_scatter.html" 
     width="89%" 
     height="500px"
     style="border:none;"
@@ -447,7 +446,7 @@ Then $$\kappa=1.0$$, it's a little hard to see on the interactive plot but the s
 And finally $$\kappa=100.0$$, where the samples are very obviously centred about the direction vector $$\mu=[1,0,0]$$. 
 
 <img 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/vMF_Figs/100.0_corner.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/vMF_Figs/100.0_corner.png" 
     style="width: 79%; height: auto; border-radius: 0px;">
 
 
@@ -460,7 +459,7 @@ f_{vMF}(\vec{x}\vert\vec{\mu}, \kappa) \propto \kappa^{p/2 - 1} \exp(\kappa \vec
 where again we can make the comparisons to the traditional normal distribution. $$\kappa$$ works similar to inverse variance, and instead of asking how similar a vector is to the mean by finding the absolute norm squared we asked $$\vert\vert \vec{x} - \vec{\mu}\vert\vert^2$$ we ask this through cosine similarity or simply the dot product $$\vec{\mu} \cdot \vec{x}$$. We just get something weird in the normalisation constant because of the form of our distribution.
 
 
-## Reparameterisation Trick on with the von Mises-Fisher
+## Reparameterisation Trick with the von Mises-Fisher distribution
 
 This is all great, well and good now instead of learning a mean vector and standard deviation vector as intermediates in our VAEs latent distributions, we can learn the mean direction vector and $$\kappa$$! However, standard VAEs rely quite heavily on the [_reparameterisation trick_](https://en.wikipedia.org/wiki/Reparameterization_trick) which allows us to "inject" the stochasticity of sampling into the training procedure. 
 
@@ -469,19 +468,34 @@ i.e. We create some noise through the variable $$\vec{\epsilon}$$ that we say co
 This meant when we were optimising/taking derivatives with respect to $$\vec{\sigma} $$ and $$\vec{\mu}$$ we would get pretty simple answers, either $$\vec{\epsilon}$$ or $$\vec{1}$$. Or in more mathematically rigorous way, our loss can be represented on some level as an expectation of some function.
 
 $$\begin{align}
-L(\vec{\mu}, \vec{\sigma}) = \mathbb{E}_{\vec{z} \sim q(\vec{z}|\kappa, \vec{\mu})}\left[f(z) \right],
+L(\vec{\mu}, \vec{\sigma}, \vec{\phi}) = \mathbb{E}_{\vec{z} \sim q(\vec{z}|\kappa, \vec{\mu})}\left[f_\vec{\phi}(z) \right],
 \end{align}$$
 
 when optimising we then need to taking derivatives with respect to the parameters we are optimising... which are within the expectation which is hard or at least the estimator, called the [REINFORCE estimator](https://stillbreeze.github.io/REINFORCE-vs-Reparameterization-trick/) you get out has quite high variance. But if we can perform the reparameterisation trick then we can pull the derivative _inside_ the expectation. For example with respect to $$\vec{\mu}$$ we can calculate the derivatives as,
 
 $$\begin{align}
-\nabla_{\vec{\mu}} L(\vec{\mu}, \vec{\sigma}) &= \nabla_{\vec{\mu}} \left( \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[f(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]\right) \\
-&= \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[ \nabla_{\vec{\mu}} f(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]
+\nabla_{\vec{\mu}} L(\vec{\mu}, \vec{\sigma}, \vec{\phi}) &= \nabla_{\vec{\mu}} \left( \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[f_\vec{\phi}(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]\right) \\
+&= \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[ \nabla_{\vec{\mu}} f_\vec{\phi}(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]
 \end{align}$$
 
 But how do we do this for the von Mises-Fisher distribution...? We can't use the same trick, sampling $$\vec{\epsilon}$$ uniformly on the sphere for example, as we don't (currently) have a way to taking a mean vector and $$\kappa$$ and stay on the sphere. So what do we do??
 
 
+One of the main results of the paper [Hyperspherical Variational Auto-Encoders by Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) was basically this trick for the hypersphere. 
+
+It basically comes down to using the symmetry of the vMF (von Mises-Fisher) distribution, in that if you just rotate the sphere you can always make it so that the samples around the mean vector are centred around the vector in the first dimension $$\vec{e}_1 = [1,0,0,...,0]$$ and then some 1D [rejection sampling](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/). 
+
+
+The basic idea of the sampling is shown in the below figure which I took from [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891), which shouldn't make complete sense yet.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/DavidsonEtAl_Diagram.png" 
+    style="width: 99%; height: auto; border-radius: 0px;">
+    <figcaption>Fig. 4 from Davidson et al. (2018) with caption - "Overview of von Mises-Fisher sampling procedure. Note that as ω is a scalar, the procedure does not suffer
+from the curse of dimensionality." </figcaption>
+
+</div>
 
 
 ```python
@@ -552,7 +566,7 @@ custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
 ```
 
 <iframe 
-    src="/files/BlogPostData/2025-mixed-curvature-vaes/SVAE_custom_vMF_3d_scatter_with_sphere.html" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SVAE_custom_vMF_3d_scatter_with_sphere.html" 
     width="89%" 
     height="500px"
     style="border:none;"
@@ -569,9 +583,6 @@ custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
 
 
 
-<br>
-
-# Mixed Curvature VAE
 
 
 
