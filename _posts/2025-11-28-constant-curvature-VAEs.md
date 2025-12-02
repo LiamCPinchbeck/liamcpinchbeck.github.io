@@ -526,7 +526,7 @@ To sample the vMF distribution with something like the reparameterisation trick,
 
 1. Generate samples on the unit sphere 1-dimension less than the dimension you want (we'll refer to this as $$\vec{v} \sim U(\mathcal{S}^{m-2})$$)
 2. Sample the spread due to $$\kappa$$ (where we sample the equivalent $$\vec{\epsilon}$$) in the first dimension from some weird distribution $$g(\omega, \kappa)$$
-3. Scale the previously uniform samples to add the first dimension of samples to get samples on the full sphere $$z' = (\omega;(\sqrt{1-\omega^2})\vec{v}^T)^T$$
+3. Scale the previously uniform samples to add the first dimension of samples. Now getting samples on the full sphere $$z' = (\omega;(\sqrt{1-\omega^2})\vec{v}^T)^T$$
 4. Rotate the distribution so that the samples are centred around the mean vector $$\vec{\mu}$$ (using the [Householder transform](https://en.wikipedia.org/wiki/Householder_transformation))
 
 
