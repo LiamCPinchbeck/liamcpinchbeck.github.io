@@ -203,7 +203,29 @@ Now let's compare the above with VAEs.
 
 Overall, a little better. The 4 doesn't transform to a 4 this time but to an 8, but at least it's a number. And the groups in the latent space seem to have more intelligible structure to them. And the transformation of the latent space still has a region with some unintelligible digits (the very centre) but the transitions and distributions altogether look better.
 
-The indistinguishability in the centre is actually pretty typical in VAEs as the prior on the distributions is centred at 0 so the groups are pulled in this direction. If you wanted to get rid of this you would need to use some uncentred/uninformative prior, but that only really gives us the uniform distribution, which won't regularise our space. This leads us to try and think of geometries where this effect is mitigated or even removed.
+The indistinguishability in the centre is actually pretty typical in low latent dimensional VAEs as the prior on the distributions is centred at 0 so the groups are pulled in this direction. If you wanted to get rid of this you would need to use some uncentred/uninformative prior, but that only really gives us the uniform distribution, which won't regularise our space. 
+
+And it turns out for high dimensional VAEs, samples from the normal distribution really start to look like uniform samples on the sphere. e.g. For the two plots below, which one do you think is a set of samples from a high dimensional normal distribution, and which is from a high dimensional sphere? (And I assure you there is in fact one of each here.)
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-mixed-curvature-vaes/HighDNormal/500D_multivariatenormal_corner.png" 
+      style="width: 49%; height: auto; border-radius: 0px;"
+      alt="Are you trying to cheat?" 
+      title="Are you trying to cheat?" >
+  <img 
+      src="/files/BlogPostData/2025-mixed-curvature-vaes/HighDNormal/500D_uniform_on_sphere_corner.png" 
+      style="width: 49%; height: auto; border-radius: 0px;"
+      alt="Are you trying to cheat again?!" 
+      title="Are you trying to cheat again?!" >
+
+<figcaption>Standard VAE MNIST 2D latent dimension combined for all digits (top) and for each digit (bottom)</figcaption>
+</div>
+
+Not any easy game is it? 
+
+This leads us to try and think of geometries where the centralising effect is mitigated or even removed, and maybe waste less time sampling a sphere indirectly and instead just sample the sphere itself! And this also motivates looking at other geometrical spaces and whether they can inherently better represent some data structures.
 
 <br>
 
@@ -429,8 +451,112 @@ And finally $$\kappa=100.0$$, where the samples are very obviously centred about
     style="width: 79%; height: auto; border-radius: 0px;">
 
 
+So broadly the von Mises-Fisher distribution boils down to,
+
+$$\begin{align}
+f_{vMF}(\vec{x}\vert\vec{\mu}, \kappa) \propto \kappa^{p/2 - 1} \exp(\kappa \vec{\mu} \cdot \vec{x}),
+\end{align}$$
+
+where again we can make the comparisons to the traditional normal distribution. $$\kappa$$ works similar to inverse variance, and instead of asking how similar a vector is to the mean by finding the absolute norm squared we asked $$\vert\vert \vec{x} - \vec{\mu}\vert\vert^2$$ we ask this through cosine similarity or simply the dot product $$\vec{\mu} \cdot \vec{x}$$. We just get something weird in the normalisation constant because of the form of our distribution.
 
 
+## Reparameterisation Trick on with the von Mises-Fisher
+
+This is all great, well and good now instead of learning a mean vector and standard deviation vector as intermediates in our VAEs latent distributions, we can learn the mean direction vector and $$\kappa$$! However, standard VAEs rely quite heavily on the [_reparameterisation trick_](https://en.wikipedia.org/wiki/Reparameterization_trick) which allows us to "inject" the stochasticity of sampling into the training procedure. 
+
+i.e. We create some noise through the variable $$\vec{\epsilon}$$ that we say comes from a standard normal with the same dimensionality as our latent space, $$\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})$$ then we could sample the conditional gaussian in this space by $$z = \vec{\sigma} \odot \vec{\epsilon} + \vec{\mu}$$.
+
+This meant when we were optimising/taking derivatives with respect to $$\vec{\sigma} $$ and $$\vec{\mu}$$ we would get pretty simple answers, either $$\vec{\epsilon}$$ or $$\vec{1}$$. Or in more mathematically rigorous way, our loss can be represented on some level as an expectation of some function.
+
+$$\begin{align}
+L(\vec{\mu}, \vec{\sigma}) = \mathbb{E}_{\vec{z} \sim q(\vec{z}|\kappa, \vec{\mu})}\left[f(z) \right],
+\end{align}$$
+
+when optimising we then need to taking derivatives with respect to the parameters we are optimising... which are within the expectation which is hard or at least the estimator, called the [REINFORCE estimator](https://stillbreeze.github.io/REINFORCE-vs-Reparameterization-trick/) you get out has quite high variance. But if we can perform the reparameterisation trick then we can pull the derivative _inside_ the expectation. For example with respect to $$\vec{\mu}$$ we can calculate the derivatives as,
+
+$$\begin{align}
+\nabla_{\vec{\mu}} L(\vec{\mu}, \vec{\sigma}) &= \nabla_{\vec{\mu}} \left( \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[f(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]\right) \\
+&= \mathbb{E}_{\vec{\epsilon} \sim \mathcal{N}(\vec{0}, \vec{1})}\left[ \nabla_{\vec{\mu}} f(z = \vec{\mu} + \vec{\sigma} \odot \vec{\epsilon}) \right]
+\end{align}$$
+
+But how do we do this for the von Mises-Fisher distribution...? We can't use the same trick, sampling $$\vec{\epsilon}$$ uniformly on the sphere for example, as we don't (currently) have a way to taking a mean vector and $$\kappa$$ and stay on the sphere. So what do we do??
+
+
+
+
+```python
+from scipy.stats import beta, uniform, uniform_direction
+
+def sample_vMF_mixture(k, m, num=10):
+    b = (-2*k + np.sqrt(4*k**2 + (m-1)**2))/(m-1)
+    a = ((m-1) + 2*k + np.sqrt(4*k**2 + (m-1)**2))/4
+    d = 4*a*b/(1+b) - (m-1)*np.log(m-1)
+
+
+    samples = []
+
+    condition = True
+    while condition:
+        Y = beta((m-1)/2, (m-1)/2).rvs()
+        u = uniform(0, 1).rvs()
+        W = (1 - (1 + b) * Y)/(1 - (1 - b) * Y)
+
+        T = 2*a*b/(1 - (1-b)*Y)
+
+        if (m-1)*np.log(T) - T + d > np.log(u):
+            samples.append(W)
+
+            if len(samples)==num:
+                condition = False
+    return np.array(samples)
+```
+
+
+
+```python
+e1vec = np.zeros_like(dirvec)
+e1vec[0] = 1.
+
+def householder(dirvec):
+
+    uprime = e1vec - dirvec
+
+    uprime /= np.linalg.norm(uprime)
+
+    U = np.eye(len(e1vec)) - 2*uprime[:, None]*uprime[None, :]
+
+    return U
+```
+
+```python
+def sample_vMF(mean_vec, k, num=10):
+
+    m = len(mean_vec)
+
+    uniform_sphere_samples = uniform_direction(dim=m-1).rvs(num)
+    
+    W = sample_vMF_mixture(k, m, num=num)
+
+    adjusted_u_sphere_samples = (np.sqrt(1-W**2) * uniform_sphere_samples.T).T
+
+    zprime = np.concatenate((W[:, None], adjusted_u_sphere_samples), axis=1)
+
+    U = householder(mean_vec)
+
+    return (zprime @ U)
+```
+
+
+```python
+custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
+```
+
+<iframe 
+    src="/files/BlogPostData/2025-mixed-curvature-vaes/SVAE_custom_vMF_3d_scatter_with_sphere.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
 
 
 
