@@ -609,7 +609,126 @@ def householder(dirvec, e1vec):
 
 ### Sampling the mixture distribution
 
-Now let's circle back to the second step.
+Now let's circle back to the second step. For this we need to motivate two things:
+
+1. Splitting the distribution such that the we can sample the 1D mixture distribution $$g(\omega\vert \kappa, m)$$ and 
+2. basically how to efficiently sample this function in a 'reparameterisation trick'-y way.
+
+
+#### 1. Splitting the distribution
+
+Splitting the distribution into two is actually fairly intuitive when observing the problem from a specific frame. 
+
+I'll try and walk through this with a 3D example. We have the mean vector and the sphere.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/MeanVec.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+Let's just presume that we can generate some samples for now.
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/Initial_vMF_Samples.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+What we're really looking at here is a 3D plot but that's hard to get right in matplotlib due to it's bad ordering behaviours.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/Initial_vMF_Samples_3D.png" 
+    style="width: 88%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+
+Back to the 2D side-on view, because the samples are symmetric about the mean vector we can kind of see that the spread due to $$\kappa$$ can be mostly attributed along this direction, 
+and then the samples in the other directions are uniform in direction.
+
+<div style="text-align: center;">
+
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/Initial_vMF_Samples_projected_onto_mean.png" 
+    style="width: 48%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/Initial_vMF_Samples_projected_onto_not_mean.png" 
+    style="width: 48%; height: auto; border-radius: 0px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/Initial_vMF_Samples_projected_onto_not_mean_top_view.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+Again, just presuming that this will work for now, let's scale the samples in the other dimensions such that they fall on the sphere 1-dimension lower than our original one (in this case the _circle_).
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/top_view_scaling_transformation.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/top_view_scaled_samples.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+Adding a few more samples we can then look at the angular distribution confirming that it's uniform on the sphere because it's uniform in angle.
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/top_view_scaled_samples_lotsa.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/angular_dist_of_top_view_scaled_samples_lotsa.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+Going back to the lower number of samples,
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/top_view_scaled_samples.png" 
+    style="width: 48%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+we can then pretend that we sampled the first dimension via some complicated distribution accounting for the spread (getting $$\omega$$), 
+and scale our uniform samples on $$\vec{v} \sim S^{1}$$ back to $$S^{2}$$ via $$(\omega, \sqrt{1-\omega^2} \vec{v}^T)$$ 
+(but in reality just take the projected values from the beginning) to see that we recover the exact same distribution.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/SplitExplanation/SideOn_initialvMFSamples_and_reproduced_samples.png" 
+    style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+So this really implies that we can uniformly sample the sphere 1-dimension lower than the one we want, sample some 1D distribution, 
+and then scale our samples with the 1D variable as a new dimension as a way to sample the vMF.
+
+If you want a more rigorous explanation, then I'm going to have to refer to the same papers that [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) refer to called 
+["Computer Generation of Distributions on the _M_-sphere" (1984) by Gary Ulrich](https://rss.onlinelibrary.wiley.com/doi/abs/10.2307/2347441) 
+and the paper that Ulrich cites called ["A Family of Distributions on the m-Sphere and Some Hypothesis Tests" (1978) by John G. Saw](https://www.jstor.org/stable/2335278).
+
+
+#### 2. Sampling the 1D Mixture distribution in a 'reparameterisation trick'-y way
+
+<br>
+
+So hopefully we now understand why we can split the distribution in two, $$f(\vec{z}) = f(\omega) \cdot f(\vec{v})$$, 
+and we can sample $$\vec{v}$$ by scaling samples from the multivariate standard normal distribution (as the samples are directionally uniform/symmetric). 
+But what is $$f(\omega) $$ and how do we sample it in a 'reparameterisation trick'-y way?
 
 ```python
 from scipy.stats import beta, uniform, uniform_direction
@@ -641,7 +760,7 @@ def sample_vMF_mixture(k, m, num=10):
 
 
 
-
+## Putting it all together
 
 We can then put this into action with something like the below.
 
@@ -658,7 +777,7 @@ custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
 
 <br>
 
-### Taking Derivatives
+## Taking Derivatives
 
 
 
