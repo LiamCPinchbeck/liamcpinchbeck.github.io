@@ -11,7 +11,9 @@ tags:
   - Deep Learning
   - Geometric deep learning
 header-includes:
-   - \usepackage{amsmath}
+  - \usepackage{amsmath}
+  - \usepackage{algpseudocode}
+
 ---
 
 
@@ -593,7 +595,7 @@ There's a tonne of useful videos and lectures notes on this that I'd recommend f
 <br>
 
 
-The operation is encoded in the `householder` function below.
+The operation is encoded in the `householder` function below (pretty much the same as Algorithm 3 from [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891)).
 
 ```python
 def householder(dirvec, e1vec):
@@ -726,7 +728,7 @@ and the paper that Ulrich cites called ["A Family of Distributions on the m-Sphe
 
 <br>
 
-So hopefully we now understand why we can split the distribution in two where $$\vec{z} = (\omega, (\sqrt{1-\omega^2})v^T)$$ with $$f(\vec{z}\vert\kappa, m) = g(\omega \vert \kappa, m) \cdot f(\vec{v} \vert m-1)$$. 
+So hopefully we now understand why we can split the distribution in two where $$\vec{z} = (\omega, (\sqrt{1-\omega^2})v^T)$$ with $$f(\vec{z}\vert\kappa, m) = g(\omega \vert \kappa, m) \cdot g_2(\vec{v} \vert m-1)$$. 
 We can sample $$\vec{v}$$ by scaling samples from the multivariate standard normal distribution (as the samples are directionally uniform/symmetric). 
 But what is $$g(\omega \vert \kappa, m)$$, and how do we sample it in a 'reparameterisation trick'-y way?
 
@@ -753,6 +755,92 @@ d\phi &= d\omega/\sqrt{1-\cos^2(\phi)} = d\omega/\sqrt{1-\omega^2}\\
 J(\omega) &= (1-\omega^2)^{\frac{m-3}{2}}. \\
 \end{align}$$
 
+So that gives us the form of $$g(\omega \vert \kappa, m)$$ (up to some multiplicative constant with respect to $$\omega$$). Next, we are going to guess that we can sample our noise from the following distribution 
+(this similar to the bit in the reparameterisation trick where we sample from a distribution independent of our parameters to get the stochastic component), 
+
+$$\begin{align}
+\epsilon \sim s(\epsilon) = \text{Beta}(\frac{m-1}{2}, \frac{m-1}{2}),
+\end{align}$$
+
+and then transform it to make a proposal for $$\omega$$ as,
+
+
+$$\begin{align}
+\omega = h(\epsilon \vert \kappa, m) = \frac{1-(1+b(\kappa, m))\epsilon}{1-(1-b(\kappa, m))\epsilon},
+\end{align}$$
+
+we'll get to the specific form of $$b$$ later, for now you can just imagine that it's some simple combination of $$\kappa$$ and $$m$$. 
+
+The $$r(\omega, \kappa)$$ referred to in the paper is the so called `envelope` distribution used in rejection sampling. 
+For a thorough introduction to rejection sampling I would recommend [my blog post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/) (not biased at all...). 
+
+
+The basics of it is that the envelope is some other distribution that we can sample, and then after some multiplicative factor, we reject samples with a smaller probability than the actual
+distribution.
+Differences between good and bad envelopes is exemplified in the below two GIFs.
+One has a non-informative envelope (top one with a uniform distribution) and one has an infomative envelope (bottom, gaussian envelope). 
+You can observe that one wastes more proposals (orange dots) than the other.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-01-28/argus_dist_effective_samples.gif" 
+    alt="GIF showing animation of rejection sampling principle with an ARGUS distribution." 
+    title="GIF showing animation of rejection sampling principle with an ARGUS distribution." 
+    style="width: 75%; height: auto; border-radius: 8px;">
+<img 
+    src="/files/BlogPostData/2025-01-28/argus_dist_with_better_proposal.gif" 
+    alt="GIF showing animation of rejection sampling principle with an ARGUS distribution with a better _proposal_ distribution." 
+    title="GIF showing animation of rejection sampling principle with an ARGUS distribution with a better _proposal_ distribution." 
+    style="width: 75%; height: auto; border-radius: 8px;">
+</div>
+
+What we want, is the envelope to have as similar of a form as the distribution we are trying to sample from. If we look at the implied distribution on $$\omega$$, based on 
+injecting the samples/density in $$s(\epsilon)$$ into $$h(\epsilon \vert \kappa, m)$$ we find that we've actually already done this. 
+First we need to rearrange $$\epsilon$$ in terms of $$\omega$$, i.e. $$\epsilon = h^{-1}(\omega\vert\kappa, m)$$.
+
+$$\begin{align}
+\omega &= \frac{1-(1+b)\epsilon}{1-(1-b)\epsilon} \\
+\left(1-(1-b)\epsilon\right)\omega &= 1-(1+b)\epsilon \\
+\omega-\omega(1-b)\epsilon &= 1-(1+b)\epsilon \\
+\omega - 1 &= (\omega(1-b)-(1+b))\epsilon \\
+\epsilon &= \frac{\omega - 1}{\omega(1-b)-(1+b)} \\
+\end{align}$$
+
+This allows us to get the jacobian between $$\epsilon$$ and $$\omega$$ in terms of $$\omega$$.
+
+$$\begin{align}
+\frac{d\epsilon}{d\omega} &= \frac{-2b}{(1+b - \omega(1-b))^2}. \\
+\end{align}$$
+
+Hence,
+
+$$\begin{align}
+r(\omega\vert\kappa, m) &= \vert\vert\frac{d\epsilon}{d\omega}\vert\vert s(\epsilon(\omega)) \\
+&= \vert\vert\frac{d\epsilon}{d\omega}\vert\vert \epsilon^{\frac{m-3}{2}}\left(1-\epsilon\right)^{\frac{m-3}{2}} \\
+&= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(1 - \frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
+&= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(\frac{\omega(1-b)-(1+b) - \omega + 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
+&= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(\frac{\omega -b\omega - 1 - b - \omega + 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
+&= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(\frac{-b( \omega + 1)}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
+&= \frac{2b^{\frac{m-1}{2}}}{(1+b - \omega(1-b))^2} \left(\frac{(1 - \omega)(1 + \omega)}{(\omega(1-b)-(1+b))^2}\right)^{\frac{m-3}{2}} \\
+&= 2b^{\frac{m-1}{2}}  \frac{(1 - \omega^2)^{\frac{m-3}{2}} }{(1 + b - \omega(1-b))^{m-1}}\\
+\end{align}$$
+
+The key similar here, and again we want the envelope to be as similar to the distribution we are trying to sample, is that they both share a $$(1 - \omega^2)^{\frac{m-3}{2}}$$ factor.
+The polynomial factor actually roughly gets larger with larger $$\omega$$, which is also similar to $$\exp(\kappa \omega)$$, but crucially will always be larger than $$\exp(\kappa \omega)$$ 
+within the range of $$\omega$$. i.e. We've found a pretty good envelope.
+
+The actual sampling then comes down to rejection sampling using $$s(\epsilon)$$, $$r(\omega\vert\kappa, m)$$ (dependence on $$\kappa$$ comes through $$b$$ by the way) and $$g(\omega\vert\kappa, m)$$. 
+This process is described in Algorithm 2 from [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) with some algebraic trickery that I'm not going to go into as to me at least, that's all it is.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/DavidsonAlgorithm2.png" 
+    style="width: 66%; height: auto; border-radius: 8px;">
+    <figcaption> Algorithm 2 from Davidson et al. 2018 </figcaption>
+</div>
+
+
+I've coded this up in the below python function.
 
 
 ```python
@@ -787,7 +875,7 @@ def sample_vMF_mixture(k, m, num=10):
 
 ## Putting it all together
 
-We can then put this into action with something like the below.
+We can then put this into action with the function we defined way above.
 
 ```python
 custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
@@ -799,10 +887,93 @@ custom_vMF_samples = sample_vMF(np.array([0., 0., 1.0]), 5.0, num=5000)
     style="border:none;"
 ></iframe>
 
+Voila! Terrifique! Magnifique! (Not sure if that's how I'm meant to spell that!)
+
 
 <br>
 
 ## Taking Derivatives
+
+So we made a sampling regime similar to the standard reparameterisation trick, but the key thing in the original was that the derivatives of the loss worked out. 
+The next question we need to ask ourselves is whether that is the case? 
+
+It's not immediately obvious because what we did isn't an exact 1-to-1 to the original, because of the rejection sampling step (which isn't in the original).
+
+What [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) do is use a result from ["Reparameterization Gradients through Acceptance-Rejection Sampling Algorithms" - Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683).
+In this paper they show that for many rejection sampling setups you can move gradients of the parameters being optimised, into the expectations within the loss.
+
+If we represent our loss as some expectation over the KL divergence between some exact posterior probability distribution $$p(z\vert x) = p(x, z)/p(x)$$ and our (variational) approximation $$q(z\vert x ; \phi)$$ that we are optimising with respect to $$\phi$$
+(for those familiar with variational inference I'm just quickly deriving the [ELBO](https://en.wikipedia.org/wiki/Evidence_lower_bound)),
+
+$$\begin{align}
+KL(q\vert\vert p ; \phi) &= \mathbb{E}_{z\sim q(z\vert x)}\left[ \log \frac{q(z\vert x ; \phi)}{p(z\vert x)}\right] \\
+&= \mathbb{E}_{z\sim q(z\vert x)}\left[ \log q(z\vert x ; \phi) - \log p(z\vert x) \right] \\
+&= \mathbb{E}_{z\sim q(z\vert x)}\left[ \log q(z\vert x ; \phi) - \log p(z, x) + \log p(x) \right] \;\;\;\;\;\;\ \text{(Bayes' theorem)}\\
+&= \mathbb{E}_{z\sim q(z\vert x)}\left[ \log q(z\vert x ; \phi)\right] \\
+&\;\;\;\;-  \mathbb{E}_{z\sim q(z\vert x ; \phi)}\left[\log p(z, x)\right] \\
+&\;\;\;\;+ 1 \cdot \log p(x). \;\;\;\;\;\;\ \text{(p(x) doesn't involve z)}\\
+\end{align}$$
+
+If we are constructing a loss to optimise, then that last term doesn't matter as it doesn't involve $$\phi$$ so we will drop it. 
+Also in statistics the first term has a more formal definition as the [_entropy_](https://en.wikipedia.org/wiki/Entropy_(information_theory)) of $$q(z\vert x ; \phi)$$, denoted $$\mathbb{H}[q(z\vert x ;\phi)]$$.
+We will then follow the notation of [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) and denote the remaining term as the following (dropping the dependence on $$x$$ from now on, presuming it to be a constant effectively),
+
+$$\begin{align}
+\mathbb{E}_{z\sim q(z; \phi)}\left[\log p(z, x)\right] = \mathbb{E}_{z\sim q(z; \phi)}\left[f(z)\right].
+\end{align}$$
+
+We will then write the loss, or simply the function that we are trying to minise, as,
+
+$$\begin{align}
+L(\phi) = \mathbb{E}_{z\sim q(z ; \phi)}\left[f(z)\right] + \mathbb{H}[q(z ;\phi)].
+\end{align}$$
+
+What [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) then show is that if you have a target distribution that you are trying to sample, 
+in this case $$q(z;\phi)$$, a proposal distribution $$r(z;\phi)$$ and constant $$M_\phi$$ such that $$q(z;\phi)\leq M_\phi r(z;\phi)$$. 
+We perform rejection sampling following the algorithm below that I'm stealing from [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) because I cannot figure out how to do the formatting
+for algorithms in GitHub markdown (just replace the $$\theta$$'s with $$\phi$$'s).
+
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/NaessethAlgorithm1.png" 
+    style="width: 50%; height: auto; border-radius: 8px;">
+    <figcaption> Algorithm 1: "Reparameterized Rejection Sampling" from  Naesseth et al. (2016)</figcaption>
+</div>
+
+When the sampling is set up in this manner we can represent the probability of accepting a given sample as the folliwing (following very closely to equation 4 in [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683)),
+
+$$\begin{align}
+\pi(\epsilon;\phi) = \int \pi(\epsilon, u ;\phi) du
+\end{align}$$
+
+$$\pi(\epsilon, u ;\phi)$$ is the probability of accepting a given $$\epsilon$$ for a specific $$u$$.
+We can split this into the base probability of sampling a given $$\epsilon \sim s(\epsilon)$$ and [_indicator function_](https://en.wikipedia.org/wiki/Indicator_function) (denoted $$\mathbb{1}$$) for whether we accept this given $$\epsilon$$, 
+along a normalisation constant which turns out to be $$M_\phi$$.
+
+$$\begin{align}
+\pi(\epsilon;\phi) &= \int \pi(\epsilon, u ;\phi) du \\
+ &= \int M_\phi s(\epsilon) \mathbb{1} \left[0 < u < \frac{q(h(\epsilon, \phi) ; \phi)}{M_\phi r(h(\epsilon, \phi) ; \phi)} \right] du \\
+ &=M_\phi s(\epsilon)  \int \mathbb{1} \left[0 < u < \frac{q(h(\epsilon, \phi) ; \phi)}{M_\phi r(h(\epsilon, \phi) ; \phi)} \right] du \\
+\end{align}$$
+
+Where $$h(\epsilon, \phi)$$ still represents the transform between $$\epsilon$$ and the parameter of interest $$z$$ which for our specific use-case is $$\omega$$. The integration then follows that,
+
+$$\begin{align}
+\pi(\epsilon;\phi) &=M_\phi s(\epsilon)  \int \mathbb{1} \left[0 < u < \frac{q(h(\epsilon, \phi) \vert \phi)}{M_\phi r(h(\epsilon, \phi) ; \phi)} \right] du \\
+&= s(\epsilon) \frac{q(h(\epsilon, \phi) ; \phi)}{r(h(\epsilon, \phi) ; \phi)},\\
+\end{align}$$
+
+which if doesn't make sense I've attempted to represent the indicator function graphically below. The function outputs 1 until it hits the threshold so the integral of it with respect to $$u$$ just ends up being the threshold.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/rejection_sampling_integration_figure.png" 
+    style="width: 50%; height: auto; border-radius: 8px;">
+    <figcaption> Graphical representation of the integration of the indicator function above.</figcaption>
+</div>
+
+
 
 
 
