@@ -726,9 +726,34 @@ and the paper that Ulrich cites called ["A Family of Distributions on the m-Sphe
 
 <br>
 
-So hopefully we now understand why we can split the distribution in two, $$f(\vec{z}) = f(\omega) \cdot f(\vec{v})$$, 
-and we can sample $$\vec{v}$$ by scaling samples from the multivariate standard normal distribution (as the samples are directionally uniform/symmetric). 
-But what is $$f(\omega) $$ and how do we sample it in a 'reparameterisation trick'-y way?
+So hopefully we now understand why we can split the distribution in two where $$\vec{z} = (\omega, (\sqrt{1-\omega^2})v^T)$$ with $$f(\vec{z}\vert\kappa, m) = g(\omega \vert \kappa, m) \cdot f(\vec{v} \vert m-1)$$. 
+We can sample $$\vec{v}$$ by scaling samples from the multivariate standard normal distribution (as the samples are directionally uniform/symmetric). 
+But what is $$g(\omega \vert \kappa, m)$$, and how do we sample it in a 'reparameterisation trick'-y way?
+
+The general method will be:
+1. We take samples from a distribution that we can _already_ sample efficiently that has a similarish form to $$g(\omega \vert \kappa, m)$$
+2. We perform rejection sampling with these samples, where the probability of accepting the values is the ratio of $$g(\omega \vert \kappa, m)$$ and our proposal distribution
+3. Figure out how this gives us derivatives of the loss that doesn't involve a derivative of the distribution over which we are taking an average
+
+To save some time (for both you and me) we're just going to propose that,
+
+$$\begin{align}
+g(\omega \vert \kappa, m) &\propto \exp(\kappa \vec{e}_1 \cdot x) (1-\omega^2)^{(m-3)/2} \\
+&=\exp(\kappa \omega) (1-\omega^2)^{(m-3)/2},
+\end{align}$$
+
+which in essence is the von Mises-Fisher distribution with a geometrical jacobian factor for what would be a surface integral. 
+Accounting for the surface area of lower dimensional sphere with the dimensions perpendicular to $$\vec{e}_1$$ ((where we get the uniform samples) ), $$\text{Area} \propto R^{m-2} = (1-\omega^2)^{\frac{m-2}{2}}$$, 
+and the conversion between $$\omega$$ as a z-coordinate and $$\phi$$ in angular coordinates (as any integration has to be done on the sphere),
+
+$$\begin{align}
+d\omega &= d(\cos(\phi)) = -\sin(\phi) d\phi \\
+d\phi &= d\omega/\sqrt{1-\cos^2(\phi)} = d\omega/\sqrt{1-\omega^2}\\
+\implies J(\omega) &= (1/\sqrt{1-\omega^2}) \cdot (1-\omega^2)^{\frac{m-2}{2}} \\
+J(\omega) &= (1-\omega^2)^{\frac{m-3}{2}}. \\
+\end{align}$$
+
+
 
 ```python
 from scipy.stats import beta, uniform, uniform_direction
