@@ -1019,6 +1019,42 @@ $$\begin{align}
 
 So in essence this is great because we went from somehow having to take a derivative of an algorithm (rejection sampling) into some nice monte carlo estimate.
 
+## Some final things involving the loss
+
+Similar to how in standard VAEs we enforce a regularisation on the distribution formed in the latent space by including a non-informative prior on the result, 
+for spherical VAEs we enforce the non-informative uniform distribution on the sphere. Beyond the changes in geometry, this is fundamentally different to standard VAEs
+that enforce a normal distribution which still yields some information about the 'centres' and 'spread' of the distributions, the regularisation/prior here is completely
+uniform. This is fine essentially because the space we are constructing our latent distribution in is already finite.
+
+With this [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) calculate the regularisation term of the loss, which is interpreted as the KL divergence between the 
+'posterior distribution' which is the vMF distribution we've been discussing and sampling above described by $$ \mathcal{C}_m(\kappa) \exp(\kappa \vec{\mu}^T \vec{z})$$ 
+and the prior (our uniform distribution on the unit sphere). 
+
+The normalisation constant $$ \mathcal{C}_m(\kappa)$$ for the von-Mises Fisher distribution is given by $$\mathcal{C}_m(\kappa) = \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)}$$. 
+
+The surface area of a sphere in $$m$$ dimensions is given by
+$$A(S^{m-1}) = \frac{2\pi^{m/2}}{\Gamma(m/2)}$$, hence the uniform probability distribution is $$p(\vec{z}) = \left(A(S^{m-1})\right)^{-1}$$. 
+
+Hence the KL divergence is given by,
+
+$$\begin{align}
+&KL\left[q(\vec{z}\vert \vec{\mu}, \kappa) \lVert p(\vec{z}) \right] \\
+&= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \log \frac{q(\vec{z}| \vec{\mu}, \kappa) }{p(\vec{z})} d\vec{z} \\
+&= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \log q(\vec{z}| \vec{\mu}, \kappa) - \log p(\vec{z}) \right) d\vec{z} \\
+&= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \log \underbrace{\left( \mathcal{C}_m(\kappa) \exp(\kappa \vec{\mu}^T \vec{z}) \right)}_{\text{von-Mises Fisher distribution}} - \log \underbrace{\left(\frac{2\pi^{m/2}}{\Gamma(m/2)} \right)}_{U(S^{m-1})}  \right) d\vec{z} \\
+&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \kappa \vec{\mu}^T \vec{z}\right) d\vec{z}  - \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)\\
+&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \kappa \vec{\mu}^T \mathbb{E}_{\vec{z}\sim q(\vec{z}|\vec{\mu}, \kappa)}\left[\vec{z}\right] - \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)\\
+\end{align}$$
+
+To continue this derivation we're going to use the fact that,
+
+$$\begin{align}
+\mathbb{E}_{\vec{z}\sim q(\vec{z}\vert\vec{\mu}, \kappa)}\left[\vec{z}\right]=\vec{\mu}\frac{\mathcal{I}_{m/2}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)},
+\end{align}$$
+
+which didn't make immediate sense but if you imagine the non-zero concentration parameter examples above, the mean coordinate is along $$\vec{\mu}$$ but has to have a smaller magnitude. 
+The $$\frac{\mathcal{I}_{m/2}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)}$$ is then simply the factor with which the vector is contracted.
+
 
 
 <br>
@@ -1032,13 +1068,13 @@ So in essence this is great because we went from somehow having to take a deriva
 
 <br>
 
-# Image Classification and Generation with MNIST and CelebA
+# Image Classification and Generation for MNIST and CelebA with constant curavture VAEs
 
 
 
 <br>
 
-# Molecular Property Prediction with QM9
+# Molecular Property Prediction for QM9 dataset with constant curavture VAEs
 
 
 
