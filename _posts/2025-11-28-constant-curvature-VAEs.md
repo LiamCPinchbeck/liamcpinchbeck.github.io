@@ -448,7 +448,7 @@ f_{vMF}(\vec{x}\vert\vec{\mu}, \kappa) \propto \kappa^{p/2 - 1} \exp(\kappa \vec
 \end{align}$$
 
 where again we can make the comparisons to the traditional normal distribution. $$\kappa$$ works similar to inverse variance, 
-and instead of asking how similar a vector is to the mean by finding the absolute norm squared $$\vert\vert \vec{x} - \vec{\mu}\vert\vert^2$$, 
+and instead of asking how similar a vector is to the mean by finding the absolute norm squared $$\lVert \vec{x} - \vec{\mu}\rVert^2$$, 
 we quantify the similarity through the [_cosine similarity_](https://en.wikipedia.org/wiki/Cosine_similarity) 
 or simply the dot product $$\vec{\mu} \cdot \vec{x}$$ when the two vectors have unit magnitude. 
 We just get something weird in the normalisation constant because of the form of our distribution.
@@ -815,8 +815,8 @@ $$\begin{align}
 Hence,
 
 $$\begin{align}
-r(\omega\vert\kappa, m) &= \vert\vert\frac{d\epsilon}{d\omega}\vert\vert s(\epsilon(\omega)) \\
-&= \vert\vert\frac{d\epsilon}{d\omega}\vert\vert \epsilon^{\frac{m-3}{2}}\left(1-\epsilon\right)^{\frac{m-3}{2}} \\
+r(\omega\vert\kappa, m) &= \left\lVert\frac{d\epsilon}{d\omega}\right\rVert s(\epsilon(\omega)) \\
+&= \left\lVert\frac{d\epsilon}{d\omega}\right\rVert \epsilon^{\frac{m-3}{2}}\left(1-\epsilon\right)^{\frac{m-3}{2}} \\
 &= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(1 - \frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
 &= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(\frac{\omega(1-b)-(1+b) - \omega + 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
 &= \frac{2b}{(1+b - \omega(1-b))^2} \left(\frac{\omega - 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}}\left(\frac{\omega -b\omega - 1 - b - \omega + 1}{\omega(1-b)-(1+b)}\right)^{\frac{m-3}{2}} \\
@@ -972,10 +972,52 @@ which if doesn't make sense I've attempted to represent the indicator function g
     style="width: 50%; height: auto; border-radius: 8px;">
     <figcaption> Graphical representation of the integration of the indicator function above.</figcaption>
 </div>
+<br>
+
+And once we have the above form of $$\pi$$ we can re-write our loss as the following,
+
+$$\begin{align}
+L(\phi) &=\mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[f(h(\epsilon, \phi))\right] + \mathbb{H}_{\epsilon \sim \pi(\epsilon ; \phi)}[q(h(\epsilon, \phi) ;\phi)].
+\end{align}$$
 
 
+Now that we have the rejection sampling distribution encoded like this it's pretty simple to take derivatives of our loss. 
+Like [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) I'll focus on the first term, as the derivation for the second is basically exactly the same (and then I don't have to do it myself either!).
+
+$$\begin{align}
+\nabla_\phi L(\phi) &= \nabla_\phi \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[f(h(\epsilon, \phi))\right] \\
+&= \int s(\epsilon) \nabla_\phi \left(f(h(\epsilon, \phi)) \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) d\epsilon \\
+&= \int s(\epsilon) \nabla_\phi \left[f(h(\epsilon, \phi)\right] \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} d\epsilon \\
+&\;\;\;\;\;\;\;\;\;\; + \int s(\epsilon) f(h(\epsilon, \phi))\nabla_\phi \left( \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) d\epsilon \\
+&=  \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi f(h(\epsilon, \phi))\right]\\
+&\;\;\;\;\;\;\;\;\;\; + \int s(\epsilon) f(h(\epsilon, \phi))\left( \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) \nabla_\phi \log \left( \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) d\epsilon \\
+&=  \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi f(h(\epsilon, \phi))\right]\\
+&\;\;\;\;\;\;\;\;\;\; + \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi \log \left( \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) \right]  \\
+\end{align}$$
 
 
+Along with the above, [Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) also note that if $$h(\epsilon, \phi)$$ is invertible 
+(which in our case it obviously is because we swapped the outputs and inputs above) then you can also show that the final term simplifies further into (remembering that $$r = s \circ h^{-1}$$),
+
+$$\begin{align}
+&\nabla_\phi \log \left( \frac{q(h(\epsilon, \phi);\phi)}{r(h(\epsilon, \phi);\phi)} \right) \\
+&= \nabla_\phi \log q(h(\epsilon, \phi);\phi) -  \nabla_\phi \log  r(h(\epsilon, \phi);\phi) + \nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert \\
+&= \nabla_\phi \log q(h(\epsilon, \phi);\phi) -  \nabla_\phi \log  s(h^{-1}(h(\epsilon, \phi);\phi)) + \nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert \\
+&= \nabla_\phi \log q(h(\epsilon, \phi);\phi) -  \nabla_\phi \log  s(\epsilon) + \nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert \\
+&= \nabla_\phi \log q(h(\epsilon, \phi);\phi) -  0 + \nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert \\
+&= \nabla_\phi \log q(h(\epsilon, \phi);\phi) + \nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert. \\
+\end{align}$$
+
+So the derivative of our loss becomes,
+
+
+$$\begin{align}
+\nabla_\phi L(\phi) &=  \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi f(h(\epsilon, \phi))\right]\\
+&\;\;\;\;\;\;\; + \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi \log q(h(\epsilon, \phi);\phi)\right]  \\
+&\;\;\;\;\;\;\; + \mathbb{E}_{\epsilon \sim \pi(\epsilon ; \phi)}\left[\nabla_\phi \log \left\lvert \frac{dh}{d\epsilon}(\epsilon, \phi) \right\rvert\right]. \\
+\end{align}$$
+
+So in essence this is great because we went from somehow having to take a derivative of an algorithm (rejection sampling) into some nice monte carlo estimate.
 
 
 
