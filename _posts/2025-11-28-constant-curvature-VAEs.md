@@ -1042,8 +1042,10 @@ $$\begin{align}
 &= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \log \frac{q(\vec{z}| \vec{\mu}, \kappa) }{p(\vec{z})} d\vec{z} \\
 &= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \log q(\vec{z}| \vec{\mu}, \kappa) - \log p(\vec{z}) \right) d\vec{z} \\
 &= \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \log \underbrace{\left( \mathcal{C}_m(\kappa) \exp(\kappa \vec{\mu}^T \vec{z}) \right)}_{\text{von-Mises Fisher distribution}} - \log \underbrace{\left(\frac{2\pi^{m/2}}{\Gamma(m/2)} \right)}_{U(S^{m-1})}  \right) d\vec{z} \\
-&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \kappa \vec{\mu}^T \vec{z}\right) d\vec{z}  - \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)\\
-&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \kappa \vec{\mu}^T \mathbb{E}_{\vec{z}\sim q(\vec{z}|\vec{\mu}, \kappa)}\left[\vec{z}\right] - \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)\\
+&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \int_{S^{m-1}} q(\vec{z}| \vec{\mu}, \kappa) \left( \kappa \vec{\mu}^T \vec{z}\right) d\vec{z} \\
+&\;\;\;\;\;\; - \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)\\
+&= \log \frac{\kappa^{m/2-1}}{(2\pi)^{m/2}\mathcal{I}_{m/2-1}(\kappa)} + \kappa \vec{\mu}^T \mathbb{E}_{\vec{z}\sim q(\vec{z}|\vec{\mu}, \kappa)}\left[\vec{z}\right] \\
+&\;\;\;\;\;\;- \log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2).\\
 \end{align}$$
 
 To continue this derivation we're going to use the fact that,
@@ -1053,9 +1055,39 @@ $$\begin{align}
 \end{align}$$
 
 which didn't make immediate sense but if you imagine the non-zero concentration parameter examples above, the mean coordinate is along $$\vec{\mu}$$ but has to have a smaller magnitude. 
-The $$\frac{\mathcal{I}_{m/2}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)}$$ is then simply the factor with which the vector is contracted.
+The $$\frac{\mathcal{I}_{m/2}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)}$$ is then simply the degree that the vector is contracted. Continuing our analytical construction of the loss (we'll see why this is important in a sec),
 
 
+$$\begin{align}
+&KL\left[q(\vec{z}\vert \vec{\mu}, \kappa) \lVert p(\vec{z}) \right] \\
+&= \underbrace{\left(\frac{m}{2}-1\right) \log \kappa - \frac{m}{2} \log\left(2\pi\right) -  \log \mathcal{I}_{m/2-1}(\kappa)}_{\text{norm. const. from vMF}}\\
+&\;\;\;\;\;\; + \underbrace{\kappa \frac{\mathcal{I}_{m/2}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)}}_{\text{from vMF expectation}} -  \underbrace{\log 2 - \frac{m}{2} \log \pi + \log \Gamma(m/2)}_{\text{from prior}}.
+\end{align}$$
+
+And this is our final loss (for the latent space/stuff involving the sphere explicitly[^mu], you would also need the reconstruction loss). 
+The issue is then that we have [modified bessel functions](https://en.wikipedia.org/wiki/Bessel_function) that non-trivially depend on one of the parameters of interest $$\kappa$$, and automatic differentiation can't handle them.
+This means we have to come up with some expression ourselves.
+
+[^mu]: Notice that the loss _only_ depends on $$\kappa$$, not on $$\mu$$. Meaning that $$\mu$$ is only updated by the reconstruction loss. This makes a little sense as the value of $$\mu$$ doesn't really mean anything regularisation-wise.
+
+
+I'll leave the derivation of this gradient to you (which after the above we know that we can perform nicely). The only information that you might need is that $$\nabla_\kappa \mathcal{I}_\nu(\kappa) = \frac{1}{2} \left(\mathcal{I}_{\nu-1}(\kappa) + \mathcal{I}_{\nu+1}(\kappa) \right)$$. 
+It then comes out (using roughly the same formatting as [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) as they derived in Equation 6 of their paper) that the derivatives of the above loss can be calculated as,
+
+$$\begin{align}
+&\nabla_\kappa KL(vMF(\vec{\mu}, \kappa) \lVert U(S^{m-1})) \\
+&= \frac{k}{2}\left(\frac{\mathcal{I}_{m/2+1}(\kappa)}{\mathcal{I}_{m/2-1}(\kappa)}- \frac{\mathcal{I}_{m/2}(\kappa) \left(\mathcal{I}_{m/2-2}(\kappa) + \mathcal{I}_{m/2}(\kappa)\right)}{\left(\mathcal{I}_{m/2-1}(\kappa)\right)^2} + 1 \right).
+\end{align}$$
+
+
+
+## Coding it all up
+
+I was thinking of coding this all up myself but in the end figured it would almost be a carbon copy of [the PyTorch version of the code produced by Davidson et al. (2018)](https://github.com/nicola-decao/s-vae-pytorch) anyways. 
+Additionally, they were kind enough to _also_ make a [Tensorflow version of their code as well](https://github.com/nicola-decao/s-vae-tf/tree/master).
+So, have a look in either of those if you're interested. 
+In the PyTorch version the calculations for the gradients/bessel functions are specifically calculated [in this file](https://github.com/nicola-decao/s-vae-pytorch/blob/master/hyperspherical_vae/ops/ive.py). 
+Not quite sure where the equivalent is in the case of the Tensorflow version.
 
 <br>
 
