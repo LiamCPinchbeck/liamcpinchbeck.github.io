@@ -1103,11 +1103,49 @@ The actual derivation is waaaaaaaaaaaaaaaaaay easier for this example than the o
 transporting samples from $$\mathbb{R}^n$$ (n-dimensional Euclidean space) to $$\mathbb{H}^n$$ (n-dimensional hyperbolic space), and calculating a jacobian. Seriously that's it.
 
 
-
 ## Hyperbolic space
 
 The definition for hyperbolic space is actually make much more general than we need for the purposes of the VAE. 
-The strict definition is something along the lines of a Riemannian manifold (smooth higher dimensional surface/space) with constant negative curvature.
+The strict definition is something along the lines of a Riemannian manifold (smooth higher dimensional surface/space) with constant negative [curvature](https://en.wikipedia.org/wiki/Curvature)[^curv] 
+
+[^curv]: For a specific type of curvature I usually default to thinking in terms of [Gaussian curvature](https://en.wikipedia.org/wiki/Gaussian_curvature).
+
+The behaviour of hyperbolic spaces is a lil strange, so much so that we require specific methods/models to try and imagine/visualise them.
+
+One such model is the [Poincare disc/ball model](https://en.wikipedia.org/wiki/Poincar%C3%A9_disk_model) which maps the hyperbolic space into a unit circle/ball 
+(I'll just use circle from now on but the circle/ball continues). The edge of the circle is infinitely far away from the centre of the disc. I steal a figure for this from Wikipedia below.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/PoincareDisc.png" 
+    style="width: 50%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+I bring this up (we'll be ditching this picture in a sec) to show the basic reason that we are interested in modelling latent space as a hyperbolic space at all. 
+The [Tetradecagons](https://en.wikipedia.org/wiki/Tetradecagon) within the hyperbolic space are of equal area. 
+
+
+Usually (in our Euclidean understanding of the world) as we move further out in space if you imagine the circle/sphere, 
+area will increase as distance squared $$\pi r^2$$ and volume distance cubed $$\frac{4}{3} \pi r^3$$. In hyperbolic space though, the area and volume will increase exponentially!
+
+This characteristic or quirk of the geometry lends itself to representing hierarchical or tree. 
+It would make sense that data/categories may need to be represented with about the same amount of space in the latent space.
+i.e. no singular category/piece of data is any more or less complicated than any other. 
+
+Then as we increase the depth of the structure the amount of area needed to nicely represent te data exponentially increases. You can see this in the below two gifs.
+
+<div style="text-align: center;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/exp_hierarchical_structure_v1.gif" 
+    style="width: 49%; height: auto; border-radius: 8px;">
+<img 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/exp_hierarchical_structure_v2.gif" 
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+So similar to how linearly increasing the depth in the above tree exponentially increases the required width, in hyperbolic space linearly increasing distances exponentially increase area!
 
 
 
