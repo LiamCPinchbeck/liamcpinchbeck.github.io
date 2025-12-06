@@ -6,17 +6,23 @@ tags:
   - Introductory
   - Sampling Methods
 #   - category2
+manual_prev_url: /posts/2025/01/2025-01-26-first-blog-post/
+manual_prev_title: "Fitting a line I"
+manual_next_url: /posts/2025/01/2025-01-28-rejection-sampling/
+manual_next_title: "Rejection Sampling"
+
 ---
 
 
-Introduction into inverse transform sampling for continuous and discrete probability distributions.
+Introduction to inverse transform sampling for continuous and discrete probability distributions.
 
 
 ### Introduction
-The end goal of the next few posts is to build up to an intuitive understanding of how Markov Chain Monte Carlo (MCMC) methods work following a similar method as the YouTuber [ritvikmath's](https://www.youtube.com/@ritvikmath) videos on the topic. 
+The end goal of the next few posts is to build up to an intuitive understanding of how **Markov Chain Monte Carlo (MCMC)** methods work, following a similar method as the YouTuber [ritvikmath's](https://www.youtube.com/@ritvikmath) videos on the topic. 
 
-At the heart of MCMC is a sampling algorithm for probability distribution with an unknown normalising constant. In this tutorial we will see how one can sample a probability density/mass distribution when you have the explicit form of the distribution.
+At the heart of MCMC is a sampling algorithm for probability distributions with an unknown normalizing constant. In this tutorial, we will see how one can sample a **probability density/mass distribution** when you have the explicit form of the distribution.
 
+---
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -25,11 +31,13 @@ At the heart of MCMC is a sampling algorithm for probability distribution with a
 - [Coding our own sampler](#coding-up-our-own-sampler)
 - [Next Steps](#next-steps)
 
+---
+
 ## The End Result
 
-If you're short on time, this will be the only section that you need to look at. A general understanding of this topic will allow us to move on to future topics in Rejection Sampling and MCMC methods. 
+If you're short on time, this will be the only section that you need to look at. A general understanding of this topic will allow us to move on to future topics in **Rejection Sampling** and **MCMC** methods. 
 
-Let's say you have a normal probability distribution function (pdf) and it's cumulative distribution function (cdf). From the below gif you can see if we invert the cdf and plug in some uniform samples from 0 to 1 then we get samples representative of the normal probability distribution.
+Let's say you have a **normal probability distribution function (pdf)** and its **cumulative distribution function (cdf)**. From the GIF below, you can see that if we invert the cdf and plug in some uniform samples from 0 to 1, then we get samples representative of the normal probability distribution.
 
 <div style="text-align: center;">
   <img 
@@ -39,7 +47,7 @@ Let's say you have a normal probability distribution function (pdf) and it's cum
       style="width: 50%; height: auto; border-radius: 8px;">
 </div>
 
-And we can do this with any analytic continuous distribution. For example below I have an examples with a power law distribution, gamma distribution, ARGUS distribution and others using scipy functions (the explicit functions aren't important just that you can see that the samples gradually mimic the pdf of the relevant distribution).
+And we can do this with any analytic continuous distribution. For example, below I have examples with a **power law distribution**, **gamma distribution**, **ARGUS distribution**, and others using `scipy` functions (the explicit functions aren't important, just that you can see that the samples gradually mimic the pdf of the relevant distribution).
 
 
 <div style="text-align: center;">
@@ -82,12 +90,13 @@ And we can do this with any analytic continuous distribution. For example below 
 
 I always imagine the values on the left smashing into the cdf on the right and dropping wherever they hit. Bigger gradients in the cdf correspond to more samples in that area when the samples drop down.
 
+---
 
 ## The Math
 
-So the question is, how is it that I can transform samples of the uniform distribution, into samples of any probability distribution with an analytic cumulative disitribution function?
+So the question is, how is it that I can transform samples of the uniform distribution into samples of any probability distribution with an analytic **cumulative distribution function**?
 
-As a test case, let's say we want samples from the exponential distribution,
+As a test case, let's say we want samples from the **exponential distribution**:
 
 $$\begin{align}
 p(x) = \begin{cases}
@@ -96,7 +105,7 @@ p(x) = \begin{cases}
 \end{cases}
 \end{align}$$
 
-which we then integrate to specific x values to get the CDF.
+which we then integrate to specific $x$ values to get the CDF.
 
 
 $$\begin{align}
@@ -106,7 +115,7 @@ CDF(x) = \int_{-\infty}^{x} p(x') dx' = \begin{cases}
 \end{cases}
 \end{align}$$
 
-If I give a specific value of x to the CDF, it will output the probability of being that value or below, for the given probability distribution. Here's a plot showing some example curves.
+If I give a specific value of $x$ to the CDF, it will output the probability of being that value or below, for the given probability distribution. Here's a plot showing some example curves.
 
 
 <div style="text-align: center;">
@@ -118,7 +127,7 @@ If I give a specific value of x to the CDF, it will output the probability of be
 
 </div>
 
-And a reminder our end goal is to produce some transformation $$T$$ (spoiler it's the inverse CDF) that will transform uniformly distributed samples $$U$$ into $$X$$ where follows whatever 1D probability density function we want.
+And a reminder: our end goal is to produce some transformation $$T$$(spoiler: it's the inverse CDF) that will transform uniformly distributed samples$$U$$into$$X$$where$$X$$ follows whatever 1D probability density function we want.
 
 $$\begin{align}
 T(U) = X
@@ -127,37 +136,38 @@ T(U) = X
 
 Cheating a little bit, we're going to presume that this will involve the CDF.
 
-By definition and our equation above,
+By definition and our equation above:
 
 $$\begin{align}
 CDF(x) = Prob(X\leq x) = Prob(T(U)\leq x) = Prob(U\leq T^{-1}(x)).
 \end{align}$$
 
-So what we've shown is that the CDF is equivalent to asking the probability that a uniform sample/value is less than or equal to $$ T^{-1}(x)$$. Well here's the cool bit, if I ask you 
-- what the probability of being less than or equal 1? 1. - As all the values/area in the dist. are equal to or less than 1.
-- what the probability of being less than or equal 0? 0. - As none the values/area in the dist. are less than 0.
-- what the probability of being less than or equal 0.5? 0.5. - As half the values/area in the dist. are less than 0.5.
+So what we've shown is that the CDF is equivalent to asking the probability that a uniform sample/value is less than or equal to $$ T^{-1}(x)$$. Well, here's the cool bit: if I ask you 
+- what the probability of being less than or equal to 1? It's 1. (As all the values/area in the distribution are equal to or less than 1.)
+- what the probability of being less than or equal to 0? It's 0. (As none of the values/area in the distribution are less than 0.)
+- what the probability of being less than or equal to 0.5? It's 0.5. (As half the values/area in the distribution are less than 0.5.)
 
-And so on. So it follows that,
+And so on. So it follows that:
 $$\begin{align}
 CDF(x) = Prob(U\leq T^{-1}(x)) = T^{-1}(x).
 \end{align}$$
 
 So you can clearly see that $$CDF = T^{-1}$$ or equivalently $$T = CDF^{-1}$$. And we have our transformation.
 
+---
 
 ## Coding up our own sampler
 
-Now [ritvikmath](https://www.youtube.com/@ritvikmath) then goes on to solve for the exact analytical inverse of the exponential. It isn't that hard, you can have a crack yourself, but what I'm interested in is "if you give me a general probability density function, how can I sample it?" And let's presume that either there is no closed form expression for the inverse CDF or that I don't have the time/can't be bothered to figure it out. 
+Now [ritvikmath](https://www.youtube.com/@ritvikmath) then goes on to solve for the exact analytical inverse of the exponential. It isn't that hard, you can have a crack yourself, but what I'm interested in is: "if you give me a general probability density function, how can I sample it?" And let's presume that either there is no closed-form expression for the inverse CDF or that I don't have the time/can't be bothered to figure it out. 
 
-Well, the inverse of a function is just if I give the inverse what _were_ the outputs of the _original function_ then I should get what the inputs must have been. So if I can create a map (or an _approximate map_) of inputs to outputs, then just do the ol' switcheroo I can interpolate the result and get an approximate inverse CDF!
+Well, the inverse of a function is just if I give the inverse what _were_ the outputs of the _original function_, then I should get what the inputs must have been. So if I can create a map (or an _approximate map_) of inputs to outputs, then just do the ol' switcheroo, I can interpolate the result and get an approximate inverse CDF!
 
 ```python
 
 from scipy.interpolate import interp1d
 
 def create_an_invcdf(pdf, inputs, kwargs):
-    # We are iplicitly presuming that the inputs are linearly spaced here and performing are finite Riemann sum
+    # We are implicitly presuming that the inputs are linearly spaced here and performing a finite Riemann sum
     pdf_outputs = pdf(inputs, **kwargs)
 
     cdf_outputs = np.cumsum(pdf_outputs)
@@ -168,9 +178,9 @@ def create_an_invcdf(pdf, inputs, kwargs):
     return inv_cdf_func
 ```
 
-I extract the pdf (a pmf would also work here) then calculate the cumulative sum, equivalent to a finite Riemann sum, diving by the max value (which should be the last but dw) such that the cdf values range from $$\approx 0$$ to 1[^1]. 
+I extract the pdf (a pmf would also work here) then calculate the cumulative sum, equivalent to a finite Riemann sum, dividing by the max value (which should be the last, but don't worry) such that the cdf values range from $$\approx 0$$ to 1[^1]. 
 
-[^1]: Presuming that we only sample in the range of the given inputs we can think of this as the complete domain, the final value should correspond to one hence the division. We could also take this step out if you are sure your distribution is properly normalised
+[^1]: Presuming that we only sample in the range of the given inputs, we can think of this as the complete domain. The final value should correspond to one, hence the division. We could also take this step out if you are sure your distribution is properly normalized.
 
 ### Continuous Approx Case
 
@@ -226,7 +236,8 @@ plt.show()
 
 </div>
 
-And then if we produce uniform random samples and feed them into these functions with lambda equal to 5 we get the following.
+And then if we produce uniform random samples and feed them into these functions with lambda equal to 5, we get the following.
+
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/2025-01-27/inv_cdf_samples_comparison.png" 
@@ -237,12 +248,42 @@ And then if we produce uniform random samples and feed them into these functions
 </div>
 
 
-You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function it would likely be better to use something like ```np.abs(input - cdf_outputs).argmin()``` to get the index of the exact input/output.
+You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function, it would likely be better to use something like `np.abs(input - cdf_outputs).argmin()` to get the index of the exact input/output.
 
 
 ## Next Steps
 
 In my [next post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/) we'll use this ability to sample "nice" probability distributions to sample "less nice" distributions using [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling).
 
+
+
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
 
 ___

@@ -6,9 +6,13 @@ tags:
   - Bayesian Analysis
   - Introductory
 #   - category2
+# manual_prev_url: /posts/2025/01/previous-post-url/
+# manual_prev_title: "Fitting a model to data I"
+manual_next_url: /posts/2025/01/2025-01-27-inverse-transform-sampling/
+manual_next_title: "Inverse Transform Sampling"
 ---
 
-First blog post, outlining what I'm going to try and do in the next few posts and some basics on Bayesian analysis.
+First blog post, outlining what I'm going to try and do in the next few posts and some basics of Bayesian analysis.
 
 
 ## Table of Contents
@@ -23,11 +27,11 @@ First blog post, outlining what I'm going to try and do in the next few posts an
 Statistics is cool trust me
 ----
 
-My research interests are in astro-particle physics. This involves a lot of data, models and parameters. Extracting meaningful information from all of that requires careful and thoughtful analysis.
+My research interests are in astro-particle physics. This involves a lot of data, models, and parameters. Extracting meaningful information from all of that requires careful and thoughtful analysis.
 
-Due to this I frequently (always) use Bayesian methods. In my first few posts, or however long it takes, I hope to show why this is.
+Due to this, I frequently (always) use Bayesian methods. In my first few posts, or however long it takes, I hope to show why this is.
 
-Like many a statistics blogger, I'm going to make this post pretty similar to [Dan Foreman Mackey's](https://dfm.io/posts/fitting-a-plane/) and then I am particularly further influenced by [Andy Casey's](https://astrowizici.st/) teaching, the relevant posts can be found [here](https://astrowizici.st/teaching/phs5000/) (unless it's bad, then he had nothing to do with it). One key difference between what I'm going to do and Dr. Casey's website, is that I'm going to skip the analytical methods at the beginning, as I personally rarely use those methods in my work and figure that this is my blog, so I'm going to show what _I_ do. 
+Like many a statistics blogger, I'm going to make this post pretty similar to [Dan Foreman Mackey's](https://dfm.io/posts/fitting-a-plane/), and I am particularly further influenced by [Andy Casey's](https://astrowizici.st/) teaching; the relevant posts can be found [here](https://astrowizici.st/teaching/phs5000/) (unless it's bad, then he had nothing to do with it). One key difference between what I'm going to do and Dr. Casey's website is that I'm going to skip the analytical methods at the beginning, as I personally rarely use those methods in my work and figure that this is my blog, so I'm going to show what _I_ do. 
 
 I'm not sure what your background is, so I’ll try to start from as basic a level as I can. That said, I know I sometimes get a bit locked into my own way of thinking—so if anything here is unclear or could be better explained, _please_ shoot me an email!
 
@@ -37,7 +41,7 @@ I'm not sure what your background is, so I’ll try to start from as basic a lev
 Fitting a line to data. (Gotta start somewhere)
 =====================
 
-For this post I'm going to throw some data at you. It might seem simple but will provide some of the ground-rules for following posts. 
+For this post, I'm going to throw some data at you. It might seem simple but will provide some of the ground rules for following posts. 
 
 I’ve generated some random x values, then created corresponding y values using the equation for a straight line and added noise drawn from a Gaussian distribution. In notation:
 
@@ -48,7 +52,7 @@ $$y \sim \mathcal{N}(\mu=m\cdot X+ c, \sigma^2=1).$$
 (The first line says that X is [uniformly distributed](https://en.wikipedia.org/wiki/Continuous_uniform_distribution) between 0 and 10. The second says that y is [normally distributed](https://en.wikipedia.org/wiki/Normal_distribution) around the straight line $$m · X + c$$ with a standard deviation of 1.)
 
 
-I won't tell you what $$m$$ and $$c$$ are, that is what we're trying to find. But let's say that we, for some reason, know that $$ m $$ will be between 0 and 10 and $$c$$ will be between $$-10$$ and $$10$$. 
+I won't tell you what $$m$$ and $$c$$ are; that is what we're trying to find. But let's say that we, for some reason, know that $$m$$ will be between $$0$$ and $$10$$ and $$c$$ will be between $$-10$$ and $$10$$. 
 
 This gave me some data that looks like the following.
 
@@ -64,7 +68,7 @@ This gave me some data that looks like the following.
 Let's start with exploration
 ---------------------
 
-First let's define a function to use for our straight line.
+First, let's define a function to use for our straight line.
 
 
 ```python
@@ -72,7 +76,7 @@ def line_function(x, m, c):
     return m * x + c
 ```
 
-The first thing that you may want to do is guess. There's nothing explicitly wrong with this, it may give you an idea of your parameters and is part of normal exploratory analysis where you get a feel for the data. For the following I got the $$m$$ and $$c$$ values by gradually changing them by eye.
+The first thing that you may want to do is guess. There's nothing explicitly wrong with this; it may give you an idea of your parameters and is part of normal exploratory analysis where you get a feel for the data. For the following I got the $$m$$ and $$c$$ values by gradually changing them by eye.
 
 ```python
 # Instantiation some x values to use with our straight line
@@ -113,7 +117,7 @@ When trying this out in practice you can be quite surprised at how close you get
 Let’s start with a simple, albeit often flawed, approach
 ---------------------
 
-We need some sort of function to get a probabilistic interpretation of our parameters. For that, we will mimic how I generated the data, particularly the probability to generate the data for a given set of input parameters otherwise known as the [_likelihood_](https://en.wikipedia.org/wiki/Likelihood_function).
+We need some sort of function to get a probabilistic interpretation of our parameters. For that, we will mimic how I generated the data, particularly the probability to generate the data for a given set of input parameters, otherwise known as the [_likelihood_](https://en.wikipedia.org/wiki/Likelihood_function).
 
 _Through Maths_
 
@@ -369,9 +373,9 @@ Issues
 =====
 
 Woo! We have a probability density on our parameters. However, there are a few subtleties that I failed to mention.
-1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension. This corresponds to 10 billion evaluations of the function, which by itself is a little ridiculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB (~54 times the size of Skyrim)... not great. Additionally, we were lucky that the posterior wasn't much smaller than our prior, so we could zoom into the relevant region of parameter space. However, if we had enough data then the posterior could be small enough that the posterior values that evaluated may not see anything meaningful above 0. I'll get back to this one later.
+1. Most interesting models have more than 2 parameters. Let's say you have a 10 parameter model, and wish to look at just 10 values in each dimension. This corresponds to $$10^{10}$$ (10 billion) evaluations of the function, which by itself is a little ridiculous, but if we were to store all those values at the same time, presuming 64bit precision, this is approximately 640GB (~54 times the size of Skyrim)... not great. Additionally, we were lucky that the posterior wasn't much smaller than our prior, so we could zoom into the relevant region of parameter space. However, if we had enough data then the posterior could be small enough that the posterior values that evaluated may not see anything meaningful above 0. I'll get back to this one later.
 
-2. There's a bias in the gradient values towards positive values. Naturally you would presume that the gradient values are uniformly distributed between angles of -90 degrees to 90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we implicitly presumed looking at uniformly spaced values of m between 0 and 10 it would look like the following. (Thanks Dr. Casey for inspo on this particular plot.)
+2. There's a bias in the gradient values towards positive values. Naturally you might presume that the gradient values are uniformly distributed between angles of -90 degrees to 90 degrees. With our assumption, there are a lot more large values than small values. e.g. If we look at the gradients that we implicitly presumed looking at uniformly spaced values of m between 0 and 10 it would look like the following. (Thanks Dr. Casey for inspo on this particular plot.)
 
 ```python
 x = np.linspace(-1, 1, 101)
@@ -402,7 +406,7 @@ plt.savefig("possible-bad-gradients.png")
       style="width: 75%; height: auto; border-radius: 8px;">
 </div>
 
-You can see that we heavily preferred larger gradient values. We can instead ask that our gradients are uniformly distributed by the sin of the angle, where the angle is given by $$\theta = \tan^{-1}(m)$$ (where $$\theta$$ is angle here _not_ "parameters").
+You can see that we heavily preferred larger gradient values. We can instead ask that our gradients are uniformly distributed by the sine of the angle, where the angle is given by $$\theta = \tan^{-1}(m)$$ (where $$\theta$$ is angle here _not_ "parameters").
 
 In essence,
 
@@ -418,7 +422,7 @@ $$ \begin{align} \pi(m) &= \pi(\theta) \left|\frac{d\theta}{dm}\right| \\
 \end{align}
 $$
 
-When I first encountered this, I found it confusing—but visualizing random samples from the distribution helped solidify my understanding. I can't show how I generated these samples without getting sidetracked, but trust me that this is what random samples of our new distribution looks like.
+When I first encountered this, I found it confusing—but visualizing random samples from the distribution personally helped solidify my understanding. I can't show how I generated these samples without getting sidetracked, but trust me that this is what random samples of our new distribution looks like.
 
 
 <div style="text-align: center;">
@@ -434,7 +438,37 @@ Much better!
 Now if we use _this_ prior in our analysis, we don't include the bias (spoiler alert, for our small case it doesn't make a huge difference). 
 
 ### What's Next?
+
 As our models grow more complex, brute force quickly becomes impractical due to the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality). In the next few posts, I'll introduce more sophisticated techniques, such as [Markov Chain Monte Carlo (MCMC)](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo), to explore the posterior efficiently. I've written another post on that [here](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-29-practical-MHA-intro/).
 
 Otherwise, feel free to try and replicate what I've done here. You could also take it a step further and look at simultaneously fitting the spread of the gaussian $$\sigma$$ which you may have noticed has been left as an explicit dependency.
 
+
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>

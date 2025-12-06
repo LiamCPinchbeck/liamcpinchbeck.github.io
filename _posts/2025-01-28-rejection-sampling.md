@@ -6,11 +6,15 @@ tags:
   - Introductory
   - Sampling Methods
 #   - category2
+manual_prev_url: /posts/2025/01/2025-01-27-inverse-transform-sampling/
+manual_prev_title: "Inverse Transform Sampling"
+manual_next_url: /posts/2025/01/2025-01-29-practical-MCMC-intro/
+manual_next_title: "Practical Intro to the Metropolis-Hastings Algorithm/Fitting a line II"
 ---
 
-In this post I'm going to introduce rejection sampling as a way to generate samples from an unnormalised pdf as further background to MCMC.
+In this post, I'm going to introduce **rejection sampling** as a way to generate samples from an **unnormalized PDF** as further background to MCMC.
 
-Like my posts so far, I take heavy inspiration from a few resources. In this case, the in particular ones are:
+Like my posts so far, I take heavy inspiration from a few resources. In particular, the ones are:
 1. [Accept-Reject Sampling : Data Science Concepts](https://youtu.be/OXDqjdVVePY) - [ritvikmath](https://www.youtube.com/@ritvikmath)
 2. [An introduction to rejection sampling](https://youtu.be/kYWHfgkRc9s) - [Ben Lambert](https://www.youtube.com/@SpartacanUsuals)
     - Although this one is icky because he uses [mathematica](https://dictionary.cambridge.org/dictionary/english/horrible)
@@ -25,9 +29,11 @@ Like my posts so far, I take heavy inspiration from a few resources. In this cas
 - [Math Intro](#more-mathematical-introduction)
 - [Next Steps](#next-steps)
 
+---
+
 ## Intuition Introduction
 
-Let's begin with the same kind of function as in my [previous post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-27-inverse-transform-sampling/) on Inverse Transform Sampling (IVS).
+Let's begin with the same kind of function as in my [previous post](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-27-inverse-transform-sampling/) on **Inverse Transform Sampling (IVS)**.
 
 
 <div style="text-align: center;">
@@ -39,9 +45,9 @@ Let's begin with the same kind of function as in my [previous post](https://liam
 
 </div>
 
-Similar to IVS, presuming that we can generate uniform samples between any two finite bounds, how can we produce an algorithm to give us samples of chosen PDF?
+Similar to IVS, presuming that we can generate uniform samples between any two finite bounds, how can we produce an algorithm to give us samples of a chosen PDF?
 
-One thing you could do for the case above is produce samples between 0 and 2 for $$x$$ and 0 to 1 for $$y$$, producing the below scatter plot.
+One thing you could do for the case above is produce samples between 0 and 2 for $$x$$ and 0 and 1 for $$y$$, producing the scatter plot below.
 
 <div style="text-align: center;">
   <img 
@@ -52,7 +58,7 @@ One thing you could do for the case above is produce samples between 0 and 2 for
 
 </div>
 
-We then overlay our pdf and the samples.
+We then overlay our PDF and the samples.
 
 <div style="text-align: center;">
   <img 
@@ -63,7 +69,7 @@ We then overlay our pdf and the samples.
 
 </div>
 
-Then, you can think of what we have as a [dot plot](https://en.wikipedia.org/wiki/Dot_plot_(statistics)), and throw out samples above our pdf.
+Then, you can think of what we have as a [dot plot](https://en.wikipedia.org/wiki/Dot_plot_(statistics)), and throw out samples above our PDF.
 
 <div style="text-align: center;">
   <img 
@@ -74,7 +80,7 @@ Then, you can think of what we have as a [dot plot](https://en.wikipedia.org/wik
 
 </div>
 
-Converting these samples into a histogram we then find the following.
+Converting these samples into a histogram, we then find the following.
 
 <div style="text-align: center;">
   <img 
@@ -85,7 +91,7 @@ Converting these samples into a histogram we then find the following.
 
 </div>
 
-Which you can see is following the right curve but let's increase the number of samples to be sure.
+Which you can see is following the right curve, but let's increase the number of samples to be sure.
 
 <div style="text-align: center;">
   <img 
@@ -98,7 +104,7 @@ Which you can see is following the right curve but let's increase the number of 
 
 And that's the basic idea of [Rejection Sampling](https://en.wikipedia.org/wiki/Rejection_sampling). 
 
-This base form is obviously extremely inefficient at producing exact representative samples as opposed to Inverse Transform Sampling. However, it is easier to implement for multi-dimensional distributions and when you can't rigorously normalise the PDF (either due to dimensionality or stability). The only requirement is that you have some $$M$$ such that $$PDF(x)<M*f(x)$$ where $$g(x)$$ is your proposal distribution (so far, a uniform distribution which is just a constant value) for all $$x$$. In the previous case $$M=1$$, but we could also have used 2 or anything higher if we wanted, it would just be less efficient as we would be wasting more samples.
+This base form is obviously extremely inefficient at producing exact representative samples, as opposed to Inverse Transform Sampling. However, it is easier to implement for **multi-dimensional distributions** and when you can't rigorously normalize the PDF (either due to dimensionality or stability). The only requirement is that you have some $$M$$ such that $$PDF(x)<M\cdot f(x)$$ where $$g(x)$$ is your proposal distribution (so far, a uniform distribution which is just a constant value) for all $$x$$. In the previous case, $$M=1$$, but we could also have used 2 or anything higher if we wanted; it would just be less efficient as we would be wasting more samples.
 
 <div style="text-align: center;">
   <img 
@@ -208,7 +214,7 @@ A little extension to this concept is that we do not need to simply sample a uni
 
 [^1]: Here I also imply that they have the same, or $$Y$$ has a larger, [support](https://en.wikipedia.org/wiki/Support_(mathematics)) as well.
 
-For example with the ARGUS distribution sampling shown below, you can see that there is a huge number of wasted samples. But you could imagine repeating the process by enveloping the distribution with a gaussian, sampling that, and then doing the same accept-reject algorithm as we did with the uniform distribution.
+For example, with the ARGUS distribution sampling shown below, you can see that there is a huge number of wasted samples. But you could imagine repeating the process by enveloping the distribution with a Gaussian, sampling that, and then doing the same accept-reject algorithm as we did with the uniform distribution.
 
 <div style="text-align: center;">
 <img 
@@ -221,10 +227,11 @@ For example with the ARGUS distribution sampling shown below, you can see that t
 i.e. The algorithm is
 
 
-1. Generate samples from a gaussian that is >= ARGUS for input values
+1. Generate samples from a Gaussian that is $\geq$ ARGUS for input values.
 2. Sample the same number of uniformly distributed values between 0 and 1.
-3. If the proposal distributions probability times the uniform sample is $$\leq$$ to the ARGUS pdf value for that input, accept it. If not, reject it. 
-    - This equivalent to accepting a sample with the probability $$PDF(x)/Proposal(x)$$. More on this in the math-y introduction
+3. If the proposal distribution's probability times the uniform sample is
+ $$\leq$$ to the ARGUS PDF value for that input, accept it. If not, reject it.
+    - This is equivalent to accepting a sample with the probability $$PDF(x)/Proposal(x)$$. More on this in the math-y introduction.
 
 Here's a GIF showing the process.
 
@@ -355,26 +362,26 @@ images[0].save(
 
 Thanks again to [ritvikmath](https://www.youtube.com/@ritvikmath) for his work. This particular section is heavily influenced by his [own video on the topic](https://youtu.be/OXDqjdVVePY). 
 
-Our goal here is to be sure that the probability density of our samples, $$D(x\mid A)$$[^3],  matches that of our target distribution, $$p(x)$$, which we have in the unnormalised form of $$f(x)$$. 
+Our goal here is to be sure that the probability density of our samples, $$D(x\mid A)$$[^3], matches that of our target distribution, $$p(x)$$, which we have in the unnormalized form of $$f(x)$$. 
 
 [^3]: Density of our samples, given that they are accepted.
 
-As I hinted at when talking about generating samples from a more appropriate density/envelope, we can summarise our algorithm in another way.
+As I hinted at when talking about generating samples from a more appropriate density/envelope, we can summarize our algorithm in another way:
 
-1. Sample a value $$x$$ from our proposal distribution $$g(x)$$
-2. Accept this value with a probability of $$\mathcal{L}(A\mid x) = \frac{f(x)}{M\cdot g(x)}$$
+1. Sample a value $$x$$ from our proposal distribution $$g(x)$$.
+2. Accept this value with a probability of $$\mathcal{L}(A\mid x) = \frac{f(x)}{M\cdot g(x)}$$.
 
-Where when we were generating samples we instead multiplied a set of uniform values by $$M\cdot g(x)$$ as a substitute for the second step.
+When we were generating samples, we instead multiplied a set of uniform values by $$M\cdot g(x)$$ as a substitute for the second step.
 
-With our new algorithm, using Bayes' theorem (which I discussed in my line fitting blog post) we find that
+With our new algorithm, using Bayes' theorem (which I discussed in my line fitting blog post), we find that:
 
 $$\begin{align}
 D(x\mid A) = \frac{\mathcal{L}(A|x)\pi(x)}{\mathcal{Z}(A)} = \frac{\frac{f(x)}{M\cdot g(x)} g(x)}{\mathcal{Z}(A)} = \frac{1}{M} \frac{f(x)}{\mathcal{Z}(A)}
 \end{align}$$
 
-Remembering that $$M$$ is the value that we multiply our proposal density by such that $$M\cdot g(x) \geq p(x)$$ for all x. So now the question is $$\mathcal{Z}(A)$$?
+Remembering that $$M$$ is the value that we multiply our proposal density by such that $$M\cdot g(x) \geq p(x)$$ for all x. So now the question is: what is $$\mathcal{Z}(A)$$?
 
-We can imagine that the purpose of $$\mathcal{Z}(A)$$ is a normalisation constant so that the numerator becomes a probability density. i.e. So that we can integrate the right hand side over the range of parameter values and get 1. $$\mathcal{Z}(A)$$ is a constant with respect to $$x$$, so it needs to be whatever the integral of $$\frac{1}{M} f(x)$$ is over x[^4].
+We can imagine that the purpose of $$\mathcal{Z}(A)$$ is a normalization constant so that the numerator becomes a probability density. i.e., So that we can integrate the right-hand side over the range of parameter values and get 1. $$\mathcal{Z}(A)$$ is a constant with respect to $$x$$, so it needs to be whatever the integral of $$\frac{1}{M} f(x)$$ is over $$x$$[^4].
 
 [^4]: $$x$$ here can be a single dimension or a collection of variables such that we would have a multi-dimensional integral. The core maths stays the same.
 
@@ -391,20 +398,56 @@ $$\begin{align}
 D(x\mid A) = \frac{\frac{f(x)}{M\cdot g(x)} g(x)}{\mathcal{Z}(A)} = \frac{1}{M} \frac{f(x)}{\frac{C}{M}} = \frac{f(x)}{C} = p(x).
 \end{align}$$
 
-Woo! And if this all still doesn't satisfy you [here's a link](https://youtu.be/OXDqjdVVePY?t=738) to where [ritvikmath](https://www.youtube.com/@ritvikmath) adds a bit more of a personal intuition.
+Woo! And if this all still doesn't satisfy you, [here's a link](https://youtu.be/OXDqjdVVePY?t=738) to where [ritvikmath](https://www.youtube.com/@ritvikmath) adds a bit more of a personal intuition.
 
 
 ## Next Steps
 
-So, one of the beautiful things we've done here is created a method where we can get an exact representation for any given sample distribution, but there are quite a few hiccups for why this isn't used very much in practice as opposed to something like MCMC when trying to draw samples from a posterior distribution.
+So, one of the beautiful things we've done here is created a method where we can get an exact representation for any given sample distribution, but there are quite a few hiccups for why this isn't used very much in practice, as opposed to something like MCMC when trying to draw samples from a posterior distribution.
 
-The main reason that we don't often use these methods is we never know (or don't presume to know) the exact shape of our posterior distribution[^5]. So we can't pick a very good proposal distribution, or pick one at all, meaning that we have to use something like a uniform distribution that we would have to update every call where we find a probability density higher than it's max value, and update all our previous samples.
+The main reason that we don't often use these methods is we never know (or don't presume to know) the exact shape of our posterior distribution[^5]. So we can't pick a very good proposal distribution, or pick one at all, meaning that we have to use something like a uniform distribution that we would have to update every call where we find a probability density higher than its max value, and update all our previous samples.
 
 [^5]: If we are presuming that then we are doing [Variational Inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods)
 
-1. This is very inefficient especially with distributions that have a high dimensionality as we'll inevitably be sampling regions with extremely low probabilities
-2. This could be extremely expensive because we not only have to keep the samples that we are accepting, but also the ones that we aren't, because we may update the distribution such that the acceptance/rejection of a sample changes
+1. This is very inefficient, especially with distributions that have a high dimensionality, as we'll inevitably be sampling regions with extremely low probabilities.
+2. This could be extremely expensive because we not only have to keep the samples that we are accepting but also the ones that we aren't, because we may update the distribution such that the acceptance/rejection of a sample changes.
 
-So, in the next post I'll go through one of the most commonly used algoriths ever, and one of the most widely successful statistical algorithm ever, to explore unknown posterior densities when we have the likelihood and prior, the [MCMC](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) [Metropolis-Hastings algorithm](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-29-practical-MHA-intro/).
+So, in the next post, I'll go through one of the most commonly used algorithms ever, and one of the most widely successful statistical algorithms ever, to explore unknown posterior densities when we have the likelihood and prior: the [MCMC](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) [Metropolis-Hastings algorithm](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-29-practical-MHA-intro/).
+
+
+
+### Added Note 07/12/2025
+
+For those that are interested in ML contexts I recently came across a paper called ["Reparameterization Gradients through Acceptance-Rejection Sampling Algorithms" - Naesseth et al. (2016)](https://arxiv.org/abs/1610.05683) that shows you can perform something like [reparmeterisation trick](https://en.wikipedia.org/wiki/Reparameterization_trick) for any distribution where you can perform rejection sampling for it. 
+
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
 
 ---
