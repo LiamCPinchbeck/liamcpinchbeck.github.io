@@ -8,7 +8,7 @@ tags:
 #   - category2
 manual_prev_url: /posts/2025/01/2025-01-27-inverse-transform-sampling/
 manual_prev_title: "Inverse Transform Sampling"
-manual_next_url: /posts/2025/01/2025-01-29-practical-MCMC-intro/
+manual_next_url: /posts/2025/01/2025-01-29-practical-MHA-intro/
 manual_next_title: "Practical Intro to the Metropolis-Hastings Algorithm/Fitting a line II"
 ---
 
