@@ -33,6 +33,8 @@ In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspher
     - [Back to the von Mises-Fisher distribution](#back-to-the-von-mises-fisher-distribution)
     - [Reparameterisation trick with the von Mises-Fisher distribution](#reparameterisation-trick-with-the-von-mises-fisher-distribution)
 - [Hyperbolic VAE](#hyperbolic-vae)
+    - [Hyperbolic Space](#hyperbolic-space)
+    - [The Pseudo-Hyperbolic Gaussian / Wrapped Normalisation Distribution on Hyperbolic Space](#the-pseudo-hyperbolic-gaussian-or-wrapped-normal-distribution-on-hyperbolic-space)
 - [Image Classification and Generation with MNIST and CelebA](#image-classification-and-generation-with-mnist-and-celeba)
 - [Molecular Property Prediction with QM9](#molecular-property-prediction-with-qm9)
 - [Conclusions](#conclusions)
@@ -1092,6 +1094,47 @@ Not quite sure where the equivalent is in the case of the Tensorflow version.
 <br>
 
 # Hyperbolic VAE
+
+There have been a few methods to encode the latent dimension of VAEs but I quite like the one in 
+[A Wrapped Normal Distribution on Hyperbolic Space for Gradient-Based Learning - Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) and it takes a similar approach to the above by trying to develop a 
+primitive (as in fundamental not trivial) distribution in hyperbolic space. 
+
+The actual derivation is waaaaaaaaaaaaaaaaaay easier for this example than the other though. It basically comes down to: vaguely knowing how hyperbolic space behaves, 
+transporting samples from $$\mathbb{R}^n$$ (n-dimensional Euclidean space) to $$\mathbb{H}^n$$ (n-dimensional hyperbolic space), and calculating a jacobian. Seriously that's it.
+
+
+
+## Hyperbolic space
+
+The definition for hyperbolic space is actually make much more general than we need for the purposes of the VAE. 
+The strict definition is something along the lines of a Riemannian manifold (smooth higher dimensional surface/space) with constant negative curvature.
+
+
+
+<div style="text-align: center;">
+<iframe 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/curvature_parametric.html" 
+    width="99%" 
+    height="600px"
+    style="border:none;"
+></iframe>
+</div>
+
+
+
+
+### Parallel Transport and the exponential map
+
+
+
+
+## The Pseudo-Hyperbolic Gaussian or Wrapped Normal Distribution on Hyperbolic Space
+
+
+
+
+## Putting the hyperbolic into the VAE
+
 
 
 
