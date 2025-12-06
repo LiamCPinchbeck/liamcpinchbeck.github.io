@@ -7,27 +7,32 @@ tags:
   - MCMC
   - Introductory
 #   - category2
+manual_prev_url: /posts/2025/01/2025-01-28-rejection-sampling/
+manual_prev_title: "Rejection Sampling"
+manual_next_url: /posts/2025/02/2025-02-01-mcmc-guide/
+manual_next_title: "Markov Chain (+) Monte Carlo methods"
+
 ---
 
-In this post I'm going to try to give an intuitive intro into the Metropolis-Hastings algorithm without getting bogged down in much of the math to show the utility of this method.
+In this post, I'm going to try to give an intuitive intro into the **Metropolis-Hastings algorithm** without getting bogged down in much of the math to show the utility of this method.
 
-Metropolis-Hastings (or more truthfully the subsequent MCMC field) is one of the most successful analytical methods that statisticians have ever used and is the bench mark for all future analysis methods that we will explore. I am basing this tutorial on various sources such as:
+**Metropolis-Hastings** (or more truthfully, the subsequent **MCMC** field) is one of the most successful analytical methods that statisticians have ever used and is the **benchmark** for all future analysis methods that we will explore. I am basing this tutorial on various sources, such as:
 - 📝 [A Conceptual Introduction to Markov Chain Monte Carlo Methods](https://arxiv.org/abs/1909.12313) - Joshua S. Speagle
 - 🌐 [Markov chain Monte Carlo sampling](https://astrowizici.st/teaching/phs5000/5/) - Andy Casey
-- 🌐 The wikipedia page on this topic is also very good [Metropolis–Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm)
+- 🌐 The Wikipedia page on this topic is also very good: [Metropolis–Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm)
 - ▶️ [Understanding Metropolis-Hastings algorithm](https://youtu.be/0lpT-yveuIA) - [Machine Learning TV](https://www.youtube.com/@MachineLearningTV)
 - ▶️ [The algorithm that (eventually) revolutionized statistics - #SoMEpi](https://youtu.be/Jr1GdNI3Vfo) - [Very Normal](https://www.youtube.com/@very-normal)
-    - I particularly meshed with this one, so if this post seems too similar... sorry 😬
-    - Although I was able to get my own algorithm to work 😬 (although I have no idea why my man went straight to 12 parameters...)
+    - I particularly **connected** with this one, so if this post seems too similar... sorry 😬
+    - Although I was able to get my own algorithm to work 😬 (I have no idea why he went straight to 12 parameters...)
 - ▶️ [Metropolis-Hastings - VISUALLY EXPLAINED!](https://youtu.be/oX2wIGSn4jY) - [Kapil Sachdeva](https://www.youtube.com/@KapilSachdeva)
 - 🌐 [The Metropolis-Hastings algorithm](https://blog.djnavarro.net/posts/2023-04-12_metropolis-hastings/) - [Danielle Navarro](https://djnavarro.net/)
 - 🌐 [Why Metropolis–Hastings Works](https://gregorygundersen.com/blog/2019/11/02/metropolis-hastings/) - [Gregory Gundersen](https://gregorygundersen.com/)
 
-If you don't like/mesh well with how I explain the concepts below, absolutely head over to any of these resources. They do widely vary in rigor and presentation method but are all great.
+If you don't like or **connect** well with how I explain the concepts below, absolutely head over to any of these resources. They do widely vary in rigor and presentation method but are all great.
 
 And the style of my GIFs is inspired by this video [PDF Sampling: MCMC - Metropolis-Hastings algorithm](https://youtu.be/zL2lg_Nfi80) - [Ridlo W. Wibowo](https://www.youtube.com/@ridlowibowo08)
 
-
+---
 
 ## Table of Contents
 - [Motivation](#motivation)
@@ -40,12 +45,14 @@ And the style of my GIFs is inspired by this video [PDF Sampling: MCMC - Metropo
 - [Coding it up...again](#coding-it-up--again)
 - [Well... now what?](#well-now-what)
 
+---
+
 ## Motivation
 ### Brute force? In this economy?
 
-In the last post we brute forced our analysis by scanning the whole entire parameter space for areas of high posterior probability. Here's a quick recape.
+In the last post, we **brute-forced** our analysis by scanning the whole entire parameter space for areas of high posterior probability. Here's a quick **recap**.
 
-1. We were given some data that I told you was from a straight line with some added gaussian noise
+1. We were given some data that I told you was from a straight line with some added **Gaussian noise**.
 
     <div style="text-align: center;">
     <img 
@@ -55,7 +62,7 @@ In the last post we brute forced our analysis by scanning the whole entire param
         style="width: 75%; height: auto; border-radius: 8px;">
     </div>
 
-2. We then quantified a likelihood and prior based on this information and produced something like this colormap of the posterior probabilities of the input parameters
+2. We then quantified a **likelihood** and a **prior** based on this information and produced something like this colormap of the posterior probabilities of the input parameters.
 
     <div style="text-align: center;">
     <img 
@@ -67,21 +74,21 @@ In the last post we brute forced our analysis by scanning the whole entire param
 
 
 
-In most scenarios this is infeasible (or _at least_ __expensive__) and we need something more sophisticated to explore regions of high probabilty and somehow get some representation of our posterior. So what could we do instead?
+In most scenarios, this is infeasible (or _at least_ __expensive__), and we need something more sophisticated to explore regions of high **probability** and somehow get some representation of our posterior. So, what could we do instead?
 
 ### What do we actually get from our analysis?
 
-If our goal is to get something representative of the posterior we generally want to do 1 or more of the following:
-1. Guess where the most optimal set of parameter values are based on our data is (not unique to posterior inference, can just be done with optimisation)
-2. Generate further values that reflect parameter uncertainties
-3. __Quantify uncertainty__
-4. Compare models via evidence values (normalisation for the posterior)
+If our goal is to get something representative of the posterior, we generally want to do one or more of the following:
+1. Guess where the most optimal set of parameter values are based on our data (not unique to posterior inference; can just be done with **optimization**).
+2. Generate further values that reflect parameter uncertainties.
+3. __Quantify uncertainty__.
+4. Compare models via evidence values (**normalization** for the posterior).
 
-So whatever other method we use to generate something representative of the posterior we need to keep these in mind[^1].
+So whatever other method we use to generate something representative of the posterior, we need to keep these in mind[^1].
 
-[^1]: And if you don't need evidence values or rigorous understanding of uncertainties... just optimise my guy. In the approximate works of Andy Casey, don't burn down forests just so you can look cool using an MCMC sampler.
+[^1]: And if you don't need evidence values or rigorous understanding of uncertainties... just **optimize** my guy. In the approximate words of Andy Casey, don't burn down forests just so you can look cool using an MCMC sampler.
 
-You are already familiar with another way that we often represent the results of analysis, that is through samples. For example, sure I could tell you that for model X parameter Y follows a normal distribution with mean of 1 and standard deviation of 0.5. (First of all this only works if our result has a functional representation and we presume our audience even knows what a normal distribution is) Or, we could show them a histogram of our results like the following.
+You are already familiar with another way that we often represent the results of analysis, that is through samples. For example, sure, I could tell you that for model X, parameter Y follows a normal distribution with a mean of 1 and a standard deviation of 0.5. (First of all, this only works if our result has a functional representation and we presume our audience even knows what a normal distribution is.) Or, we could show them a histogram of our results like the following.
 
 ```python
 from scipy.stats import norm
@@ -108,38 +115,38 @@ plt.show()
 
 ### Samples!?
 
-Now if you tell anyone off the street that the parameter follows this distribution, they would be able glean most of the key information (although I wouldn't recommend pulling people of the street and asking them random statistics questions btw...you often don't get the best responses. Unless the question is how many times can someone threaten your life in ~10 seconds, in which it's extremely informative...). 
-1. You can see where the mode of the distribution is
-2. We could generate further samples of variables by using the samples in this distribution and see the result
-3. You can see the spread of the distribution on the parameter to understand our uncertainty on it. (We can also construct [credible intervals](https://en.wikipedia.org/wiki/Credible_interval) through various methods to get quantitative values for our uncertainties )
+Now, if you tell anyone off the street that the parameter follows this distribution, they would be able to glean most of the key information (although I wouldn't recommend pulling people off the street and asking them random statistics questions, by the way... you often don't get the best responses. Unless the question is how many times can someone threaten your life in ~10 seconds, in which case it's extremely informative...).
+1. You can see where the mode of the distribution is.
+2. We could generate further samples of variables by using the samples in this distribution and see the result.
+3. You can see the spread of the distribution on the parameter to understand our uncertainty on it. (We can also construct [credible intervals](https://en.wikipedia.org/wiki/Credible_interval) through various methods to get quantitative values for our uncertainties.)
 
-And from these samples we've also shown essentially the same information a our first brute scan colormap. What we require are a set of samples representative of the same probability density! This both reduces the initial computation cost, as we don't have to explore regions of the parameter space where the probabilities are extremely small, and in the storage of the result, as we will likely only require $$\lesssim 100,000$$ samples/numbers to show this.
+And from these samples, we've also shown essentially the same information as our first brute scan colormap. What we require is a set of samples representative of the same probability density! This both reduces the initial computation cost, as we don't have to explore regions of the parameter space where the probabilities are extremely small, and in the storage of the result, as we will likely only require $$\lesssim 100,000$$ samples/numbers to show this.
 
-We don't explicitly have a way to get evidence values for model comparison from this, but we can tackle this later if/when we look at [Nested Sampling](https://en.wikipedia.org/wiki/Nested_sampling_algorithm).
+We also don't explicitly have a way to get evidence values for model comparison from this, but we can tackle this later if/when we look at [Nested Sampling](https://en.wikipedia.org/wiki/Nested_sampling_algorithm).
 
 
 ### How do we sample our posterior?
 
-Now, unlike the above normal distribution, our function isn't normalised, we have the top part of the fraction that makes up Bayes' theorem.
+Now, unlike the above normal distribution, our function isn't normalized; we have the top part of the fraction that makes up Bayes' theorem.
 
 $$\begin{align}
 p(\vec{\theta}\mid\vec{d}) = \frac{\mathcal{L}(\vec{d}\mid\vec{\theta})\pi(\theta)}{\mathcal{Z}(\vec{d})}
 \end{align}$$
 
-But from our perspective, $$\vec{d}$$ is a constant, so you can say,
+But from our perspective, $$\vec{d}$$ is a constant, so we can say:
 
 $$\begin{align}
 p(\vec{\theta}\mid\vec{d}) \propto \mathcal{L}(\vec{d}\mid\vec{\theta})\pi(\theta).
 \end{align}$$
 
-Now you might want to calculate $$\mathcal{Z}(\vec{d})$$ directly but you would run into the same issues (and worse) when we tried to directly scan the posterior to begin with (this is further explored in the [Section 4](https://arxiv.org/abs/1909.12313) of Speagle's introduction). So we need some method where we can sample something _proportional_ to a probability density.
+Now you might want to calculate $$\mathcal{Z}(\vec{d})$$ directly but you would run into the same issues (and worse) when we tried to directly, but you would run into the same issues (and worse) when we tried to directly scan the posterior to begin with (this is further explored in [Section 4 of Speagle's introduction](https://arxiv.org/abs/1909.12313)). So we need some method where we can sample something proportional to a probability density.
 
 
 ## Metropolis-Hastings! - Having dessert before dinner
 
 One answer to this is the [Metropolis-Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm). And like the heading I'm going to show you the end result so you can see why what we're doing is so cool.
 
-Using the unnormalised posterior function we used in the last post on line fitting, I'm going to create a pretty small function that will almost magically generate sample our distribution.
+Using the unnormalized posterior function we used in the last post on line fitting, I'm going to create a pretty small function that will almost magically generate samples from our distribution.
 
 ```python
 import numpy as np
@@ -184,7 +191,7 @@ samples = metropolis_hastings_function(unnormalised_log_posterior_better, (y, X_
     style="width: 100%; height: auto; border-radius: 1px;">
 </div>
 
-Magic! Now it isn't the prettiest thing, and to be fair to it this algorithm is ([recently, as of 2020](https://ideas.repec.org/a/oup/biomet/v107y2020i1p1-23..html)) over 50 years old! And since then there have been a lot of improvements, but isn't it amazing that with so little code we are able to do something like this? Additionally, with the samples there's a handy package called [corner](https://corner.readthedocs.io/en/latest/). That allows us to have a closer look at our samples.
+Magic! Now, it isn't the prettiest thing, and to be fair to it, this algorithm is ([recently, as of 2020](https://ideas.repec.org/a/oup/biomet/v107y2020i1p1-23..html)) over 50 years old! And since then, there have been a lot of improvements, but isn't it amazing that with so little code, we are able to do something like this? Additionally, with the samples, there's a handy package called [corner](https://corner.readthedocs.io/en/latest/) that allows us to have a closer look at our samples.
 
 ```python
 from corner import corner
@@ -224,7 +231,7 @@ plt.show()
     style="width: 100%; height: auto; border-radius: 1px;">
 </div>
 
-The top left and bottom right plots in the above show the [_marginal distributions_](https://en.wikipedia.org/wiki/Marginal_distribution) of the relevant parameters. These plots effectively show distributions once you take the explicit dependence of the other variable(s) out[^2]. This is extremely useful when summarising our results by text or by word we can't show the plot, so we typically summarise our findings to one variable at a time, and further simplify it by asking what the width of the [highest density region that contains the same area as a normal distribution](https://en.wikipedia.org/wiki/Credible_interval) between $$1\sigma$$, $$2\sigma$$, $$3\sigma$$ (68%, 95%, 99.7%) or etc.
+The top left and bottom right plots in the above show the [_marginal distributions_](https://en.wikipedia.org/wiki/Marginal_distribution) of the relevant parameters. These plots effectively show distributions once you take the explicit dependence of the other variable(s) out[^1]. This is extremely useful when summarizing our results by text or by word we can't show the plot, so we typically summarize our findings to one variable at a time, and further simplify it by asking what the width of the [highest density region that contains the same area as a normal distribution](https://en.wikipedia.org/wiki/Credible_interval) between $$1\sigma$$, $$2\sigma$$, $$3\sigma$$ (68%, 95%, 99.7%) or etc.
 
 [^2]: There is kind of still a dependence but it's through the model itself, and importantly, it's not dependent on any _particular_ value of the other variable(s) (as stated). You can also think of it as taking the average of distributions of the relevant variable over the other parameter(s). 
 
@@ -235,8 +242,8 @@ So here are the steps in plain-ish english.
 >
 #### Metropolis Algorithm
 1. Initialise: 
-    1. Have a distribution you want to sample from (duh)
-    2. $$f(x)$$, manually create a starting point for the algorithm,
+    1. Have a distribution you want to sample from (duh) $$f(x)$$,
+    2. manually create a starting point for the algorithm $$x_0$$,
     3. pick a symmetric distribution $$g(x\mid y)$$ to sample from 
         - like a gaussian with a fixed covariance matrix such that $$g(x\mid y)=g(y\mid x)$$
     4. pick the number of samples you can be bothered waiting for $$N$$
@@ -251,9 +258,9 @@ So here are the steps in plain-ish english.
 
 [^3]: The process of comparing the acceptance probability to the uniform sample is to simulate a random process where the probability of accepting the proposal is $$\alpha$$
 
-The first thing to notice is that we don't require the normalisation of our function as it just depends on the ratios, and the normalisation cancels itself out. The second is that it doesn't have many steps despite being able to do quite a lot.
+The first thing to notice is that we don't require the normalization of our function, as it just depends on the ratios, and the normalization cancels itself out. The second is that it doesn't have many steps, despite being able to do quite a lot.
 
-Now this is the point that I want to show you an animation of the process, but I don't want to do that with the 2D distribution as it's slow enough as it is and it would be annoying figuring out how to nicely visualise accepting or rejecting a sample. So forgive me for doing this for a single dimensional gaussian that I made up on the spot.
+Now, this is the point that I want to show you an animation of the process, but I don't want to do that with the 2D distribution as it's slow enough as it is, and it would be annoying figuring out how to nicely visualize accepting or rejecting a sample. So, forgive me for doing this for a single-dimensional Gaussian that I made up on the spot.
 
 <div style="text-align: center;">
 <img 
@@ -262,8 +269,10 @@ Now this is the point that I want to show you an animation of the process, but I
     title="GIF showing the process of a Metropolis algorithm" 
     style="width: 100%; height: auto; border-radius: 1px;">
 </div>
+<br>
 
 Slowing it down and having a look at the accepting conditions.
+
 <div style="text-align: center;">
 <img 
     src="/files/BlogPostData/2025-01-29/metropolis_slow_gif.gif" 
@@ -271,7 +280,9 @@ Slowing it down and having a look at the accepting conditions.
     title="GIF showing the process of a Metropolis algorithm" 
     style="width: 100%; height: auto; border-radius: 1px;">
 </div>
-You will notice that in the GIF, there are some samples off to the side that don't seem to fit the distribution. We refer to this as the "burn-in phase", it is a sequence of samples at the beginning of MCMC sampling (not specific to Metropolis or the Metropolis-Hastings) where the chain of samples hasn't reached the key part of the distribution yet. When doing your own MCMC sampling you should be sure to throw away a few samples at the beginning[^4].
+<br>
+
+You will notice that in the GIF, there are some samples off to the side that don't seem to fit the distribution. We refer to this as the "burn-in phase"; it is a sequence of samples at the beginning of MCMC sampling (not specific to Metropolis or the Metropolis-Hastings) where the chain of samples hasn't reached the key part of the distribution yet. When doing your own MCMC sampling, you should be sure to throw away a few samples at the beginning[^4].
 
 [^4]: There is no hard and fast rule for this that will work every time but if you're new to MCMC I would start with ~10% of your samples and then wiggle that percentage around for each problem. You want to maximise the number of samples you have in your distribution but you don't want bad ones.
 
@@ -285,7 +296,9 @@ Let's say you wanted to undertake the average distribution of activities that [M
 - With a probability of the ratio of how much time they spend at each activity you either stay at your current activity or go to the new one
 - Repeat
 
-And eventually, even if you didn't pick an activity that was very good, you will eventually be lead to the "good" activities (equilibrium distribution) and start to do the same activities as typical Melburnian's do despite only ever comparing two choices at a time "stay" or "next". However, if this decision process only allows transitions between certain activities (e.g., people who go to cafes only talk to others at cafes), then some activities might be overrepresented while others remain underexplored[^5].
+And eventually, even if you didn't pick an activity that was very good, you will eventually be led to the "good" activities (equilibrium distribution) and start to do the same activities as typical Melburnians do, despite only ever comparing two choices at a time: "stay" or "next". 
+
+However, if this decision process only allows transitions between certain activities (e.g., people who go to cafes only talk to others at cafes), then some activities might be overrepresented while others remain underexplored[^5].
 
 This is an issue for the _Metropolis_ algorithm[^6], which is what I detailed above, but not the generalisation of the algorithm by [Wilfred Keith Hastings](https://en.wikipedia.org/wiki/W._K._Hastings) the _Metropolis-Hastings_ algorithm. 
 
@@ -293,13 +306,13 @@ This is an issue for the _Metropolis_ algorithm[^6], which is what I detailed ab
 [^5]: Trying to essentially have a common sense explanation of [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance). Please feel free to suggest another short and plain English way to explain this.
 [^6]: by [Nicholas Metropolis](https://en.wikipedia.org/wiki/Nicholas_Metropolis)(one of the best names ever btw),  [Arianna W. Rosenbluth](https://en.wikipedia.org/wiki/Arianna_W._Rosenbluth), [Marshall Rosenbluth](https://en.wikipedia.org/wiki/Marshall_Rosenbluth), [Augusta H. Teller](https://en.wikipedia.org/wiki/Augusta_H._Teller) and [Edward Teller](https://en.wikipedia.org/wiki/Edward_Teller)
 
-For the _Metropolis_ algorithm to work we presume that the proposal distribution, $$g$$, is symmetric, i.e. $$g(x\mid y)=g(y\mid x)$$, but this can be restrictive. Some distributions that may produce faster convergence or better fit a particular posterior setup may not be symmetric. So Hastings generalised the result to allow this, by modifying the acceptance probability from $$\alpha = f(x^*)/f(x_n)$$ to $$\alpha = \frac{f(x^*)g(x_n\mid x^*)}{f(x_n)g(x^*\mid x_n)}$$ which accounts for any assymetry in $$g$$ (I'll go into more detail in a later post).
+For the _Metropolis_ algorithm to work, we presume that the proposal distribution, $$g$$, is symmetric, i.e. $$g(x\mid y)=g(y\mid x)$$, but this can be restrictive. Some distributions that may produce faster convergence or better fit a particular posterior setup may not be symmetric. So Hastings __generalized__ the result to allow this, by modifying the acceptance probability from $$\alpha = f(x^*)/f(x_n)$$ to $$\alpha = \frac{f(x^*)g(x_n\mid x^*)}{f(x_n)g(x^*\mid x_n)}$$ which accounts for any assymetry in $$g$$ (I'll go into more detail in a later post).
 
 >
 #### Metropolis-Hastings Algorithm
 1. Initialise: 
-    1. Have a distribution you want to sample from (duh)
-    2. $$f(x)$$, manually create a starting point for the algorithm,
+    1. Have a distribution you want to sample from (duh) $$f(x)$$,
+    2. manually create a starting point for the algorithm $$x_0$$,
     3. pick a symmetric distribution $$g(x\mid y)$$ to sample from 
         - like a gaussian with a fixed covariance matrix such that $$g(x\mid y)=g(y\mid x)$$
     4. pick the number of samples you can be bothered waiting for $$N$$
@@ -313,12 +326,12 @@ For the _Metropolis_ algorithm to work we presume that the proposal distribution
         2. Reject if: $$u>\alpha$$, s.t. $$x_{n+1} = x_n$$
 
 
-Now we'll see when an asymmetric proposal distribution can do better than a symmetric one, we'll look at the two algorithms side-by-side[^7].
+Now we'll see when an asymmetric proposal distribution can do better than a symmetric one; we'll look at the two algorithms side-by-side[^7].
 
 [^7]: Although special note, they aren't really "two" algorithms it's just that the Metropolis is a _specific case_ of the Metropolis-Hastings
 
 
-For the distribution that we're trying to model we'll use the [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) with $$\alpha=2$$ and our two proposal distributions will be a normal distribution with a standard deviation of 0.5 for our symmetric distribution and a [log-normal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) with $$\sigma=0.5$$ for our asymmetric distribution. 
+For the distribution that we're trying to model, we'll use the [Gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) with $$\alpha=2$$ and our two proposal distributions will be a normal distribution with a standard deviation of 0.5 for our symmetric distribution and a [log-normal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) with $$\sigma=0.5$$ for our asymmetric distribution. 
 
 Additionally, [arviz](https://python.arviz.org/en/stable/) can estimate the number of _effective_ samples.
 
@@ -330,9 +343,9 @@ Additionally, [arviz](https://python.arviz.org/en/stable/) can estimate the numb
     style="width: 90%; height: auto; border-radius: 1px;">
 </div>
 
-You can see that the asymmetric proposal distribution is able to get the core shape of the distribution quicker than the symmetric distribution. Especially if you look at the left edge of the distribution and the tail passed 7 or so. 
+You can see that the asymmetric proposal distribution is able to get the core shape of the distribution more quickly than the symmetric distribution. Especially if you look at the left edge of the distribution and the tail past 7 or so.
 
-Viva le estadistica[^8]!... (looks up noun gender of statistics in Spanish)... Viva la estadistica[^9]!
+Viva le estadistica[^8]!... (looks up noun gender of statistics in Spanish)... Viva __la estadistica__[^9]!
 
 [^8]: statistics
 [^9]: statistics with correct grammar
@@ -385,10 +398,41 @@ def metropolis_hastings(
 
 ### A quick note
 
-I've gone through the Metropolis-Hasting algorithm here and told you about burn in, but there are other criteria for whether you should trust your samples/diagnostics. I'm going to leave that for another time as you will likely never use Metropolis-Hastings in practice but other algorithms, so I'll talk about diagnostics there and after I introduce MCMC as a concept in general (which I haven't so far).
+I've gone through the Metropolis-Hastings algorithm here and told you about burn-in, but there are other criteria for whether you should trust your samples/diagnostics. I'm going to leave that for another time as you will likely never use Metropolis-Hastings in practice but other algorithms, so I'll talk about diagnostics there and after I introduce MCMC as a concept in general (which I haven't so far).
 
 ## Well... now what?
 
 Next I'm going to attempt to explain what [MCMC is in general](https://liamcpinchbeck.github.io/posts/2025/02/2025-02-01-mcmc-guide/) and why [detailed balance](https://en.wikipedia.org/wiki/Detailed_balance) as a property of our MCMC algorithms is important and how we can quantify how we can judge whether our samples have converged and later to maybe give a general intro into the now much more commonly used NUTS algorithm that most MCMC python packages like [emcee](https://emcee.readthedocs.io/en/stable/), [pyMC](https://www.pymc.io/welcome.html) and many others use.
+
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
+
 
 ---
