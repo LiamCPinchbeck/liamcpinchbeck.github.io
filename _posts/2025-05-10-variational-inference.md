@@ -12,6 +12,11 @@ tags:
   - NumPyro
 header-includes:
    - \usepackage{amsmath}
+manual_next_url: /posts/2025/04/2025-04-28-normalising-flows/
+manual_next_title: "Normalising Flows for Variational Inference (with FlowJAX)"
+manual_prev_url: /posts/2025/08/2025-08-04-flow-from-scratch/
+manual_prev_title: "Building a normalising flow from scratch using PyTorch"
+
 ---
 
 In this post I will attempt to give an introduction to variational inference with some examples using the NumPyro python package.
@@ -56,11 +61,11 @@ As usual, here are some of the resources I’m using as references for this post
 
 # Motivation
 
-In short, variational inference approximates a complex target distribution (like a Bayesian posterior) using a pre-defined set of distributions, and chooses the best within the set by solving an optimization problem. This leads to the fact that the target distribution will _not be within the set_ (and is often actually assumed not to be a priori). So, why are people so interested/why am I discussing variational methods if it's a given that it won't give you your target distribution? In short, MCMC is hard and variational inference _can_ be less hard and still give you something reasonable.
+In short, **variational inference** approximates a complex target distribution (like a Bayesian posterior) using a pre-defined set of distributions, and chooses the best within the set by solving an optimization problem. This leads to the fact that the target distribution will _not be within the set_ (and is often actually assumed not to be a priori). So, why are people so interested/why am I discussing variational methods if it's a given that it won't give you your target distribution? In short, MCMC is hard and variational inference _can_ be less hard and still give you something reasonable.
 
-In particular, despite the overwhelming success of MCMC methods when it comes to Bayesian inference they do not scale for high dimensional distributions (often called ___p___ problems) or for extremely large and/or high dimensional sets of data (often called ___n___ problems). 
+In particular, despite the overwhelming success of **MCMC** methods when it comes to Bayesian inference they do not scale for high dimensional distributions (often called **p** problems) or for extremely large and/or high dimensional sets of data (often called **n** problems). 
 
-Variational Inference (which I will now denote VI) turns all of this into an optimisation problem and thus can utilise many of the tools of optimisation such as [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) and [stochastic optimisation](https://en.wikipedia.org/wiki/Stochastic_optimization) methods. Allowing VI methods to more easily scale for ___n___ and/or ___p___ problems.
+Variational Inference (which I will now denote **VI**) turns all of this into an **optimisation problem** and thus can utilise many of the tools of optimisation such as [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) and [stochastic optimisation](https://en.wikipedia.org/wiki/Stochastic_optimization) methods. Allowing VI methods to more easily scale for **n** and/or **p** problems.
 
 Additionally, VI can more easily update an approximate distribution with new data conditioned on previous data. Done by using the previous version of the distribution from the original set of data as a starting distribution, and simply updating the loss function with the new data. Similar to a [stochastic optimisation](https://en.wikipedia.org/wiki/Stochastic_optimization) method of tempered annealing. (If this doesn't make sense, I go more into depth once we have a loss function to actually optimise.)
 
@@ -77,10 +82,13 @@ More abstractly, if you are within a space of distributions within which the set
 
 
 Unfortunately, it is not standard to measure "distance" between two distributions, but to use a _"divergence"_[^1], which is pretty close but not quite. 
-If you have a distribution $$X$$ and distribution $$Y$$, a function that would quantify the distance $$d$$ between them would satisfy **symmetry** $$d(X, Y)=d(Y, X)$$.
+
+If you have a distribution $$X$$and distribution$$Y$$, a function that would quantify the distance $$d$$ between them would satisfy **symmetry** $$d(X, Y)=d(Y, X)$$.
 i.e. In real world settings, if I run 5km North, then run 5km South, I should be in the same direction I started (and quite tired from the running).
+
 But for a divergence $$D$$, then $$D(X, Y)\neq D(Y, X)$$. 
 i.e. If I run 5km North, then run 5km South, I don't necessarily end where I start (and now likely dying from dehydration because I always forget to drink water on my runs). 
+
 That said, divergences *do* tell us something important: if two distributions are identical, the divergence between them is zero. 
 And the more dissimilar they are, the larger the divergence tends to be — regardless of which one you start from[^2].
 
@@ -88,7 +96,7 @@ And the more dissimilar they are, the larger the divergence tends to be — rega
 [^1]: Hot tub vs Jacuzzi situation here btw, all distances are divergences, but not all divergences are distances. When people say “divergence” in this context, they usually mean one that *isn't* a proper distance (i.e., fails symmetry or triangle inequality). And forgive me for quite often referring to these divergences as distances anyway...
 [^2]: For the mathematically inclined yes I'm telling a couple white lies here, but I'm trying to introduce Variational Inference, not measure theory.
 
-The overwhelming most common way that we measure the divergence between two distributions in statistics is the ___Kullback-Leibler___ divergence, denoted $$KL(q\mid\mid p)$$ for two distributions $$p$$ and $$q$$. For these two distributions over a discrete sample space $$\mathcal{Z}$$ then the Kullback-Leibler divergence is defined,
+The overwhelmingly the most common way that we measure the divergence between two distributions in statistics is the **Kullback-Leibler** divergence, denoted $$KL(q\mid\mid p)$$ for two distributions $$p$$ and $$q$$. For these two distributions over a discrete sample space $$\mathcal{Z}$$ then the Kullback-Leibler divergence is defined,
 
 $$\begin{align}
 KL(q\mid\mid p) = \sum_{z\in \mathcal{Z}} q(z) \log \frac{q(z)}{p(z)}.
@@ -102,9 +110,9 @@ KL(q\mid\mid p) = \int_{z\in \mathcal{Z}} dz \,\, q(z) \log \frac{q(z)}{p(z)}.
 
 In either case, you can see that these are an average of $$\log \frac{q}{p}$$ over the given sample space. If the two distributions are the identical, then $$\frac{q}{p}=1$$, the $$\log$$ will give 0 everywhere, and the average over anything of 0 is 0.
 
-Note that KL divergence is **not symmetric** — in general, $$ KL(q \,\|\, p) \neq KL(p \,\|\, q) $$ — which reflects the asymmetry we talked about earlier[^1]. 
+Note that KL divergence is **not symmetric** — in general, $$KL(q \,\|\, p) \neq KL(p \,\|\, q)$$ — which reflects the asymmetry we talked about earlier[^1]. 
 
-These divergences are usually estimated using **Monte Carlo sampling** on $$ \log \frac{q}{p} $$. For those unfamiliar: you sample from the distribution over which you're averaging (in this case, $$ q(z) $$), and plug those samples into the function of interest — here, $$ \log \frac{q(z)}{p(z)} $$. Since you're taking a weighted average over a finite set of $$N$$ samples, it behaves much like the discrete version of KL anyway.
+These divergences are usually estimated using **Monte Carlo sampling** on $$\log \frac{q}{p}$$. For those unfamiliar: you sample from the distribution over which you're averaging (in this case, $$q(z)$$), and plug those samples into the function of interest — here, $$\log \frac{q(z)}{p(z)}$$. Since you're taking a weighted average over a finite set of $$N$$ samples, it behaves much like the discrete version of KL anyway.
 
 
 $$\begin{align}
@@ -120,29 +128,29 @@ Well what we're going to do is slightly manipulate the $$KL$$ divergence to get 
 $$\begin{align}
 KL(q\mid\mid p) &= \sum_{z \in \mathcal{Z}} q(z) \left( \log q(z) - \log p(z\mid x)  \right)\\
 &= \sum_{z \in \mathcal{Z} } q(z) \left( \log q(z) - \log p(z, x) + \log p(x) \right) \\
-&= \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log q(z) - \log p(z, x) \right) \right] + \sum_{z \in \mathcal{Z} } q(z) p(x) \\
-&= \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log q(z) - \log p(z, x) \right) \right] + p(x)
+&= \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log q(z) - \log p(z, x) \right) \right] + \sum_{z \in \mathcal{Z} } q(z) \log p(x) \\
+&= \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log q(z) - \log p(z, x) \right) \right] + \log p(x)
 \end{align}$$
 
-Where we were able to take out the _evidence_ $$p(x)$$ as it has no dependence on $$z$$ hence is essentially a constant within this average. Remembering that we are trying to make $$q(z)$$ look like $$p(z\mid x)$$, then any kind of optimisation will not involve $$p(x)$$ as it doesn't involve $$q(z)$$. So we define the ___ELBO___,
+Where we were able to take out the _evidence_ $$\log p(x)$$ as it has no dependence on$$z$$hence is essentially a constant within this average. Remembering that we are trying to make $$q(z)$$ look like $$p(z\mid x)$$, then any kind of optimisation will not involve $$\log p(x)$$ as it doesn't involve $$q(z)$$. So we define the **ELBO**,
 
 $$\begin{align}
-KL(q\mid\mid p) &= p(x) - \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log p(z, x) - \log q(z) \right) \right] \\
+KL(q\mid\mid p) &= \log p(x) - \sum_{z \in \mathcal{Z} } \left[ q(z) \left( \log p(z, x) - \log q(z) \right) \right] \\
 &= \log p(x) - \text{ELBO}(q, p).
 \end{align}$$
 
-_ELBO_ stands for **E**vidence **L**ower **BO**und, because by a quick rearrangement of the above you can see,
+**ELBO** stands for **E**vidence **L**ower **BO**und, because by a quick rearrangement of the above you can see,
 
 $$\begin{align}
  \log p(x) = KL(q\mid\mid p) + \text{ELBO}(q, p).
 \end{align}$$
 
-As the KL divergence positive definite, the ELBO is a lower bound for $$p(x)$$. AND, as previously stated, the ELBO works as the target for our optimisation, we maximise the ELBO and subsequently minimise the KL divergence. In practice, we don’t compute the ELBO exactly — we estimate it using samples, and we adjust the parameters of $$q(z)$$ to maximize it. 
+As the KL divergence positive definite, the ELBO is a lower bound for $$\log p(x)$$. AND, as previously stated, the ELBO works as the target for our optimisation, we maximize the ELBO and subsequently minimize the KL divergence. In practice, we don’t compute the ELBO exactly — we estimate it using samples, and we adjust the parameters of $$q(z)$$ to maximize it. 
 
 
 # Mean Field Approximation and CAVI
 
-The question is then how do we go about maximising the ELBO? Well for that I'm first going to introduce a simple framework under which you can construct sets of distributions to optimise over, the ___Mean Field Approximation___. The approximation is that the variables of the approximate distribution factorise. Meaning that if you have a probability density $$q$$ for your posterior over variables $$z=(z_0, z_1, ..., z_N)$$ then we can represent $$q(z)$$ as,
+The question is then how do we go about maximising the ELBO? Well for that I'm first going to introduce a simple framework under which you can construct sets of distributions to optimise over, the **Mean Field Approximation**. The approximation is that the variables of the approximate distribution factorise. Meaning that if you have a probability density $$q$$ for your posterior over variables $$z=(z_0, z_1, ..., z_N)$$ then we can represent $$q(z)$$ as,
 
 $$\begin{align}
 q(z) = \prod_{i=0}^N q_i(z_i).
@@ -161,7 +169,7 @@ Where $$q_i$$ represents a factorised probability over the $$i^{\text{th}}$$ com
 
 You’ll notice that the variational approximation is slightly more concentrated than the true posterior. This happens because, under the assumption of independent (mean-field) Gaussians, it is more optimal to concentrate around the high-density core of the posterior. Additionally, because we're assuming single gaussians for our components there is no chance that using this will give any reasonable answer for a multi-modal problem. However, if you believe that your posterior will be roughly gaussian with a single mode in each dimension then the mean field approximation has its utility in being lightweight and has many established quick optimisation techniques.
 
-How the optimisation in the GIF was done is the main topic of this section, it is called ___CAVI___.
+How the optimisation in the GIF was done is the main topic of this section, it is called **CAVI** (**Coordinate Ascent Variational Inference**).
 
 If we plug the general mean field approximate distribution into the ELBO we can isolate a given probability density component as follows.
 
@@ -171,10 +179,9 @@ ELBO(q,p) &= \mathbb{E}_{q(z)}\left[\log(p(z,x))- \log(q(z))\right] \\
 &= \mathbb{E}_{q(z)}\left[\log(p(z,x))- \sum_{i=0}^N \log(q_i(z_i))\right] \\
 &= \mathbb{E}_{q(z)}\left[\log(p(z,x))\right] - \sum_{i=0}^N \mathbb{E}_{q(z)}\left[\log(q_i(z_i))\right] \\
 &= \mathbb{E}_{q(z)}\left[\log(p(z,x))\right] - \mathbb{E}_{q(z)}\left[\log(q_j(z_j))\right] - \sum_{i=0\neq j}^N \mathbb{E}_{q(z)}\left[\log(q_i(z_i))\right] \\
-\end{align}
-$$
+\end{align}$$
 
-We are then trying to maximise the ELBO while looking along a particular component, $$q_j$$, and trying to maximise it with respect to that. And as is typical, we're looking for a local maximum, so we set the derivative of the thing we're trying to optimise over with respect to the thing we're changing to 0. i.e.
+We are then trying to maximize the ELBO while looking along a particular component, $$q_j$$, and trying to maximize it with respect to that. And as is typical, we're looking for a local maximum, so we set the derivative of the thing we're trying to optimize over with respect to the thing we're changing to 0. i.e.
 
 $$\begin{align}
 0 &= \frac{\partial ELBO}{\partial q_j} \\
@@ -200,7 +207,6 @@ $$\begin{align}
 & \hspace{4em} - \sum_{i=0\neq j}^N \int_{z\in \mathcal{Z}} dz\, \left[ \left(\prod_{k=0 \neq j}^N q_k(z_k) \right) \log(q_i(z_i)) \right]  \\
 
 
-
 &= \mathbb{E}_{q_{-j}}\left[\log(p(z,x))\right] 
 - \mathbb{E}_{q_{-j}}\left[ \log(q_j(z_j)) + 1\right]   
 - \sum_{i=0\neq j}^N \mathbb{E}_{q_{-j}}\left[ \log(q_i(z_i)) \right]  \\
@@ -219,7 +225,7 @@ q_j(z_j) &=  \exp\left( \mathbb{E}_{q_{-j}}\left[\log(p(z,x))\right] + 1 - \sum_
 
 Where $$\mathbb{E}_{q_{-j}}$$ represents the average over all the components of $$q$$ except the $$j^\text{th}$$ and in the final couple of steps you will note that the $$1 - \sum_{i=0\neq j}^N \mathbb{E}_{q_{-j}}\left[ \log(q_i(z_i)) \right] $$ has nothing to do with $$z_j$$ or $$q_j$$, so if we're trying to optimise the form of $$q_j(z_j)$$ then these are effectively constants and $$\exp(\text{constant})=\text{constant}=C$$. 
 
-Now of course this form of $$q_j(z_j)$$ cannot be calculated exactly in practice as it involves marginalising over all the other variables of interest, so CAVI assumes that the posterior satisfies conjugacy (i.e. the form of the prior and the likelihood has a known form typically following that of the prior). Without conjugacy, the expectation $$\mathbb{E}_{q_{-j}}\left[\log p(z, x) \right]$$ becomes analytically intractable, so we can't recover a closed-form expression for $$q_j(z_j)$$. 
+Now of course this form of $$q_j(z_j)$$ cannot be calculated exactly in practice as it involves marginalising over all the other variables of interest, so CAVI assumes that the posterior satisfies **conjugacy** (i.e. the form of the prior and the likelihood has a known form typically following that of the prior). Without conjugacy, the expectation $$\mathbb{E}_{q_{-j}}\left[\log p(z, x) \right]$$ becomes analytically intractable, so we can't recover a closed-form expression for $$q_j(z_j)$$. 
 
 So in summary, what CAVI does is isolates a given $$j^\text{th}$$ component of your approximate distribution $$q_j(z_j)$$ (which we can do under the mean field approximation) marginalise over the other components for every component of $$z$$ except $$z_j$$ to get an exact updated estimate for $$q_j(z_j)$$.
 
@@ -240,10 +246,10 @@ Now CAVI is great because it doesn't require derivation of gradients and is pret
 
 # Black Box Variational Inference
 
-So if you don't want to derive a model specific optimisation technique/can't because it doesn't satisfy conjugacy but still fine with taking the mean field approximation, a common alternative is ___Black Box Variational Inference___ or _BBVI_. 
+So if you don't want to derive a model specific optimisation technique/can't because it doesn't satisfy conjugacy but still fine with taking the mean field approximation, a common alternative is **Black Box Variational Inference** or _BBVI_. 
 
 
-BBVI starts off with producing a generalised form for the gradient of the ELBO with respect to the general parameters of the approximating distribution which I denote $$\lambda$$ (__heavily__ inspired by [arXiv:1401.0118](https://arxiv.org/abs/1401.0118))
+BBVI starts off with producing a generalised form for the gradient of the ELBO with respect to the general parameters of the approximating distribution which I denote $$\lambda$$ (**heavily** inspired by [arXiv:1401.0118](https://arxiv.org/abs/1401.0118))
 
 
 $$\begin{align}
@@ -251,7 +257,7 @@ $$\begin{align}
 &=  \int_{z\in \mathcal{Z}} dz \nabla_\lambda \left[q(z|\lambda) \left(\log p(z, x) - \log q(z|\lambda)\right) \right]\\
 &=  \int_{z\in \mathcal{Z}} dz \nabla_\lambda q(z|\lambda) \left[\log p(z, x) - \log q(z|\lambda) \right]\\
 &+\int_{z\in \mathcal{Z}} dz\, q(z|\lambda)  \nabla_\lambda \left[ \log p(z, x) - \log q(z|\lambda)\right]\\
-\end{align} $$
+\end{align}$$
 
 We then note that $$\nabla_\lambda[\log p(z,x)]=0$$ because $$p$$ doesn't involve $$\lambda$$ in any way and the following,
 
@@ -273,7 +279,7 @@ $$\begin{align}
 &= \mathbb{E}_q \left[ \nabla_\lambda \log q(z|\lambda) \left(\log p(z, x) - \log q(z|\lambda) \right) \right]\\
 \end{align}$$
 
-And in case it's useful $$ \nabla_\lambda \log q(z\mid\lambda)$$ comes up in a few contexts and is often called the _score function_. If we then estimate this using monte carlo sampling of the variational approximation using $$S$$ samples $$\sim q(z\mid\lambda)$$ then,
+And in case it's useful $$\nabla_\lambda \log q(z\mid\lambda)$$ comes up in a few contexts and is often called the _score function_. If we then estimate this using monte carlo sampling of the variational approximation using $$S$$ samples $$\sim q(z\mid\lambda)$$ then,
 
 $$\begin{align}
 \nabla_\lambda ELBO \approx \frac{1}{S} \sum_{s=1}^{S} \nabla_\lambda \log q(z_s|\lambda) \left( \log p(x, z_s)-\log q(z_s|\lambda)\right)
@@ -337,9 +343,9 @@ So no matter what, the variance of our new estimator is lower than our original,
 
 ## Control Variates
 
-Okay, so we've gotten a less noisy estimate for the $$i^\text{th}$$ component of the gradient by swapping out the joint density with another variable that has the same expectation value but lower variance. We can further decrease the variance on our estimate using ___control variates___. TLDR: A control variate is an auxiliary function with known expectation, used to reduce the variance of a Monte Carlo estimate.
+Okay, so we've gotten a less noisy estimate for the $$i^\text{th}$$ component of the gradient by swapping out the joint density with another variable that has the same expectation value but lower variance. We can further decrease the variance on our estimate using **control variates**. TLDR: A control variate is an auxiliary function with known expectation, used to reduce the variance of a Monte Carlo estimate.
 
-As a quick intro, if I have some function $$f(z)$$ of which I want to estimate the average of, I can instead look at another variable $$\hat{f}$$ that has the same expectation value described as the following,
+As a quick intro, if I have some function $$f(z)$$ of which I want to estimate the average of, I can instead look at another variable$$\hat{f}$$ that has the same expectation value described as the following,
 
 $$\begin{align}
 \hat{f}(z) \equiv f(z) - a\left(h(z) - \mathbb{E}[h(z)] \right) .
@@ -360,8 +366,7 @@ $$\begin{align}
 Var\left[\hat{f}(z)\right] &= Var\left[f(z) - a\left(h(z) - \mathbb{E}[h(z)] \right) \right] \\
 &= \mathbb{E}\left[ \left(f(z) - a\left(h(z) - \mathbb{E}[h(z)] \right) \right)^2\right] - \left(\mathbb{E}\left[f(z) - a\left(h(z) - \mathbb{E}[h(z)] \right) \right]\right)^2 \\
 
-&= \mathbb{E}\left[ f^2(z)  + a^2 h^2(z) + a^2 h(z) \mathbb{E}[h(z)]\right] \\
-&\quad\quad + \mathbb{E}\left[- 2 a f(z) h(z) + 2 a f(z)\mathbb{E}[h(z)] - 2 a^2 h(z) \mathbb{E}[h(z)] \right] \\
+&= \mathbb{E}\left[ f^2(z)  + a^2 h^2(z) + a^2 \mathbb{E}[h(z)]^2 - 2 a f(z) h(z) + 2 a f(z)\mathbb{E}[h(z)] - 2 a^2 h(z) \mathbb{E}[h(z)] \right] \\
 &\quad\quad - \left(\mathbb{E}\left[f(z) - a\left(h(z) - \mathbb{E}[h(z)] \right) \right] \right)^2 \\
 
 
@@ -374,14 +379,14 @@ Var\left[\hat{f}(z)\right] &= Var\left[f(z) - a\left(h(z) - \mathbb{E}[h(z)] \ri
 &\quad\quad - 2 a \mathbb{E}\left[ f(z) h(z)\right] + 2 a \mathbb{E}\left[f(z)\right]\mathbb{E}[h(z)] \\
 
 
-&= Var\left[ f(z)\right]  + a^2 Var\left[h^2(z)\right] - 2 a \mathbb{E}\left[ f(z) h(z)\right] + 2 a \mathbb{E}\left[f(z)\right]\mathbb{E}[h(z)].\\
+&= Var\left[ f(z)\right]  + a^2 Var\left[h(z)\right] - 2 a \mathbb{E}\left[ f(z) h(z)\right] + 2 a \mathbb{E}\left[f(z)\right]\mathbb{E}[h(z)].\\
 \end{align}$$
 
 And then just because I didn't remember this simplification while writing this, I note that,
 
 $$\begin{align}
 Cov[f(z), h(z)] &\equiv \mathbb{E}\left[ (f(z)-\mathbb{E}\left[f(z)\right])(h(z)-\mathbb{E}\left[h(z)\right]) \right] \\
-&= \mathbb{E}\left[ f(z)h(z)-\mathbb{E}\left[f(z)\right]h(z) - \mathbb{E}\left[h(z)\right] f(z)- \mathbb{E}\left[h(z)\right] \mathbb{E}\left[f(z)\right] \right] \\
+&= \mathbb{E}\left[ f(z)h(z)-\mathbb{E}\left[f(z)\right]h(z) - \mathbb{E}\left[h(z)\right] f(z)+ \mathbb{E}\left[h(z)\right] \mathbb{E}\left[f(z)\right] \right] \\
 &= \mathbb{E}\left[ f(z)h(z)\right] -\mathbb{E}\left[f(z)\right]\mathbb{E}\left[h(z)\right] - \mathbb{E}\left[h(z)\right] \mathbb{E}\left[f(z)\right] + \mathbb{E}\left[h(z)\right] \mathbb{E}\left[f(z)\right] \\
 &= \mathbb{E}\left[ f(z)h(z)\right] -\mathbb{E}\left[f(z)\right]\mathbb{E}\left[h(z)\right].\\
 \end{align}$$
@@ -390,7 +395,7 @@ Hence,
 
 
 $$\begin{align}
-Var\left[\hat{f}(z)\right] &= Var\left[ f(z)\right]  + a^2 Var\left[h^2(z)\right] - 2 a \mathbb{E}\left[ f(z) h(z)\right] + 2 a \mathbb{E}\left[f(z)\right]\mathbb{E}[h(z)] \\
+Var\left[\hat{f}(z)\right] &= Var\left[ f(z)\right]  + a^2 Var\left[h(z)\right] - 2 a \mathbb{E}\left[ f(z) h(z)\right] + 2 a \mathbb{E}\left[f(z)\right]\mathbb{E}[h(z)] \\
 &= Var\left[f(z)\right] + a^2 Var\left[h(z)\right] - 2a Cov\left(f, h\right). \\
 \end{align}$$
 
@@ -429,9 +434,9 @@ I made a gif showing how much more efficient this algorithm is compared to CAVI 
 Despite the increased generality of BBVI (doesn't require conjugacy), if you have a highly multidimensional problem, calculating all the gradients of the variational density can be quite tedious (and again the estimates of the ELBO gradient can still be quite noisy). 
 This motivates **Automatic Differentiation Variational Inference (ADVI)** — a method that automates much of the process using autodiff and the [reparameterization trick](https://en.wikipedia.org/wiki/Reparameterization_trick).
 
-In short, ADVI replaces hand-derived gradients with those computed via [**automatic differentiation**](https://en.wikipedia.org/wiki/Automatic_differentiation): a system that tracks the computational graph of elementary operations (like `+`, `*`, `log`, `exp`) and uses the chain rule to compute exact gradients.
+In short, **ADVI** replaces hand-derived gradients with those computed via [**automatic differentiation**](https://en.wikipedia.org/wiki/Automatic_differentiation): a system that tracks the computational graph of elementary operations (like `+`, `*`, `log`, `exp`) and uses the chain rule to compute exact gradients.
 
-Instead of estimating the gradient of the ELBO with score functions (as in BBVI), ADVI reparameterizes the variational distribution so the gradient flows through the *samples themselves*, enabling lower-variance, faster-converging optimisation.
+Instead of estimating the gradient of the ELBO with score functions (as in BBVI), ADVI **reparameterizes** the variational distribution so the gradient flows through the *samples themselves*, enabling lower-variance, faster-converging optimisation.
 
 To make the derivatives more well-behaved in ADVI we transform any variables into a continuous domain (if everything already has $$\mathbb{R}$$ support then $$T$$ is an identity). If our exact joint target density is $$p(z, x)$$ where $$z$$ is constrained to some domain, then we apply $$T$$ to find,
 
@@ -463,10 +468,10 @@ q_{\text{FR}}(\zeta|\phi_{\text{FR}}) = \mathcal{N}(\zeta; \mu, \mathbf{\Sigma})
 Now, our loss can be expressed as,
 
 $$\begin{align}
-ELBO(\phi) = \mathbb{E}_{q(z\mid \phi)}\left[\log p(z, T^{-1}(\zeta)) + log\left|\text{det}\left( \frac{dT^{-1}}{d\zeta}\right) \right| - \log q(\zeta;\phi) \right].
+ELBO(\phi) = \mathbb{E}_{q(z\mid \phi)}\left[\log p(z, T^{-1}(\zeta)) + \log\left|\text{det}\left( \frac{dT^{-1}}{d\zeta}\right) \right| - \log q(\zeta;\phi) \right].
 \end{align}$$
 
-If we wanted to compute the gradients of this, that can be quite difficult for the computer to handle due to the expectation being done over the variational density we are trying to optimise. So, we employ the [___reparameterisation trick___](https://en.wikipedia.org/wiki/Reparameterization_trick) (called elliptical standardization in the original paper) where we transfer the direct sampling of the variational density (in this case gaussians) to an independent noise parameter $$\epsilon \sim \mathcal{N}(0, \mathcal{I})$$ that allows us to sample the original variational density with the following transformation,
+If we wanted to compute the gradients of this, that can be quite difficult for the computer to handle due to the expectation being done over the variational density we are trying to optimise. So, we employ the [**reparameterisation trick**](https://en.wikipedia.org/wiki/Reparameterization_trick) (called elliptical standardization in the original paper) where we transfer the direct sampling of the variational density (in this case gaussians) to an independent noise parameter $$\epsilon \sim \mathcal{N}(0, \mathcal{I})$$ that allows us to sample the original variational density with the following transformation,
 
 
 $$\begin{align}
@@ -507,12 +512,9 @@ ELBO(\phi) = \mathbb{E}_{\mathcal{N}(\epsilon ; 0, \mathcal{I})}\left[\log p( T^
 This allows us to easily calculate the gradient through the following,
 
 
-
-
 $$\begin{align}
 \nabla_{\mu} ELBO = \mathbb{E}_{\mathcal{N}(\epsilon ; 0, \mathcal{I})}\left[\nabla_{\theta}\log p(x, \theta) \nabla_{\zeta}T^{-1}(\zeta) + \nabla_{\zeta} \log \left| \text{det} \frac{dT^{-1}}{d\zeta} \right|   \right],
 \end{align}$$
-
 
 
 $$\begin{align}
@@ -657,7 +659,7 @@ Here's how the approximations progress and how they look! The full rank gaussian
 
 # Limitations
 
-Okay, so now we have a relatively general setup that you can use to approach posterior inference problems, but now I'm going to tell you why you (sometimes) shouldn't use it. Of course with the above we presume that the posterior follows a gaussian distribution, which yes is a little restrictive, but the most restrictive assumption is that your posterior isn't multi-modal. 
+Okay, so now we have a relatively general setup that you can use to approach posterior inference problems, but now I'm going to tell you why you (sometimes) shouldn't use it. Of course with the above we presume that the posterior follows a gaussian distribution, which yes is a little restrictive, but the most restrictive assumption is that your posterior isn't **multi-modal**. 
 
 For example, let's have at look at a mixture model with known contributions, without order statistics, we get label switching. Let's otherwise use the same code as above.
 
@@ -670,7 +672,7 @@ For example, let's have at look at a mixture model with known contributions, wit
     style="width: 80%; height: auto; border-radius: 8px;">
 </div>
 
-You can see that they totally miss the multi-modality (of course) but ADVI only found one of the modes but the full rank approximation tried to cover both, which only happens when the modes are nearby. If I made the slope values further apart then it's just as bad as ADVI.
+You can see that they totally miss the multi-modality (of course) but **ADVI** only found one of the modes but the **full rank approximation** tried to cover both, which only happens when the modes are nearby. If I made the slope values further apart then it's just as bad as ADVI.
 
 <div style="text-align: center;">
 <img 
@@ -681,8 +683,41 @@ You can see that they totally miss the multi-modality (of course) but ADVI only 
 </div>
 
 
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
 
-# Further Reading
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
+<br>
+<br>
+
+# Appendices
+
+
+## Further Reading
 
 So now we're aware of these relatively basic methods, I'll leave some links for other methods that might interest you.
 
@@ -722,9 +757,6 @@ So now we're aware of these relatively basic methods, I'll leave some links for 
 - ***Structured Variational Inference***
 
 
-
-
-# Appendices
 
 ## ADVI GIF Code
 
