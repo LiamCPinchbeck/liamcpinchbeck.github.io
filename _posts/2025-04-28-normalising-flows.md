@@ -9,9 +9,12 @@ tags:
   - FlowJAX
 header-includes:
    - \usepackage{amsmath}
+manual_next_url: /posts/2025/05/2025-05-10-variational-inference/
+manual_next_title: "Variational Inference Introduction"
+
 ---
 
-In this post, I’ll attempt to give an introduction to normalising flows from the perspective of variational inference.
+In this post, I’ll attempt to give an introduction to **normalising flows** from the perspective of **variational inference**.
 
 ---
 
@@ -41,19 +44,19 @@ Below are the resources I’m using as references for this post. Feel free to ex
 
 ## Variational Inference
 
-A common goal in Bayesian analysis is to develop a posterior distribution for inference:
+A common goal in Bayesian analysis is to develop the **posterior distribution** for inference:
 
-$$ \pi(z \mid x) $$
+$$\pi(z \mid x)$$
 
-Bayesian inference methods typically approach this by sampling from the posterior using algorithms like MCMC or nested sampling. These methods rely on the product of the likelihood $$ p(x \mid z) $$ and the prior $$ p(z) $$:
+Bayesian inference methods typically approach this by sampling from the posterior using algorithms like **MCMC** or **nested sampling**. These methods rely on the product of the likelihood $$p(x \mid z)$$ and the prior $$p(z)$$:
 
-$$ \pi(z \mid x) \propto \mathcal{L}(x \mid z) \pi(z) $$
+$$\pi(z \mid x) \propto \mathcal{L}(x \mid z) \pi(z)$$
 
 The goal is to produce representative samples of the posterior distribution. MCMC and nested samplers are theoretically exact in their limits — if you run MCMC indefinitely or increase the number of live points to infinity in nested sampling, you’ll converge to the true posterior (or at least close enough that the difference doesn't matter in practice).
 
-**Variational inference**, by contrast, trades this potential for exactness in favour of approximating the posterior with a simpler distribution from a tractable family.
+**Variational inference (VI)**, by contrast, trades the potential for exactness for approximating the posterior with a simpler distribution from a tractable family.
 
-You define a family of candidate distributions, denoted $$ \mathcal{Q} $$, and find the member of that family which is closest (in KL divergence) to the true posterior. The true posterior may or may not lie within $$ \mathcal{Q} $$, but we optimise for the best approximation available within that set.
+You define a family of candidate distributions, denoted $$\mathcal{Q}$$, and find the member of that family which is closest (in **KL divergence**) to the true posterior. The true posterior may or may not lie within $$\mathcal{Q}$$, but we optimise for the best approximation available within that set.
 
 <div style="text-align: center;">
 <img 
@@ -67,16 +70,16 @@ You might prefer methods that guarantee convergence to the exact posterior, but 
 
 I generally agree with this view, but there are a few caveats to keep in mind throughout this post:
 
-- The function family $$ \mathcal{Q} $$ may not include anything that approximates the true posterior particularly well.
+- The function family $$\mathcal{Q}$$ may not include anything that approximates the true posterior particularly well.
     - For example, a Laplace approximation may struggle with a posterior involving a mixture model, where variables could be better described by an uninformative Dirichlet — something a Gaussian would approximate poorly.
-- As far as I know, there aren’t great tools to analyse convergence of variational inference the way we can with MCMC (e.g., using autocorrelation) or nested sampling (e.g., using $$ \text{dlogz} $$).
-    - That said, in my experiments, once the ELBO loss flattens out, further training usually doesn’t improve results much — and this has generally been “good enough.”
+- As far as I know, there aren’t great tools to analyse convergence of variational inference the way we can with MCMC (e.g., using autocorrelation) or nested sampling (e.g., using $$\text{dlogz}$$).
+    - That said, in my experiments, once the **ELBO** loss flattens out, further training usually doesn’t improve results much — and this has generally been “good enough.”
 
 Still, one of the strongest advantages I’ve found with variational methods is that they give you a **parametric** form for your posterior, which is extremely useful. More importantly, they convert the posterior estimation problem from one of **sampling** to one of **optimisation**. This makes the problem more tractable and opens the door to using modern optimisation techniques to speed up your analysis.
 
 ### The Formal Goal of Variational Inference
 
-Let’s say we approximate the posterior with a distribution $$ q_\Phi(z) \in \mathcal{Q} $$, where $$ \Phi $$ are the parameters controlling its shape. Then, the formal objective of variational inference is:
+Let’s say we approximate the posterior with a distribution $$q_\Phi(z) \in \mathcal{Q}$$, where $$\Phi$$ are the parameters controlling its shape. Then, the formal objective of variational inference is:
 
 $$ 
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -85,9 +88,9 @@ q_{\Phi^*}(z) = \argmin_{q_\Phi(z) \in \mathcal{Q}} \;\; KL(q(z) || \pi(z|x)).
 \end{align}
 $$
 
-[^1]: I’ve dropped the explicit dependence on $$ x $$, since the approximation doesn’t take $$ x $$ as a direct input — though the final result is still implicitly dependent on $$ x $$ via the optimisation.
+[^1]: I’ve dropped the explicit dependence on $$x$$, since the approximation doesn’t take $$x$$ as a direct input — though the final result is still implicitly dependent on $$x$$ via the optimisation.
 
-That is: find the parameter set $$ \Phi^* $$ such that $$ q_{\Phi^*}(z) $$ is the closest element in $$ \mathcal{Q} $$ to $$ \pi(z \mid x) $$, in terms of KL divergence. In this setup, the densities are normalised with respect to $$ z $$, not $$ \Phi $$. The problem of sampling from a posterior becomes one of minimising a loss function.
+That is: find the parameter set $$\Phi^*$$ such that $$q_{\Phi^*}(z)$$ is the closest element in $$\mathcal{Q}$$ to $$\pi(z \mid x)$$, in terms of KL divergence. In this setup, the densities are normalised with respect to $$z$$, not $$\Phi$$. The problem of sampling from a posterior becomes one of minimising a loss function.
 
 We can also expand the KL divergence:
 
@@ -105,14 +108,14 @@ $$
 \log \mathcal{L}(x) = KL(q(z) \| \pi(z|x)) + \text{ELBO}(q)
 $$
 
-Since the KL divergence is non-negative, the ELBO is indeed a lower bound on the log evidence $$ \log \mathcal{L}(x) $$. Conveniently, ELBO only involves the joint distribution $$ p(z, x) $$ and the approximate posterior $$ q(z) $$, not the true posterior itself. This means we can maximise the ELBO using standard likelihood-prior products to identify the optimal approximate posterior $$ q_{\Phi^*}(z) $$.
+Since the KL divergence is non-negative, the **ELBO (Evidence Lower BOund)** is indeed a lower bound on the log evidence $$\log \mathcal{L}(x)$$. Conveniently, ELBO only involves the joint distribution $$p(z, x)$$ and the approximate posterior $$q(z)$$, not the true posterior itself. This means we can **maximise the ELBO** using standard likelihood-prior products to identify the optimal approximate posterior $$q_{\Phi^*}(z)$$.
 
 
 ## Normalising Flows
 
-Normalising flows, in a nutshell, are a way of constructing an approximate posterior in variational inference by transforming simple probability distributions into more complex ones through a series of invertible, differentiable mappings.
+**Normalising flows (NFs)**, in a nutshell, are a way of constructing an approximate posterior in variational inference by transforming simple probability distributions into more complex ones through a series of invertible, differentiable mappings.
 
-Suppose we have a random variable $$ Y $$ with a known, tractable probability distribution $$ p_Y $$, and we define a transformation such that $$ Z = g(Y) $$ or equivalently $$ Y = f(Z) $$. Then the probability density of $$ Z $$ is:
+Suppose we have a random variable $$Y$$ with a known, tractable probability distribution $$p_Y$$, and we define a transformation such that $$Z = g(Y)$$ or equivalently $$Y = f(Z)$$. Then the probability density of $$Z$$ is given by:
 
 $$
 \begin{align}
@@ -121,11 +124,11 @@ p_Z(z) &= p_Y(Y = f(z)) \cdot \left| \det \, \mathbf{Df}(z) \right| \\\\
 \end{align}
 $$
 
-where $$ \mathbf{Df}(z) = \frac{\partial f}{\partial z} $$ is the Jacobian of $$ f $$ with respect to $$ z $$, and similarly $$ \mathbf{Dg}(y) = \frac{\partial g}{\partial y} $$ is the Jacobian of $$ g $$ with respect to $$ y $$. In this context, $$ p_Z(z) $$ is sometimes referred to as the *pushforward* of $$ p_Y $$ by the function $$ g $$, denoted $$ g_* p_Y $$.
+where $$\mathbf{Df}(z) = \frac{\partial f}{\partial z}$$ is the **Jacobian** of $$f$$ with respect to $$z$$, and similarly $$\mathbf{Dg}(y) = \frac{\partial g}{\partial y}$$ is the Jacobian of $$g$$ with respect to $$y$$. In this context, $$p_Z(z)$$ is sometimes referred to as the *pushforward* of $$p_Y$$ by the function $$g$$, denoted $$g_* p_Y$$.
 
-The term **normalising** in “normalising flows” comes from the inverse mapping $$ f $$, which transforms the (possibly complex) variable $$ Z $$ into the simpler $$ Y $$. Essentially, this “normalises” the data to a distribution we know how to work with, such as a standard Gaussian.
+The term **normalising** in “normalising flows” comes from the inverse mapping $$f$$, which transforms the (possibly complex) variable $$Z$$ into the simpler $$Y$$. Essentially, this “normalises” the data to a distribution we know how to work with, such as a standard Gaussian.
 
-So far, this setup involves just a single transformation $$ g $$, but because invertible functions can be composed, we can create a chain of such transformations:
+So far, this setup involves just a single transformation $$g$$, but because invertible functions can be composed, we can create a chain of such transformations:
 
 $$
 g = g_N \circ g_{N-1} \circ \dots \circ g_2 \circ g_1
@@ -137,19 +140,19 @@ $$
 f = f_1 \circ f_2 \circ \dots \circ f_{N-1} \circ f_N
 $$
 
-The determinant of the total Jacobian of $$ f $$ can then be expressed as the product of the Jacobians of each component:
+The determinant of the total Jacobian of $$f$$ can then be expressed as the product of the Jacobians of each component:
 
 $$
 \det \, \mathbf{Df}(z) = \prod_{i=1}^N \det \, \mathbf{Df}_i(s_i)
 $$
 
-where each intermediate variable $$ s_i $$ is defined as:
+where each intermediate variable $$s_i$$ is defined as:
 
 $$
 s_i = g_i \circ g_{i-1} \circ \dots \circ g_1(y) = f_{i+1} \circ f_{i+2} \circ \dots \circ f_N(z),
 $$
 
-with $$ s_N = z $$. This stacking allows us to combine relatively simple, expressive transformations into highly flexible and powerful composite mappings capable of modelling very complex posteriors.
+with $$s_N = z$$. This stacking allows us to combine relatively simple, expressive transformations into highly flexible and powerful composite mappings capable of modelling very complex posteriors.
 
 An intuitive demonstration of this idea is shown below, from a GIF by Eric Jang in [his tutorial on normalising flows](https://blog.evjang.com/2019/07/nf-jax.html), which focuses on how to implement flows using JAX:
 
@@ -161,7 +164,7 @@ An intuitive demonstration of this idea is shown below, from a GIF by Eric Jang 
     style="width: 80%; height: auto; border-radius: 16px;">
 </div>
 
-Back to the math: since we typically prefer working in log-space for numerical stability, we can write the log-likelihood of a set of samples $$ \mathcal{Z} $$ from the transformed distribution as:
+Back to the math: since we typically prefer working in log-space for numerical stability, we can write the log-likelihood of a set of samples $$\mathcal{Z}$$ from the transformed distribution as:
 
 $$
 \begin{align}
@@ -170,35 +173,34 @@ $$
 \end{align}
 $$
 
-Here, $$ \theta $$ denotes the parameters controlling the transformations, and $$ \phi $$ parameterises the base distribution $$ p_Y $$. Together, these represent the full parameter set $$ \Phi = \{\theta, \phi\} $$.
+Here, $$\theta$$ denotes the parameters controlling the transformations, and $$\phi$$ parameterises the base distribution $$p_Y$$. Together, these represent the full parameter set $$\Phi = \{\theta, \phi\}$$.
 
-During training, the main parameters to optimise are those of the transformations $$ \theta $$, and of the base distribution $$ \phi $$, in order to maximise the ELBO. A useful identity allows us to compute expectations with respect to $$ p_Z $$ in terms of the base distribution:
+During training, the main parameters to optimise are those of the transformations $$\theta$$, and of the base distribution $$\phi$$, in order to maximize the ELBO. A useful identity allows us to compute expectations with respect to $$p_Z$$ in terms of the base distribution:
 
 $$
 \mathbb{E}_{p_Z(z|\theta)} [h(z)] = \mathbb{E}_{p_Y(y)}[h(g(y|\theta))],
 $$
 
-for any function $$ h $$, treating $$ \phi $$ as constant (since any dependence on it can typically be rolled into $$ \theta $$ anyway). This identity is useful for calculating gradients during optimisation: instead of needing to differentiate through a sampling distribution, we can use this reparameterisation trick to move the dependence on $$ \theta $$ inside the integrand. That makes computing gradients with respect to $$ \theta $$ far more straightforward.
+for any function $$h$$, treating $$\phi$$ as constant (since any dependence on it can typically be rolled into $$\theta$$ anyway). This identity is useful for calculating gradients during optimisation: instead of needing to differentiate through a sampling distribution, we can use this **reparameterisation trick** to move the dependence on $$\theta$$ inside the integrand. That makes computing gradients with respect to $$\theta$$ far more straightforward.
 
 ### The Process
 
 In practical terms, the general process for using normalising flows in variational inference looks like this:
 
-1. Sample $$ z $$ from the current approximation $$ q(z \mid \theta) $$
-2. Compute the probability of this sample under both $$ q(z \mid \theta) $$ and the joint $$ \mathcal{L}(x \mid z) \pi(z) $$
+1. Sample $$z$$ from the current approximation $$q(z \mid \theta)$$
+2. Compute the probability of this sample under both $$q(z \mid \theta)$$ and the joint $$\mathcal{L}(x \mid z) \pi(z)$$
 3. Calculate the Jacobian and its log determinant
 4. Update the transformation parameters using gradient-based optimisation
 
 
-
 ## Examples of Flow Methods
 
-Your next question should be then, well what are the transformations?? What should I specifically make $$g$$/$$f$$?? Well the class of functions that you wish to consider basically dictates the overall approach that you want to take. I'll show some examples of different methods building up to the ultimate goal of this post which is variational inference with normalising flows with neural network assisted transformations. 
+Your next question should be: what are the transformations? What should I specifically make $$g$$/$$f$$? The class of functions you choose basically dictates the overall approach you want to take. I'll show some examples of different methods, building up to the ultimate goal of this post, which is variational inference with normalising flows using neural network-assisted transformations. 
 
 
 ### Linear Flows
 
-Linear flows are normalising flows that utilise transformations of the form,
+Linear flows are normalising flows that utilise transformations of the form:
 
 $$\begin{align}
 
@@ -206,23 +208,21 @@ g(s) = A s +b,
 
 \end{align}$$
 
-where $$A \in \mathbb{R}^{D\times D}$$ and $$b_i\in \mathbb{R}^D$$ and $$D$$ is the dimensionality of $$z$$. These types of transformations are relatively restricted in the complexity of posteriors they can express, but are simpler to implement compared to other methods while still being able to capture many less pathological distributions. The determinant of the jacobian of the transformation is just the determinant of $$A$$ and the inverse transformation just $$A^{-1}$$ (and the total transformation just the product of all of these), but both operations can be expensive in high dimensions with complexities of $$\mathcal{O}(D^3)$$. However, we can restrict the form of $$A$$ to increase the efficiency of these operations.
+where $$A \in \mathbb{R}^{D\times D}$$ and $$b_i\in \mathbb{R}^D$$, and $$D$$ is the dimensionality of $$z$$. These types of transformations are relatively restricted in the complexity of posteriors they can express, but are simpler to implement compared to other methods while still being able to capture many less pathological distributions. The determinant of the Jacobian of the transformation is just the determinant of $$A$$ and the inverse transformation is just $$A^{-1}$$ (and the total transformation is just the product of all of these), but both operations can be expensive in high dimensions, with complexity $$\mathcal{O}(D^3)$$. However, we can restrict the form of $$A$$ to increase the efficiency of these operations.
 
 And then you can layer these transformations (letting $$g=g_i$$ above) to create a more flexible model.
 
 #### Diagonal-Linear Flows
 
-If $$A$$ is a diagonal matrix, the inverse is just the reciprocal of the diagonal elements and the determinant is the product of the elements on the diagonal which are both $$\mathcal{O}(D)$$. However, this transformation turns into an element-wise transformation which makes it impossible to capture the correlation between variables.
-
-
+If $$A$$ is a diagonal matrix, the inverse is just the reciprocal of the diagonal elements and the determinant is the product of the elements on the diagonal, both of which are $$\mathcal{O}(D)$$. However, this transformation turns into an element-wise transformation, which makes it impossible to capture the correlation between variables.
 
 #### Triangular-Linear Flows
 
-If we make $$A$$ a lower or upper triangular matrix then we can theoretically capture the correlations between variables because multiple variables from the base distribution can mix, but additionally the matrix determinant is still just the product of the diagonal, and matrix inversion is $$\mathcal{O}(D^2)$$ instead of $$\mathcal{O}(D^3)$$ for general matrix inversion.
+If we make $$A$$ a lower or upper triangular matrix, we can theoretically capture the correlations between variables because multiple variables from the base distribution can mix. Additionally, the matrix determinant is still just the product of the diagonal, and matrix inversion is $$\mathcal{O}(D^2)$$ instead of $$\mathcal{O}(D^3)$$ for general matrix inversion.
 
 ## Coupling Flows
 
-Coupling flows are set up such that the transforms are conditioned on other values of the variables in posterior of interest. i.e. If you have a D-dimensional posterior still denoted with $$\vec{z} = \{z_1, z_2, ..., z_d, z_{d+1}, ..., z_D\}$$ and $$y$$ and $$x$$ follow this same dimensionality. A _coupling flow_ in this scheme is constructed as a hybrid function, remembering that $$\vec{s}$$ is our fill in "intermediary variable" between $$y$$ and $$z$$, such that,
+Coupling flows are set up such that the transforms are conditioned on other values of the variables in the posterior of interest. That is, if you have a $$D$$-dimensional posterior $$\vec{z} = \{z_1, z_2, \dots, z_D\}$$ (and $$y$$ and $$s$$ follow the same dimensionality). A *coupling flow* in this scheme is constructed as a hybrid function, remembering that $$\vec{s}$$ is our fill in "intermediary variable" between $$y$$ and $$z$$, such that:
 
 $$
 \begin{align}
@@ -235,13 +235,13 @@ $$
 \end{align}
 $$
 
-In essence, you leave some parts of your intermediary variable alone, $$s_{d+1:D}$$ , and then transform the rest, $$s_{1:d}$$, based on some _coupling function_ $$h$$ with parameters based on some _conditioner_ $$\Theta$$ that are dependent on the part of the variable we leave alone, $$x_{d+1:D}$$. The assumption being that you would then apply some permutation function inbetween subsequent layers so that you apply a transformation to every value in $$y$$ (so you wouldn't really have $$z$$ on the left above but the next stage of the intermediary variable $$s$$ but that'd be confusing). 
+In essence, you leave some parts of your intermediary variable alone, $$s_{d+1:D}$$, and then transform the rest, $$s_{1:d}$$, based on some *coupling function* $$h$$ whose parameters are determined by a *conditioner* $$\Theta$$, which depends on the part of the variable we leave alone, $$s_{d+1:D}$$. The assumption is that you would then apply some permutation function in-between subsequent layers so that you apply a transformation to every value in $$y$$ (so you wouldn't really have $$z$$ on the left above but the next stage of the intermediary variable $$s$$ but that'd be confusing).
 
-This approach is nice as you get a lot of expressiveness out of it (depending on what you choose for $$h$$) while gives you a block triangular matrix with the blocks being the identity matrix and $$Dh$$ (which is just $$d\times D-d$$ as opposed to $$D\times D$$). The method by which you partition it is then up to you, but it's common to either split it in half or do some alternating pixels if you are looking at image data. 
+This approach is nice as you get a lot of expressiveness out of it (depending on what you choose for $$h$$) while retaining a block triangular matrix for the Jacobian, with the blocks being the identity matrix and $$Dh$$ (which is just $$d\times D-d$$ as opposed to $$D\times D$$). The method by which you partition it is then up to you, but it's common to either split it in half or do some alternating pixels if you are looking at image data.
 
 Additionally, $$\Theta$$ can be as complex as you like and is often represented using a neural network (but not the goal of this post).
 
-The inverse then looks like (presuming that the inverse, $$h^{-1}$$, exists),
+The inverse then looks like (presuming that the inverse, $$h^{-1}$$, exists):
 
 $$
 \begin{align}
@@ -257,87 +257,76 @@ $$
 
 ## Autoregressive Flows
 
-General autoregressive models outside of just normalising flows describe the probability of a given event or variable as some sort of function on previous events/variables. i.e. If I have a variable $$x=(x_1, x_2, ..., x_d)$$ then an autoregressive model might describe the probability as[^cr],
+General autoregressive models outside of just normalising flows describe the probability of a given event or variable as some sort of function on previous events/variables. I.e., if I have a variable $$x=(x_1, x_2, \dots, x_d)$$, then an autoregressive model might describe the probability as[^cr]:
 
 [^cr]: This is just a direct application of the [chain rule of probability](https://en.wikipedia.org/wiki/Chain_rule_(probability))
 
-$$ p(x) = p(x_1)\cdot p(x_2\mid x_1)\cdot p(x_3\mid x_1, x_2) \cdot \dots \cdot p(x_d\mid x_1, ..., x_{d-1}) $$
+$$p(x) = p(x_1)\cdot p(x_2\mid x_1)\cdot p(x_3\mid x_1, x_2) \cdot \dots \cdot p(x_d\mid x_1, \dots, x_{d-1})$$
 
-This has a nice extensions to what we're doing with our intermediate variables $$s_i$$.
+This has a nice extension to what we're doing with our intermediate variables $$s_i$$.
 
-We generate the samples as 
+We generate the samples as: 
 
 $$\begin{align}
 z_i = h(s_i|\Theta_{i}(s_{1:i-1})),
 \end{align}$$
 
-where $$\Theta_1$$ is a constant. This is extremely similar to what we saw in the coupling flows except instead of our transformation is blocks of $$\vec{s}$$ being transformed into blocks of $$\vec{s}$$ they are now of blocks of $$\vec{s}$$ being transformed into specific values of $$\vec{s}$$, $$s_i$$. The functions also retain the same terminology. So the determinant here is given by[^Block],
+where $$\Theta_1$$ is a constant. This is extremely similar to what we saw in the coupling flows, except instead of our transformation transforming blocks of $$\vec{s}$$ into blocks of $$\vec{s}$$, they are now transforming blocks of $$\vec{s}$$ into specific values of $$\vec{s}$$, $$s_i$$. The functions also retain the same terminology. So the determinant here is given by[^Block]:
 
 [^Block]: Additionally [Kobyzev, 2020](https://arxiv.org/abs/1908.09257v4) makes the useful comparison that the autoregressive flow architecture can be seen as a non-linear generalization of the triangular affine transformation above. 
 
 $$\begin{align}
-\det(Dg) = \prod_{i=1}^D \frac{\partial x_i}{\partial s_i} .
+\det(Dg) = \prod_{i=1}^D \frac{\partial z_i}{\partial s_i} .
 \end{align}$$
 
-The difficulty for this style of flow is the calculation of the inverse that has to be found using _recursion_ (icky) and inherently sequential as,
+The difficulty for this style of flow is the calculation of the inverse that has to be found using *recursion* (icky) and is inherently sequential:
 
 $$\begin{align}
 s_1 &= h^{-1}(z_1;\Theta_1) (\text{easy?})\newline
 s_2 &= h^{-1}(z_2;\Theta_2(s_1)) (\text{depends on }s_1)\newline
-s_3 &= h^{-1}(z_3;\Theta_3(s_1, s_2)) (\text{depends on }s_2\text{ (which depends on }s_1\text{) and }s_1)\newline
+s_3 &= h^{-1}(z_3;\Theta_3(s_1, s_2)) (\text{depends on }s_1 \text{ and } s_2)\newline
 &  \vdots \newline
-s_i &= h^{-1}(z_i;\Theta_i(s_{1:i-1})) (\text{depends on }s_{i-1}\text{ (which depends on }s_{i-2}...,s_1\text{) and }s_{i-2}\text{ (which depends on ...)} )\newline
+s_i &= h^{-1}(z_i;\Theta_i(s_{1:i-1})) (\text{depends sequentially on } s_1, \dots, s_{i-1})\newline
 \end{align}$$
 
-Despite this drawback autoregressive models have been shown to have an extreme level of flexibility at capturing complex distributions (e.g. Papamakarios, 2017). And additionally, there is a related architecture called _"inverse autoregressive flows"_ where $$z_i = h(s_i;\theta(z_{1:i-1}))$$ that has the _inverse_ problem that the forward direction is hard to compute but the inverse is simple, i.e. that it is quicker to sample and is thus better suited to methods within variational inference that require lots of sampling.
-
+Despite this drawback, autoregressive models have been shown to have an extreme level of flexibility at capturing complex distributions (e.g. Papamakarios, 2017). And additionally, there is a related architecture called **"inverse autoregressive flows"** where $$z_i = h(s_i;\theta(z_{1:i-1}))$$ that has the *inverse* problem: the forward direction is hard to compute but the inverse is simple. I.e., it is quicker to sample and is thus better suited to methods within variational inference that require lots of sampling.
 
 
 ### Examples of coupling functions
 
-Well after all that it may seem like I've kicked the can down the road as the question was "what functions should I use for my transformations" and now I've left the answer open because now you're likely asking "well what should I use for my coupling functions!". Well for now I would just look at the titles as they're pretty self-explanatory, and I want to finish this post.
-
-
+Well after all that it may seem like I've kicked the can down the road as the question was "what functions should I use for my transformations," and now I've left the answer open because now you're likely asking "well what should I use for my coupling functions!" Well for now I would just look at the titles as they're pretty self-explanatory, and I want to finish this post.
 
 
 #### Affine Coupling Functions
 
-
-
 #### Cubic Splines
-
-
 
 #### Rational Quadratic Splines
 
-
-
 ## Notable mentions of approaches that I did not cover
 
- - Sequential Neural Posterior estimation (see e.g. [Automatic Posterior Transformation for Likelihood-Free Inference](https://arxiv.org/abs/1905.07488) or [On Contrastive Learning for Likelihood-free Inference](https://arxiv.org/abs/2002.03712))
-   - A method where you skip the use of priors and likelihoods and instead estimate the posterior using simulations based on the parameters of interest
- - Unconditional density estmation
-    - If you have a samples from the distribution directly and wish to construct a parametric form 
+ - **Sequential Neural Posterior estimation (SNPE)** (see e.g. [Automatic Posterior Transformation for Likelihood-Free Inference](https://arxiv.org/abs/1905.07488) or [On Contrastive Learning for Likelihood-free Inference](https://arxiv.org/abs/2002.03712))
+   - A method where you skip the use of priors and likelihoods and instead estimate the posterior using simulations based on the parameters of interest.
+ - **Unconditional density estimation**
+    - If you have samples from the distribution directly and wish to construct a parametric form.
  - [RealNVP](https://arxiv.org/abs/1605.08803)
-    - A very successful approach to normalising flows algorithm
- - Continuous Flows
-    - Not even sure how this one works but it looks neat
- -  
+    - A very successful approach to normalising flows algorithm.
+ - **Continuous Flows**
+    - Not even sure how this one works but it looks neat.
  - Many others, I'd highly recommend looking at all the resources I've linked to above for more info.
-
 
 
 ## Normalising Flows with neural network mediated transforms (Neural Autoregressive Flows)
 
-Thanks for sticking around this far (and welcome, if you skipped most of the post and are just here for the conclusion). The final cherry on top is that, although normalising flows are ultimately an optimisation problem, we can leverage recent advancements in machine learning—particularly neural networks—to improve their flexibility and expressiveness.
+Thanks for sticking around this far (and welcome, if you skipped most of the post and are just here for the conclusion). The final cherry on top is that, although normalising flows are ultimately an optimisation problem, we can leverage recent advancements in machine learning—particularly **neural networks**—to improve their flexibility and expressiveness.
 
-There isn’t much new theory here: you’re simply replacing the conditioning mechanisms in your coupling functions (i.e., the $$ \Theta $$'s from earlier) with neural networks. One might ask: why not just use neural networks as the transformations themselves?
+There isn’t much new theory here: you’re simply replacing the conditioning mechanisms in your coupling functions (i.e., the $$\Theta$$'s from earlier) with neural networks. One might ask: why not just use neural networks as the transformations themselves?
 
 While that sounds reasonable in theory, in practice it poses challenges. General neural network transformations tend to be dense, making the resulting mappings difficult or impossible to invert analytically or efficiently. Many common flow architectures—like coupling flows or autoregressive flows—are specifically designed to ensure tractable Jacobians and invertibility. Letting neural networks control the *parameters* of these structured flows maintains these guarantees while still benefiting from neural nets' flexibility.
 
 As before, I highly recommend [Eric Jang’s tutorial](https://blog.evjang.com/2019/07/nf-jax.html) if you're interested in coding up a normalising flow yourself using JAX. Personally, though, I prefer to avoid the inevitable debugging headaches and use an off-the-shelf solution whenever possible.
 
-In my case, I’ve had good experiences with the [FlowJAX](https://danielward27.github.io/flowjax/index.html) Python package, and also found solid support in [PyTorch](https://github.com/VincentStimper/normalizing-flows) and [TensorFlow](https://blog.evjang.com/2018/01/nf1.html) ecosystems.
+In my case, I’ve had good experiences with the **[FlowJAX](https://danielward27.github.io/flowjax/index.html)** Python package, and also found solid support in [PyTorch](https://github.com/VincentStimper/normalizing-flows) and [TensorFlow](https://blog.evjang.com/2018/01/nf1.html) ecosystems.
 
 In the next section, I’ll walk through a few examples of how to use [FlowJAX for variational inference](https://danielward27.github.io/flowjax/examples/variational_inference.html) and compare it with traditional samplers.
 
@@ -361,7 +350,7 @@ Y_2 & \text{with probability } w_2
 \end{align}
 $$
 
-We assume the first model has a fixed intercept (i.e., $$ c_1 = 0 $$) to reduce identifiability issues. The parameters to infer are $$ m_1 $$, $$ m_2 $$, $$ c_2 $$, and one mixture fraction (since $$ w_2 = 1 - w_1 $$). So, we have **4 independent variables** total.
+We assume the first model has a fixed intercept (i.e., $$c_1 = 0$$) to reduce identifiability issues. The parameters to infer are $$m_1$$, $$m_2$$, $$c_2$$, and one mixture fraction (since $$w_2 = 1 - w_1$$). So, we have **4 independent variables** total.
 
 Below are two plots showing the simulated data: one with colours indicating the source model, and one showing the raw observed scatter.
 
@@ -382,7 +371,7 @@ Below are two plots showing the simulated data: one with colours indicating the 
     </div>
 </div>
 
-Now, we’ll apply both a normalising flow and nested sampling to this problem and compare the results. The likelihood for a given point $$ (x_i, y_i) $$ is:
+Now, we’ll apply both a normalising flow and nested sampling to this problem and compare the results. The likelihood for a given point $$(x_i, y_i)$$ is:
 
 $$
 \begin{align}
@@ -392,7 +381,7 @@ w_2 \cdot \mathcal{N}(y_i \mid m_2 x_i + c_2, \sigma_2^2)
 \end{align}
 $$
 
-We assume uniform priors on $$ m_1 $$, $$ m_2 $$, and $$ c_2 $$, and an uninformative Dirichlet prior on the mixture fractions (which, for two components, is just a uniform prior over [0, 1]).
+We assume uniform priors on $$m_1$$, $$m_2$$, and $$c_2$$, and an uninformative Dirichlet prior on the mixture fractions (which, for two components, is just a uniform prior over $$[0, 1]$$).
 
 After running nested sampling, we get the following posterior distribution:
 
@@ -448,7 +437,7 @@ def unnormalised_posterior(theta):
     return jax_logprior(theta) + jax_total_loglikelihood(theta, yvals=y_vals, xvals=x_vals)
 ```
 
-From here, we can just drop this into our favourite inference engine—like FlowJAX:
+From here, we can just drop this into our favourite inference engine-like FlowJAX:
 
 ```python
 from flowjax.bijections import Affine, RationalQuadraticSpline
@@ -473,23 +462,46 @@ flow, losses1 = fit_to_key_based_loss(train_key, flow, loss_fn=loss, learning_ra
 flow, losses2 = fit_to_key_based_loss(train_key, flow, loss_fn=loss, learning_rate=1e-3, steps=200)
 
 ```
-This gives us a nice ELBO loss curve. Note that the ELBO is a lower bound on the evidence, so it's not expected to go to zero — here, I offset the curve by its minimum value for display purposes:
+This gives us a nice ELBO loss curve. Note that the ELBO is a lower bound on the evidence, so it's not expected to go to zero - here, I offset the curve by its minimum value for display purposes:
 
-<div style="text-align: center;"> <img src="/files/BlogPostData/2025-04-28/basic_example_NF_loss_curve.png" alt="Loss curve for normalising flow approximation of 2D scatter data posterior" title="Loss curve for normalising flow approximation of 2D scatter data posterior" style="width: 50%; height: auto; border-radius: 16px;"> </div>
+<div style="text-align: center;"> 
+<img src="/files/BlogPostData/2025-04-28/basic_example_NF_loss_curve.png" 
+    alt="Loss curve for normalising flow approximation of 2D scatter data posterior" 
+    title="Loss curve for normalising flow approximation of 2D scatter data posterior" 
+    style="width: 50%; height: auto; border-radius: 16px;"> 
+</div>
+<br>
+
 And finally, here’s the approximate posterior obtained from the normalising flow:
 
-<div style="text-align: center;"> <img src="/files/BlogPostData/2025-04-28/basic_example_NF_corner.png" alt="Corner plot from normalising flow posterior" title="Corner plot from normalising flow posterior" style="width: 80%; height: auto; border-radius: 16px;"> </div>
+<div style="text-align: center;"> 
+<img src="/files/BlogPostData/2025-04-28/basic_example_NF_corner.png" 
+    alt="Corner plot from normalising flow posterior" 
+    title="Corner plot from normalising flow posterior" 
+    style="width: 80%; height: auto; border-radius: 16px;"> 
+</div>
+<br>
+
 To compare, we overlay the flow-derived posterior with the one obtained from nested sampling:
 
-<div style="text-align: center;"> <img src="/files/BlogPostData/2025-04-28/basic_example_stacked_corner.png" alt="Corner plot comparing nested sampling and normalising flow posteriors" title="Corner plot comparing nested sampling and normalising flow posteriors" style="width: 80%; height: auto; border-radius: 16px;"> </div>
+<div style="text-align: center;"> 
+<img src="/files/BlogPostData/2025-04-28/basic_example_stacked_corner.png" 
+alt="Corner plot comparing nested sampling and normalising flow posteriors" 
+title="Corner plot comparing nested sampling and normalising flow posteriors" 
+style="width: 80%; height: auto; border-radius: 16px;"> 
+</div>
+<br>
+
 As you can see, the distributions agree closely for most parameters. However, the flow seems to produce a more sharply peaked distribution for the gradient of the second model ($$m_2$$). This doesn’t necessarily mean the flow is “better”—in fact, it likely underestimates the uncertainty, which is a known tendency in variational inference.
 
 
 ### Example: Hierarchical Bayesian Model Analysis
 
-The only reason that you should be interested in normalising flows should be either some benefit of getting a parametric representation out of your analysis, the dimensionality of your problem is high (and you don't have or can't be bothered finding yourself gradient data) or you've got some pathological posterior that other samplers are having trouble with. For this next example I was hoping to show this to you but could only get as far as 26 dimensions for reasons that I will explain after this example. 
+The only reason that you should be interested in normalising flows should be either some benefit of getting a parametric representation out of your analysis, the dimensionality of your problem is high (and you don't have or can't be bothered finding yourself gradient data) or you've got some pathological posterior that other samplers are having trouble with. For this next example I was hoping to show this to you but could only get as far as 26 dimensions for reasons that I will explain after this example.
 
-For this example we're going to look at pseudo-particle tracking data where you have a three straight lines with gaussian intrinsic scatter going through $$x$$, $$y$$, $$z$$ with parametric representations based on time $$t$$ which is sampled uniformly from $$-20$$ to $$20$$ and a "deposited energy" variable $$E$$ that follows an exponential relationship with $$t$$ (in hopes of reproducing the general behaviour of a particle exponentially losing energy over time). This data is shown in the first row of GIFs. We then add gaussian noise to the spatial data and log-normal noise to the energy data (independent of time and each other for simplicity) with some background noise that is just uniform in space and log-uniform in energy (again independent of time).
+For this example we're going to look at pseudo-particle tracking data where you have a three straight lines with gaussian intrinsic scatter going through $$x$$, $$y$$, $$z$$ with parametric representations based on time $$t$$ which is sampled uniformly from $$-20$$ to $$20$$ and a "deposited energy" variable $$E$$ that follows an exponential relationship with $$t$$ (in hopes of reproducing the general behaviour of a particle exponentially losing energy over time). 
+
+This data is shown in the first row of GIFs. We then add gaussian noise to the spatial data and log-normal noise to the energy data (independent of time and each other for simplicity) with some background noise that is just uniform in space and log-uniform in energy (again independent of time).
 
 <div style="text-align: center;">
 <img 
@@ -739,6 +751,7 @@ This gave me the following loss curve. Anecdotally, I've found that if the loss 
     title="Loss curve for normalising flow pseudo-particle track data posterior" 
     style="width: 50%; height: auto; border-radius: 16px;">
 </div>
+<br>
 
 And posterior.
 
@@ -749,21 +762,21 @@ And posterior.
     title="Normalising flow posterior for pseudo-particle track data" 
     style="width: 100%; height: auto; border-radius: 16px;">
 </div>
+<br>
 
-Due to needing the results to be stable for this dimensionality this run took significantly longer than the first. The normalising flow for the first example took ~30 seconds to train, while this one took ~25 minutes (although the large time for the second is likely due to my relative inexperience with flows). But hey, that's still relatively quick for the $$10^4$$ datapoints that this uses and now we have a parametric representation of our posterior that we can sample really easily and quickly.
+Due to needing the results to be stable for this dimensionality this run took significantly longer than the first. The normalising flow for the first example took ~30 seconds to train, while this one took ~25 minutes (although the large time for the second is likely due to my relative inexperience with JAX). But hey, that's still relatively quick for the $$10^4$$ datapoints that this uses and now we have a parametric representation of our posterior that we can sample really easily and quickly.
 
 
 ## Some Annoying Things About Normalising Flows
 
 
-Despite what the benefits that I've tried to get across with all of the above, there are still quite a few aspects of normalising flows that are finicky enough that, personally, would mean that I wouldn't recommend using normalising flows to the general statistician that I will highlight (mostly again) here.
+Despite what the benefits that I've tried to get across with all of the above, there are still quite a few aspects of normalising flows that are finicky enough such that I will highlight (mostly again) here.
 
-1. Optimisation Instability. Despite the "speed" benefits of optimisation, due to the large number of parameters being investigated among other things, gradients are prone to explode and produce major instabilities during fitting. I've referenced a couple approaches to get around some of these problems below but I've found that at least one of them still leaves things being finicky (and the other ones I haven't implemented yet...), and now with the stability measures, not that fast.
-2. Convergence. Because this is essentially optimisation like I talk about above the only "convergence" metric is whether you think the loss curve has plateaued and because the flow is just moving around some "nice" distribution to begin with the results can still look "nice" even if it's converged on some bogus area of the parameter space bar the following point.
-3. "Is that the posterior, or some weird artefact from the transformations?" I will quite often get a posterior out from a normalising flow with a variable with a strange skew or extension in the posterior, but it is hard to tell whether this comes from the posterior actually having that shape and the flow just allows the freedom to sample enough to see this properly or whether it's some artefact of the transformations that the normalising flow has found and left in there.
-4. It's just plain ol' finicky. In my experience, using normalising flows has been a kind of mix of optimisation issues, general machine-learning bugs, alongside a bloody sampler. I think I solve one thing or then another problem pops up (seemingly purely out of mechanical spite). But even worse, is that I fix something that is obviously wrong, and that makes the flow _stop_ working. For the above examples it would have been much much _much_ quicker to use standard methods like HMC or nested sampling rather than flows (possibly out of experience, but the flows really seemed like an uphill battle).
+1. Convergence. Because this is essentially optimisation like I talk about above the only "convergence" metric is whether you think the loss curve has plateaued and because the flow is just moving around some "nice" distribution to begin with the results can still look "nice" even if it's converged on some bogus area of the parameter space bar the following point.
+2. "Is that the posterior, or some weird artefact from the transformations?" I will quite often get a posterior out from a normalising flow with a variable with a strange skew or extension in the posterior, but it is hard to tell whether this comes from the posterior actually having that shape and the flow just allows the freedom to sample enough to see this properly or whether it's some artefact of the transformations that the normalising flow has found and left in there.
+3. It's just plain ol' finicky. In my experience, using normalising flows has been a kind of mix of optimisation issues, general machine-learning bugs, alongside a bloody sampler. I think I solve one thing or then another problem pops up (seemingly purely out of mechanical spite). But even worse, is that I fix something that is obviously wrong, and that makes the flow _stop_ working. For the above examples it would have been much much _much_ quicker to use standard methods like HMC or nested sampling rather than flows.
 
-Additionally, I have only read this as I haven't had the need to look at discrete distributions in my posterior (and can't be bothered making synthetic data for yet). According to [Kobyzev, 2020](https://arxiv.org/abs/1908.09257v4), describing discrete distributions are an open problem.
+Additionally, I have only read this as I haven't had the need to look at discrete distributions in my posterior. Describing discrete distributions are an open problem (e.g. this is discussed in [Kobyzev, 2020](https://arxiv.org/abs/1908.09257v4)).
 
 Here are some references that include discussions on issues involving normalising flows (and in some cases partial solutions to the problems), wouldn't focus too much on the results (and their validity) these are just papers I found that at least reference the issues I'm trying to talk about.
 
@@ -786,7 +799,8 @@ Since writing this post I've learned slightly more about the flows that I was tr
 
 ## Update!
 
-So a bit more time has introduced me to NumPyro and it's various Varitiational Inference classes, and some seemingly stable normalising flow setups. 
+So a bit more time has introduced me to NumPyro and it's various Varitiational Inference classes, and some much more stable normalising flow setups. 
+
 Not in much of a writing mood, but I'll paste the code here for now seeing as it's basically made all the above irrelevant (please don't judge me for the bad code practices, I'm writing this at 2am).
 
 Here's the final result (with slightly different data, hence the extra mixture). It only took 10 minutes but I let it run for a little longer than I needed to so that I was sure the result was stable.
@@ -897,6 +911,33 @@ for step in tqdm(range(n_steps)):
 ```
 
 
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
 
 
 ---
