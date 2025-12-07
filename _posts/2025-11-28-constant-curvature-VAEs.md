@@ -1108,7 +1108,7 @@ transporting samples from $$\mathbb{R}^n$$ (n-dimensional Euclidean space) to $$
 The definition for hyperbolic space is actually make much more general than we need for the purposes of the VAE. 
 The strict definition is something along the lines of a Riemannian manifold (smooth higher dimensional surface/space) with constant negative [curvature](https://en.wikipedia.org/wiki/Curvature)[^curv] 
 
-[^curv]: For a specific type of curvature I usually default to thinking in terms of [Gaussian curvature](https://en.wikipedia.org/wiki/Gaussian_curvature).
+[^curv]: For the purpose of this post the usual notion of 'curving' is good enough. For a more general type of curvature that I usually default to thinking in terms of [Gaussian curvature](https://en.wikipedia.org/wiki/Gaussian_curvature).
 
 The behaviour of hyperbolic spaces is a lil strange, so much so that we require specific methods/models to try and imagine/visualise them.
 
@@ -1145,9 +1145,16 @@ Then as we increase the depth of the structure the amount of area needed to nice
 </div>
 <br>
 
-So similar to how linearly increasing the depth in the above tree exponentially increases the required width, in hyperbolic space linearly increasing distances exponentially increase area!
+So, similar to how linearly increasing the depth in the above tree exponentially increases the required width, in hyperbolic space linearly increasing distances exponentially increase area! So if you use a typical euclidean latent space you have to exponentially explore the space, which would be difficult for a neural network to model. So instead we will replace it with a hyperbolic space so that maybe the neural networks will only need to 'linearly' manoeuvre in the space.
 
+For the rest of this post we will instead defer to the [Lorentz/Hyperboloid/Minkowski model](https://en.wikipedia.org/wiki/Hyperboloid_model) for hyperbolic space where basically we interpret N-dimensional hyperbolic space as a hyperboloid in $$\mathbb{R}^{N+1}$$ with a [Minkowski metric](https://en.wikipedia.org/wiki/Minkowski_space)[^Minkowski] in a similar way to how we imagine spherical space to exist as sphere in $$\mathbb{R}^{N+1}$$.
 
+[^Minkowski]: I.E It exists within an N+1 dimensional [Minkowski space](https://en.wikipedia.org/wiki/Minkowski_space).
+
+This model allows one to create the below 'typical' plot for observing how curvature manipulates the shapes representing the different spaces. 
+The hyperboloid or what we will imagine as the hyperbolic the space exists for $$\kappa < 0$$[^kappa].
+
+[^kappa]: Not to be confused with the $$\kappa$$ from the vMF distribution.
 
 <div style="text-align: center;">
 <iframe 
@@ -1158,6 +1165,32 @@ So similar to how linearly increasing the depth in the above tree exponentially 
 ></iframe>
 </div>
 
+Another fun thing about these spaces though is how 'straight lines' behave and when I say 'straight lines' I mean geodesics. A practical definition for a geodesic is that it is the shortest path or set of points that connect to coordinates. 
+
+e.g. The 'straight line' or shortest path between two points on the sphere is curved. This can be seen in the diagram below showing different paths between Melbourne and Sapporo one of them is a little harder in practice. What one would think of as the 'straight' path isn't really the straight path as it doesn't exist in the spherical space. So the "actual" straight line is the curved line connecting the two points
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Sapporo_Melbourne_circle_example.png" 
+      alt="Diagram showing different paths between Melbourne and Sapporo" 
+      title="Diagram showing different paths between Melbourne and Sapporo" 
+      style="width: 79%; height: auto; border-radius: 8px;">
+<figcaption></figcaption>
+</div>
+<br>
+
+
+Similarly, geodesics in hyperbolic space are not what we would call straight. Below are some examples of geodesics on/in the different geometries/spaces (this plot took me an embarassingly long time to make, please appreciate).
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/ParallelGeodesicPaths.png" 
+      alt="Diagrams showing how parallel trajectories behave in curved spaces" 
+      title="Diagrams showing how parallel trajectories behave in curved spaces" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+<figcaption></figcaption>
+</div>
+<br>
 
 
 
@@ -1223,6 +1256,35 @@ Auto-Encoders. 34th Conference on Uncertainty in Artificial Intelligence (UAI-18
 
 
 <br>
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
 
 ---
 
