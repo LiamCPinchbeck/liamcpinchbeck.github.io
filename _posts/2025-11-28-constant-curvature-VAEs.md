@@ -581,7 +581,7 @@ There's a tonne of useful videos and lectures notes on this that I'd recommend f
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagrams/HouseHolder1.png" 
     style="width: 48%; height: auto; border-radius: 1px;">
 <img 
-    src="/files/BlogPostData/2025-constant-curvature-vaesHouseHolderDiagrams/HouseHolder2.png" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagrams/HouseHolder2.png" 
     style="width: 48%; height: auto; border-radius: 1px;">
 <img 
     src="/files/BlogPostData/2025-constant-curvature-vaes/HouseHolderDiagrams/HouseHolder3.png" 
@@ -1204,7 +1204,11 @@ Another interesting thing is that unlike in Euclidean geometry, parallel lines d
 ### Tangent Space
 
 Before we can even start navigating our maps though maybe we need some notion of direction. 
-In the study of these spaces we define the 'velocity' vectors defining where we can move in the [Tangent Space](https://en.wikipedia.org/wiki/Tangent_space).
+Let's say we exist in the space of a sphere. We cannot view out into $$\mathbb{R}^3$$ as it doesn't exist to us, we can only see the geometry that is intrinsic to the space. 
+So how do we 'walk around' if we don't even know 'where' we can walk.
+
+
+We define the 'velocity' vectors defining where we can move as existing in the [Tangent Space](https://en.wikipedia.org/wiki/Tangent_space).
 The Tangent Space for a given point on the manifold ($$\vec{\mu}$$), which we will denote $$T_\vec{\mu} \mathbb{H}^n$$ for the hyperbolic space, can also be more simply thought of the space that contains the set tangent vectors in the same ambient space as the manifold $$\vec{u} \in \mathbb{R}^{n+1}$$.
 
 For the hyperbolic space we can define,
@@ -1232,12 +1236,9 @@ Which just ends up giving you lines and planes like the below.
 <br>
 
 
-
-
 ### Parallel Transport and the exponential map
 
-
-
+Okay now that we have some notion of how to encode 'direction', now let's figure out how to walk straight. 
 
 
 
