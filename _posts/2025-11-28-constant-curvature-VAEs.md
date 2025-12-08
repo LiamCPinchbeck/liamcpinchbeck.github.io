@@ -1165,7 +1165,15 @@ The hyperboloid or what we will imagine as the hyperbolic the space exists for $
 ></iframe>
 </div>
 
-Another fun thing about these spaces though is how 'straight lines' behave and when I say 'straight lines' I mean geodesics. A practical definition for a geodesic is that it is the shortest path or set of points that connect to coordinates. 
+The more rigorous definition of the space $$\mathbb{H}^n$$ is the set of points $$\vec{z} \in \mathbb{R}^{n+1}$$ with $$z_0>0$$ such that the Lorentzian inner product $$\langle ... \rangle_\mathcal{L}$$, given as,
+
+$$\begin{align}
+\langle \vec{z}^{(j)}, \vec{z}^{(k)} \rangle_\mathcal{L} = -z_0^{(j)} z_0^{(k)}  + \sum_{i=1}^n z_i^{(j)} z_i^{(k)},
+\end{align}$$
+
+is equal to $$-1$$ if $$i=k$$. i.e. $$\mathbb{H}^n = \{\vec{z} \in \mathbb{R}^{n+1} : \langle \vec{z}, \vec{z} \rangle_\mathcal{L} = -1, z_0>0 \}$$. And like [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) we will use $$\vec{\mu}_0 = [1, 0, 0, ...] \in \mathbb{H}^n \subset \mathbb{R}^n $$ as a kind of origin for the space.
+
+Another fun thing about these spaces is how 'straight lines' behave and when I say 'straight lines' I mean geodesics. A practical definition for a geodesic is that it is the shortest path or set of points that connect to coordinates. 
 
 e.g. The 'straight line' or shortest path between two points on the sphere is curved. This can be seen in the diagram below showing different paths between Melbourne and Sapporo one of them is a little harder in practice. What one would think of as the 'straight' path isn't really the straight path as it doesn't exist in the spherical space. So the "actual" straight line is the curved line connecting the two points
 
@@ -1192,6 +1200,39 @@ Similarly, geodesics in hyperbolic space are not what we would call straight. Be
 </div>
 <br>
 
+Another interesting thing is that unlike in Euclidean geometry, parallel lines don't remain parallel! In essence, we can't just explore this space will-nilly, we have to have some sort of map.
+
+### Tangent Space
+
+Before we can even start navigating our maps though maybe we need some notion of direction. 
+In the study of these spaces we define the 'velocity' vectors defining where we can move in the [Tangent Space](https://en.wikipedia.org/wiki/Tangent_space).
+The Tangent Space for a given point on the manifold ($$\vec{\mu}$$), which we will denote $$T_\vec{\mu} \mathbb{H}^n$$ for the hyperbolic space, can also be more simply thought of the space that contains the set tangent vectors in the same ambient space as the manifold $$\vec{u} \in \mathbb{R}^{n+1}$$.
+
+For the hyperbolic space we can define,
+
+$$\begin{align}
+T_\vec{\mu} \mathbb{H}^n = \{\vec{u}: \langle \vec{u}, \vec{\mu}\rangle_\mathcal{L} = 0\}.
+\end{align}$$
+
+Which just ends up giving you lines and planes like the below.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/tangent_space.gif" 
+      alt="Diagram showing different examples of what tangent spaces on $$\mathbb{H}^1$$ look like" 
+      title="Diagram showing different examples of what tangent spaces on $$\mathbb{H}^1$$ look like" 
+      style="width: 29%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/tangent_space_3d.gif" 
+      alt="Diagram showing different examples of what tangent spaces on $$\mathbb{H}^2$$ look like" 
+      title="Diagram showing different examples of what tangent spaces on $$\mathbb{H}^2$$ look like" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+<figcaption>Diagrams showing different examples of what tangent spaces on \(\mathbb{H}^1\) and  \(\mathbb{H}^2\) look like.</figcaption>
+</div>
+<br>
+
+
 
 
 ### Parallel Transport and the exponential map
@@ -1199,7 +1240,11 @@ Similarly, geodesics in hyperbolic space are not what we would call straight. Be
 
 
 
+
+
 ## The Pseudo-Hyperbolic Gaussian or Wrapped Normal Distribution on Hyperbolic Space
+
+
 
 
 
