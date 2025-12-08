@@ -1236,9 +1236,76 @@ Which just ends up giving you lines and planes like the below.
 <br>
 
 
-### Parallel Transport and the exponential map
+### Parallel Transport
 
-Okay now that we have some notion of how to encode 'direction', now let's figure out how to walk straight. 
+Okay now that we have some notion of how to encode 'direction', now let's figure out how to walk straight. In [differential geometry](https://en.wikipedia.org/wiki/Differential_geometry) we generalise the notion of 'walking in a straight line' into [Parallel transport](https://en.wikipedia.org/wiki/Parallel_transport).
+
+The parallel transport map is a rule for moving a vector along a curve from one point, $$p$$, to another, $$q$$, on a manifold. The key property is that the vector is translated such that it remains "constant" with respect to the geometry of the space (i.e., its intrinsic length and angle with respect to the curve are preserved).
+
+More simply, it's the process of sliding a vector along a curve without letting it rotate or change magnitude as it relates to the space's local coordinates. If the curve you're transporting the vector along is a geodesic, then the vector being parallel transported along that geodesic defines what a straight line looks like in that geometry.
+
+e.g. If a vector is parallel to a geodesic we are travelling on (the generalised notion of a straight line) then it will remain parallel to the geodesic by the end.
+
+Even more simply, in our usual Euclidean space, if I hold my arm out to the right and then walk in a straight line, unless I move it, my arm will still be to my right. However, let's say that I'm a n-dimensional spherical being, and I'm on some positive latitude, if I hold my arm 'up' it will stay 'up' to me. But to some observer in $$\mathbb{R}^{n+1}$$ it will initially look like I'm pointing 'up and out' but as I circle around, the observer will effectively see my arm reverse directions with respect to me. I've tried to visualise this below.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/dual_parallel_transport_sphere.gif" 
+      alt="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) from the perspective of \(\mathbb{R}^3\)" 
+      title="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) from the perspective of \(\mathbb{R}^3\)"
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/moving_frame_transport.gif" 
+      alt="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) from the perspective of \(S^{2}\)" 
+      title="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) from the perspective of \(S^{2}\)" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+<figcaption>Diagram showing how parallel transport manipulates vectors on \(S^{2}\) from the perspective of \(\mathbb{R}^3\) and \(S^{2}\)".</figcaption>
+</div>
+<br>
+
+The top vector/line isn't a geodesic so the vector appears to rotate from both perspectives we show.
+
+Because we are focused on the relative positions/directions of the vectors this mapping is defined between tangent spaces. 
+So in hyperbolic space, if we have $$\vec{\mu}, \vec{\nu} \in \mathbb{H}^n$$ then we define the parallel transport map that carries $$\vec{v} \in T_\vec{\nu}\mathbb{H}^n$$ into $$\vec{u} \in T_\vec{\mu}\mathbb{H}^n$$ as,
+
+$$\begin{align}
+\vec{u} = \text{PT}_{\vec{\nu} \rightarrow \vec{\mu}}(\vec{v}) = \vec{v} + \frac{\langle \vec{\mu}-\alpha \vec{\nu}, \vec{v} \rangle_{\mathcal{L}}}{\alpha + 1}(\vec{\nu} + \vec{\mu})
+\end{align}$$
+
+
+with $$\alpha = - \langle \vec{\mu}, \vec{\nu}\rangle_{\mathcal{L}}$$. I've tried to recreate the gifs I made above for the sphere on the hyperbola, notably sans the perspective of the tangent space, because when I made the gif it wasn't really clear what was going on anyway.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hyperbolic_parallel_transport.gif" 
+      alt="Diagram showing how parallel transport manipulates vectors on \(\mathbb{H}^{2}\) from the perspective of \(\mathbb{R}^3\)" 
+      title="Diagram showing how parallel transport manipulates vectors on \(\mathbb{H}^{2}\) from the perspective of \(\mathbb{R}^3\)"
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hyperbolic_parallel_transport_2.gif" 
+      alt="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) also from the perspective of \(\mathbb{R}^3\)" 
+      title="Diagram showing how parallel transport manipulates vectors on \(S^{2}\) also from the perspective of \(\mathbb{R}^3\)" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+<figcaption>Diagram showing how parallel transport manipulates vectors on \(\mathbb{H}^{2}\) from the perspective of \(\mathbb{R}^3\).</figcaption>
+</div>
+<br>
+
+It is also handy to have the inverse of this map, $$\text{PT}_{\vec{\nu}\rightarrow\vec{\mu}}^{-1}$$, which maps the vectors in $$T_\vec{\mu}\mathbb{H}^n$$ back to $$T_\vec{\nu}\mathbb{H}^n$$, but that's just parallel transport in the other direction.
+
+$$\begin{align}
+\vec{v} = \text{PT}_{\vec{\nu}\rightarrow\vec{\mu}}^{-1}(\vec{u}) = \text{PT}_{\vec{\mu}\rightarrow\vec{\nu}}(\vec{v})
+\end{align}$$
+
+
+
+### The Exponential Map
+
+
+So the above let's us transport vectors between tangent spaces. Woop-de-doo. We want to generate samples on $$\mathbb{H}^n$$ not on $$T_\vec{\mu}\mathbb{H}^n$$ or $$T_\vec{\nu}\mathbb{H}^n$$. What we need now is some way to map vectors $$\vec{\mu} \in \mathbb{H}^n$$ and $$\vec{v} \in T_\vec{\mu}\mathbb{H}^n$$. For the purpose of this work and [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) this will be fulfilled by the ***Exponential Map***.
+
+
+
 
 
 
