@@ -1304,7 +1304,52 @@ $$\begin{align}
 
 So the above let's us transport vectors between tangent spaces. Woop-de-doo. We want to generate samples on $$\mathbb{H}^n$$ not on $$T_\vec{\mu}\mathbb{H}^n$$ or $$T_\vec{\nu}\mathbb{H}^n$$. What we need now is some way to map vectors $$\vec{\mu} \in \mathbb{H}^n$$ and $$\vec{v} \in T_\vec{\mu}\mathbb{H}^n$$. For the purpose of this work and [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) this will be fulfilled by the ***Exponential Map***.
 
+The exponential map connects linear structure, in the tangent space $$T_\vec{\mu} \mathbb{H}^n$$ for example, to the manifold, e.g. $$\mathbb{H}^n$$. 
 
+For a given $$\vec{\mu}$$, the map finds _the_ unique geodesic $$\gamma_{\vec{\mu}}(t)$$ that starts at $$\vec{\mu}$$ (i.e., $$\gamma_{\vec{\mu}}(0)=\vec{\mu}$$) and has $$\vec{v}$$ as its initial velocity (i.e., $$\gamma_{\vec{\mu}}'(0)=\vec{v}$$). 
+
+The exponential map then simply evaluates this geodesic at $$t=1$$: $$\exp_\vec{\mu}(\vec{v}) = \gamma_{\vec{v}}(1)$$. 
+
+This setup is such that the magnitude $$\lVert\vec{v}\rVert$$ of the input vector $$\vec{v}$$ directly corresponds to the geodesic distance between the base point $$\vec{\mu}$$ and the resulting point $$\exp_p(\vec{v})$$, effectively using the tangent space as a "rolled out" local version of the manifold. This means that we can define samples in the tangent space of the "origin", parallel transport them, then use the exponential map to map these transported samples onto the hyperbolic manifold.
+
+For the n-dimensional hyperbolic space we define the exponential map for $$\vec{\mu} \in \mathbb{H}^n$$ and $$\vec{u} \in T_\vec{\mu} \mathbb{H}^n$$ as,
+
+$$\begin{align}
+\vec{v} = \exp_\vec{\mu}(\vec{u}) = \cosh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \vec{\mu} + \sinh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \frac{\vec{u}}{\lVert \vec{u} \rVert_\mathcal{L}}.
+\end{align}$$
+
+The map is also norm preserving meaning that,
+
+$$\begin{align}
+&d_\mathcal{L}(\vec{\mu}, \exp_\vec{\mu}(\vec{u})) \\
+&= \text{arccosh}\left(-\langle \vec{\mu}, \exp_\vec{\mu}(\vec{u}) \rangle_\mathcal{L} \right) \\
+&= \text{arccosh}\left(-\langle \vec{\mu}, \cosh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \vec{\mu} + \sinh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \frac{\vec{u}}{\lVert \vec{u} \rVert_\mathcal{L}} \rangle_\mathcal{L} \right) \\
+&= \text{arccosh}\left(-\cosh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \langle \vec{\mu}, \vec{\mu}\rangle_\mathcal{L} + \sinh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \frac{1}{\lVert \vec{u} \rVert_\mathcal{L}} \langle \vec{\mu},\vec{u} \rangle_\mathcal{L} \right) \\
+&= \text{arccosh}\left(-\cosh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \cdot (-1) + \sinh\left(\lVert \vec{u} \rVert_\mathcal{L}\right) \frac{1}{\lVert \vec{u} \rVert_\mathcal{L}} \cdot 0\right) \\
+&= \text{arccosh}\left(\cosh\left(\lVert \vec{u} \rVert_\mathcal{L}\right)\right) \\
+\\
+&d_\mathcal{L}(\vec{\mu}, \exp_\vec{\mu}(\vec{u})) = \lVert \vec{u} \rVert_\mathcal{L}
+\end{align}$$
+
+And of course we like having the inverse,
+
+$$\begin{align}
+\vec{u} = \exp_\vec{\mu}^{-1}(\vec{v}) = \frac{\text{arccosh}(\alpha)}{\sqrt{\alpha^2 - 1}} (\vec{v} - \alpha \vec{\mu}),
+\end{align}$$
+
+with $$\alpha = -\langle \vec{\mu}, \vec{v}\rangle_\mathcal{L}$$ again. 
+
+Below is a visualisations showing how the mapping morphs the tangent space on to a neighbourhood of $$\mathbb{H}^n$$ around $$\vec{\mu}$$.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/tangent_space_exp_map.gif" 
+      alt="Diagram showing how exponential manipulates vectors in \(T_\vec{\mu}\mathbb{H}^{2}\) into \(\mathbb{H}^{2}\)." 
+      title="Diagram showing how exponential manipulates vectors in \(T_\vec{\mu}\mathbb{H}^{2}\) into \(\mathbb{H}^{2}\)."
+      style="width: 59%; height: auto; border-radius: 8px;">
+<figcaption>Diagram showing how exponential manipulates vectors in \(T_\vec{\mu}\mathbb{H}^{2}\) into \(\mathbb{H}^{2}\).</figcaption>
+</div>
+<br>
 
 
 
