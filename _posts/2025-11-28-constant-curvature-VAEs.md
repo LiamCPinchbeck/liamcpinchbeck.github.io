@@ -1402,6 +1402,171 @@ I will also directly copy-paste the algorithm directly from [Nagano et al. (2019
 
 ### 2. Evaluating the Pseudo-Hyperbolic Gaussian density
 
+We can sample the distribution, now we want to figure out the density of the projected distribution/the probabilities of samples in $$\mathbb{H}^n$$. 
+To do this we use the typical formula for the pushforward of a density,
+
+$$\begin{align}
+\log p(\vec{z}) = \log p(\vec{v}) - \log \det \left(\frac{\partial f}{\partial \vec{v}} \right).
+\end{align}$$
+
+In our case $$f$$ is the transformation of the samples from the tangent space of $$\vec{\mu}_0$$ to $$\mathbb{H}^n$$ around $$\vec{\mu}$$, that is $$f = \exp_\vec{\mu} \circ \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}$$. 
+
+
+By the chain rule,
+
+$$\begin{align}
+&\det \left(\frac{\partial}{\partial \vec{v}} \exp_\vec{\mu} \circ \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}} \right) \\
+&= \det \left( \frac{\partial}{\partial \vec{u}} \exp_\vec{\mu}(\vec{u}) \cdot \frac{\partial}{\partial \vec{v}} \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{v}) \right)\\
+&= \det \left( \frac{\partial}{\partial \vec{u}} \exp_\vec{\mu}(\vec{u})\right) \cdot \det \left(\frac{\partial}{\partial \vec{v}} \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{v}) \right)
+\end{align}$$
+
+
+Now just for completeness I'm going to include the derivations for both of these, but there's nothing much to add that isn't already in Appendix A.3 and A.4 in [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992). Which is a good reminder that if you do feel so inclined to ever cite me, please always cite the work that I'm likely referencing and you may find that you don't need to cite me at all anyways.
+
+### $$\det \left( \frac{\partial}{\partial \vec{u}} \exp_\vec{\mu}(\vec{u})\right) $$ Derivation
+
+For this derivation we will use an orthonormal basis such that the determinant is simply the product of the individual directional derivatives for each basis. Additionally, we will construct that basis such that the first component is the unit vector in the direction of $$\vec{u}$$, $$\bar{u} = \vec{u}/\lVert \vec{u}\rVert_\mathcal{L} = \vec{u}/r$$. This means for the basis $$\{\bar{u}=\vec{u}_1', \vec{u}_2', \vec{u}_3',...\}$$ where $$\lVert \vec{u}_k'\rVert_\mathcal{L}=1$$ and $$\langle \vec{u}_i',\vec{u}_k'\rangle_\mathcal{L} = \delta_{ik}$$,
+
+$$\begin{align}
+\det \left( \frac{\partial}{\partial \vec{u}} \exp_\vec{\mu}(\vec{u})\right) = \prod_{i=1}^n \left\lVert \frac{\partial}{\partial \vec{u}_i'} \exp_\vec{\mu}(\vec{u})\right\rVert_\mathcal{L}.
+\end{align}$$
+
+We then have two cases of where $$\vec{u}_k'$$  equals $$\bar{u}$$ or not.
+
+$$\begin{align}
+\frac{\partial}{\partial \bar{u}} \exp_\vec{\mu}(\vec{u}) &= \frac{d}{d\epsilon}\big\vert_{\epsilon=0} \left(\cosh\left(\lVert \vec{u} + \epsilon \bar{u} \rVert_\mathcal{L}\right) \vec{\mu} + \sinh\left(\lVert \vec{u}  + \epsilon \bar{u} \rVert_\mathcal{L}\right) \frac{\vec{u}  + \epsilon \bar{u}}{\lVert \vec{u}  + \epsilon \bar{u}\rVert_\mathcal{L}} \right) \\
+&= \frac{d}{d\epsilon}\big\vert_{\epsilon=0} \left(\cosh\left(\lVert (r + \epsilon) \bar{u} \rVert_\mathcal{L}\right) \vec{\mu} + \sinh\left(\lVert (r + \epsilon) \bar{u} \rVert_\mathcal{L}\right) \frac{(r + \epsilon) \bar{u}}{\lVert (r + \epsilon) \bar{u}\rVert_\mathcal{L}} \right) \\
+&= \frac{d}{d\epsilon}\big\vert_{\epsilon=0} \left(\cosh\left(r + \epsilon \right) \vec{\mu} + \sinh\left(r + \epsilon\right) \bar{u} \right)\\
+&= \left(\sinh\left(r + \epsilon \right) \vec{\mu} + \cosh\left(r + \epsilon\right) \bar{u} \right) \big\vert_{\epsilon=0} \\
+&= \sinh\left(r \right) \vec{\mu} + \cosh\left(r\right) \bar{u}
+\end{align}$$
+
+With,
+
+$$\begin{align}
+&\langle \sinh\left(r \right) \vec{\mu} + \cosh\left(r\right) \bar{u}, \sinh\left(r \right) \vec{\mu} + \cosh\left(r\right) \bar{u}\rangle_{\mathcal{L}} \\
+&= \sinh\left(r \right)^2 \langle \vec{\mu}, \vec{\mu} \rangle_\mathcal{L} + 2\cosh\left(r\right)\sinh\left(r \right) \langle \vec{\mu}, \bar{u}\rangle_\mathcal{L} + \cosh\left(r\right)^2 \langle \vec{u}, \bar{u}\rangle_{\mathcal{L}} \\
+&= \sinh\left(r \right)^2 \cdot (-1) + 2\cosh\left(r\right)\sinh\left(r \right) \cdot 0 + \cosh\left(r\right)^2 \cdot 1\\
+&= \cosh\left(r\right)^2 - \sinh\left(r \right)^2 = 1.
+\end{align}$$
+
+And before the next bit I'll just say that 
+
+$$\begin{align}
+\lVert \vec{u}  + \epsilon  \vec{u}_k'  \rVert_\mathcal{L} &= \sqrt{\langle \vec{u}, \vec{u}\rangle_\mathcal{L} + \epsilon \langle \vec{u}, \vec{u}_k'\rangle_\mathcal{L} + \epsilon^2 \langle \vec{u}_k', \vec{u}_k'\rangle_\mathcal{L} \langle } \\
+&= \sqrt{r^2 + \epsilon \cdot 0 + \epsilon^2 \cdot 1 } \\
+&= \sqrt{r^2 + \epsilon^2 }, \\
+\end{align}$$
+
+and $$\frac{d}{d\epsilon} \sqrt{r^2 + \epsilon^2 } = \frac{\epsilon}{\sqrt{r^2 + \epsilon^2}}$$.
+
+Using this,
+
+$$\begin{align}
+\frac{\partial}{\partial \vec{u}_{k\neq 1}'} \exp_\vec{\mu}(\vec{u}) &= \frac{d}{d\epsilon}\big\vert_{\epsilon=0} \left(\cosh\left(\lVert \vec{u} + \epsilon  \vec{u}_k' \rVert_\mathcal{L}\right) \vec{\mu} + \sinh\left(\lVert \vec{u}  + \epsilon  \vec{u}_k'  \rVert_\mathcal{L}\right) \frac{\vec{u}  + \epsilon \vec{u}_k' }{\lVert \vec{u}  + \epsilon  \vec{u}_k' \rVert_\mathcal{L}} \right) \\
+&= \frac{d}{d\epsilon}\big\vert_{\epsilon=0} \left(\cosh\left(\sqrt{r^2 + \epsilon^2 }\right) \vec{\mu} + \sinh\left(\sqrt{r^2 + \epsilon^2 }\right) \frac{\vec{u}  + \epsilon \vec{u}_k' }{\sqrt{r^2 + \epsilon^2 }} \right) \\
+&= \left[ \frac{\epsilon}{\sqrt{r^2 + \epsilon^2}} \sinh\left(\sqrt{r^2 + \epsilon^2 }\right) \vec{\mu} \color{white} \right] \color{black} \\
+&\;\;\;\;\;\;+ \color{white} \color{black} \frac{\epsilon}{\sqrt{r^2 + \epsilon^2}} \cosh\left(\sqrt{r^2 + \epsilon^2 }\right) \frac{\vec{u}  + \epsilon \vec{u}_k' }{\sqrt{r^2 + \epsilon^2 }} \\
+&\;\;\;\;\;\;+ \color{white} \left[ \color{black} \sinh\left(\sqrt{r^2 + \epsilon^2 }\right) \left( \frac{\vec{u}_k' }{\sqrt{r^2 + \epsilon^2 }} - \frac{\epsilon\vec{u}  + \epsilon^2 \vec{u}_k' }{\sqrt{(r^2 + \epsilon^2)^3 }} \right) \right] \color{black} {\Huge\vert}_{\epsilon=0} \\
+
+&= \frac{\sinh\left(r\right)}{r} \vec{u}_k'\\
+
+\end{align}$$
+
+With $$\lVert \frac{\sinh\left(r\right)}{r} \vec{u}_k' \rVert_\mathcal{L} = \frac{\sinh\left(r\right)}{r} \lVert\vec{u}_k'\rVert_\mathcal{L} = \frac{\sinh\left(r\right)}{r}$$ due to our choice of basis. Hence,
+
+$$\begin{align}
+\det \left( \frac{\partial}{\partial \vec{u}} \exp_\vec{\mu}(\vec{u})\right) = \left(\frac{\sinh\left(r\right)}{r} \right)^{n-1}
+\end{align}$$
+
+
+### $$\det \left(\frac{\partial}{\partial \vec{v}} \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{v})\right)$$ Derivation
+
+Then for $$\vec{v} \in T_{\vec{\mu}_0} \mathbb{H}^n$$ and any ol' relevant orthonormal basis $$\{\vec{\xi}_1,\vec{\xi}_2, \vec{\xi}_3,..\}$$ and $$\alpha = -\langle \vec{\mu}_0, \vec{\mu}\rangle_\mathcal{L}$$,
+
+$$\begin{align}
+\frac{\partial}{\partial \vec{\xi}_k} \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{v}) &= \frac{\partial}{\partial \epsilon} \lvert_{\epsilon=0} \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{v} + \epsilon \vec{\xi}_k) \\
+
+&= \frac{\partial}{\partial \epsilon} \lvert_{\epsilon=0} \left( (\vec{v} + \epsilon \vec{\xi}_k) + \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0, (\vec{v} + \epsilon \vec{\xi}_k)  \rangle_\mathcal{L}}{\alpha + 1} \left(\vec{\mu}_0 +\vec{\mu} \right) \right)\\
+
+&= \vec{\xi}_k + \frac{\partial}{\partial \epsilon} \left( \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0, \vec{v}  \rangle_\mathcal{L} + \epsilon \langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \left(\vec{\mu}_0 +\vec{\mu} \right) \right)\lvert_{\epsilon=0} \\
+
+&= \vec{\xi}_k + \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \left(\vec{\mu}_0 +\vec{\mu} \right) \\
+
+&= \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k)
+
+\end{align}$$
+
+The parallel transport map is then norm preserving, meaning that $$\lVert \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k) \rVert_\mathcal{L} = 1$$. 
+This makes sense as it's basically the generalisation of what happens after walking in a straight line in Euclidean space, you wouldn't expect your arm to grow just because you walk a few steps. 
+But we can also show this algebraically if that analogy isn't satisfactory (I said before realising how muh algebra was needed and why [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) skipped it...),
+
+$$\begin{align}
+& \langle \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k), \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k)\rangle_\mathcal{L} \\
+
+&= \langle \vec{\xi}_k + \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \left(\vec{\mu}_0 +\vec{\mu} \right), \vec{\xi}_k + \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \left(\vec{\mu}_0 +\vec{\mu} \right) \rangle_\mathcal{L}\\
+
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} + \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \langle \vec{\xi}_k,\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L} + \left(\frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1}\right)^2 \langle \left(\vec{\mu}_0 +\vec{\mu} \right),\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L}\\
+
+\end{align}$$
+
+Letting $$C = \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1}$$
+
+$$\begin{align}
+& \langle \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k), \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k)\rangle_\mathcal{L} \\
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} + C \langle \vec{\xi}_k,\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L} + C^2 \langle \left(\vec{\mu}_0 +\vec{\mu} \right),\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L}\\
+
+\end{align}$$
+
+Splitting this into bits (remembering that $$\vec{\xi}_k$$ is a basis for the inputs $$\vec{v} \in T_{\vec{\mu}_0}\mathbb{H}^n$$),
+
+$$\begin{align}\langle \vec{\xi}_k,\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L} \\
+= \langle \vec{\xi}_k, \vec{\mu}_0\rangle_\mathcal{L} + \langle \vec{\xi}_k,\vec{\mu} \rangle_\mathcal{L}\\
+= \langle \vec{\xi}_k,\vec{\mu} \rangle_\mathcal{L}\\
+\end{align}$$
+
+And similarly, 
+
+
+$$\begin{align}
+C &= \frac{\langle \vec{\mu} - \alpha \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \\
+&= \frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L} - \alpha \langle \vec{\mu}_0,  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1} \\
+&= \frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1}. \\
+\end{align}$$
+
+And finally,
+
+$$\begin{align}
+&\langle \left(\vec{\mu}_0 +\vec{\mu} \right),\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L} \\
+&=\langle \vec{\mu}_0,\vec{\mu}_0 \rangle_\mathcal{L} + 2\langle \vec{\mu}_0, \vec{\mu}\rangle_\mathcal{L} + \langle \vec{\mu}, \vec{\mu} \rangle_\mathcal{L} \\
+&= -1 - 2 \alpha - 1\\
+&= -2 (1 + \alpha) \\
+\end{align}$$
+
+Now we can put it all back together again,
+
+$$\begin{align}
+& \langle \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k), \text{PT}_{\vec{\mu}_0 \rightarrow \vec{\mu}}(\vec{\xi}_k)\rangle_\mathcal{L} \\
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} + C \langle \vec{\xi}_k,\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L} + C^2 \langle \left(\vec{\mu}_0 +\vec{\mu} \right),\left(\vec{\mu}_0 +\vec{\mu} \right)\rangle_\mathcal{L}\\
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} + \frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L}^2}{\alpha + 1} - 2 (1 + \alpha)  \left(\frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L}}{\alpha + 1}\right)^2 \\
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} + \frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L}^2}{\alpha + 1} - 2 \frac{\langle \vec{\mu},  \vec{\xi}_k  \rangle_\mathcal{L}^2}{\alpha + 1} \\
+
+&= \langle \vec{\xi}_k, \vec{\xi}_k\rangle_\mathcal{L} = 1.
+
+\end{align}$$
+
+### In Summary
+
+
+$$\begin{align}
+\log p(\vec{z}) = \log p(\text{PT}_{\vec{\mu} \rightarrow \vec{\mu}_0}(\exp_\vec{\mu}^{-1}(\vec{z})) )  - (n-1) \log \left(\frac{\sinh\left(\lVert\exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L} \right)}{\lVert \exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L}} \right).
+\end{align}$$
+
 
 
 
