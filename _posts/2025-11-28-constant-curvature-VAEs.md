@@ -1564,7 +1564,7 @@ $$\begin{align}
 
 
 $$\begin{align}
-\log p(\vec{z}) = \log p(\text{PT}_{\vec{\mu} \rightarrow \vec{\mu}_0}(\exp_\vec{\mu}^{-1}(\vec{z})) )  - (n-1) \log \left(\frac{\sinh\left(\lVert\exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L} \right)}{\lVert \exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L}} \right).
+\log p(\vec{z}) = \log \mathcal{N}(\text{PT}_{\vec{\mu} \rightarrow \vec{\mu}_0}(\exp_\vec{\mu}^{-1}(\vec{z})) | \vec{0}, \Sigma)  - (n-1) \log \left(\frac{\sinh\left(\lVert\exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L} \right)}{\lVert \exp_\vec{\mu}^{-1}(\vec{z}) \rVert_\mathcal{L}} \right).
 \end{align}$$
 
 
