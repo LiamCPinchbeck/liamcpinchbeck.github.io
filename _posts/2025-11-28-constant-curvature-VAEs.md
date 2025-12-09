@@ -1357,6 +1357,50 @@ Below is a visualisations showing how the mapping morphs the tangent space on to
 ## The Pseudo-Hyperbolic Gaussian or Wrapped Normal Distribution on Hyperbolic Space
 
 
+We are now done with the hard stuff. From here's it's real simple. We just need to do two things:
+1. Figure out how to sample a projected normal distribution in hyperbolic space (easier than it sounds)
+2. How to evaluate the density
+
+
+### 1. Sampling the Pseudo-Hyperbolic Gaussian
+
+The way [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) sample what they call a 'wrapped' gaussian distribution $$\mathcal{G}(\vec{\mu}, \Sigma)$$ for a mean coordinate $$\vec{\mu} \in \mathbb{H}^n$$ is simply:
+
+1. Sample $$\vec{v}' \sim \mathcal{N}(\vec{0}, \Sigma) \in \mathbb{R}^n$$
+2. Set $$\vec{v} = [0, \vec{v}']$$ such that $$\vec{v} \in T_{\vec{\mu}_0}\mathbb{H}^n$$ (remembering that $$\vec{\mu}_0$$ defined our 'origin' and can be interpreted as the bottom of the hyperboloid, where the vertical direction corresponds to the first dimension)
+3. Us parallel transport to move the samples in the tangent space $$ \vec{v} \in T_{\vec{mu}_0}\mathbb{H}^n$$ into the tangent space $$\vec{u} \in T_{\vec{\mu}}\mathbb{H}^n$$ (along the relevant geodesic/straight line)
+4. Use the exponential map $$\exp_\vec{\mu}$$ to map the samples in $$T_{\vec{\mu}}\mathbb{H}^n$$ on to $$\mathbb{H}^n$$
+
+And that's it. The beauty of this is that it also allows us to easily perform the reparameterisation trick, as we can sample $$\epsilon$$ in the first step to capture the stochasticity!
+
+I demonstrate the general process in the case of $$\mathbb{H}^1$$ in the gifs below.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/H1_wrapped_gaussian_sampling_1.gif" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/H1_wrapped_gaussian_sampling_2.gif" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/H1_wrapped_gaussian_sampling_3.gif" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+
+</div>
+<br>
+
+I will also directly copy-paste the algorithm directly from [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) below as well.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Nagano_Sampling_Algorithm.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+<figcaption>Algorithm 1 from Nagano et al. (2019) arXiv:1902.02992.</figcaption>
+</div>
+<br>
+
+
+### 2. Evaluating the Pseudo-Hyperbolic Gaussian density
 
 
 
