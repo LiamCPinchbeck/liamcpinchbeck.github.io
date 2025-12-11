@@ -1573,11 +1573,243 @@ $$\begin{align}
 ## Putting the hyperbolic into the VAE
 
 
-So in the case of the VAE we have our 'gaussian' distribution where we can learn the mean and the variance $$\mathcal{G}(\vec{\mu}, \Sigma)$$, and $$\mathcal{G}(\vec{\mu}_0, \mathbb{I})$$ works as the prior on that space.
+So in the case of the VAE we have our 'gaussian' distribution where we can learn the mean and the variance $$\mathcal{G}(\vec{\mu}, \Sigma)$$, and $$\mathcal{G}(\vec{\mu}_0, \mathbb{I})$$ works as the prior on that space. I didn't make the mistake of looking for a GitHub page that had already implemented this beforehand, so if my code is similar to yours, it should be a coincidence.
+
+Anyways, we need to do four things[^wondering]: 
+
+[^wondering]: If you're wondering why the text is so close to the numbers it's because the markdown file kept thinking that the numbering was restarting after each code block...
+
+1.Encode our base transformations (PT, exponential map, Lorentz product, etc)
+
+```python
+import torch
 
 
+def lorentz_inner_product(x, y):
+    """ -x0*y0 + x1*y1 + ... + xn*yn """
+    return -x[..., 0] * y[..., 0] + torch.sum(x[..., 1:] * y[..., 1:], dim=-1)
+
+def lorentz_norm_sq(x):
+    """||x||_L^2 = <x, x>_L."""
+    return lorentz_inner_product(x, x)
+
+def lorentz_norm(x):
+    """||x||_L = sqrt(<x, x>_L)."""
+    return torch.sqrt(lorentz_norm_sq(x))
+
+def exp_map(mu, u):
+    """ T_\mu(\mathbb{H}^n) -> H^n
+    
+    \vec{v} = \exp_\vec{\mu}(\vec{u}) = \cosh(\lVert \vec{u}\rVert_\mathcal{L}) \vec{\mu} + \sinh(\lVert \vec{u} \rVert_\mathcal{L})\frac{\vec{u}}{\lVert \vec{u} \rVert_\mathcal{L}}
+    """
+    r = lorentz_norm(u)
+    
+    # making sure that r isn't too small, making everything explode # not great
+    epsilon = 1e-6
+    return torch.cosh(r).unsqueeze(-1) * mu + torch.sinh(r).unsqueeze(-1) * (u / r.unsqueeze(-1).clamp(min=epsilon))
+
+def inv_exp_map(mu, z):
+    """exp_mu^{-1}(z) : H^n -> T_mu(H^n)"""
+    alpha = -lorentz_inner_product(mu, z) # alpha = cosh(d(mu, z))
+    
+    # Similar thing to r above
+    alpha = torch.clamp(alpha, min=1.0)
+    
+    d = torch.acosh(alpha)
+    
+    # Clampin
+    sinh_d = torch.sqrt(alpha**2 - 1).clamp(min=1e-6) 
+
+    u = (d / sinh_d).unsqueeze(-1) * (z - alpha.unsqueeze(-1) * mu)
+    return u
+
+def parallel_transport(nu, mu, v):
+    """PT_{x->y}(v) : T_nu(H^n) -> T_mu(H^n)
+    
+    \vec{u} &= \text{PT}){\vec{\nu}\rightarrow \vec{\mu}}(\vec{v}) \\
+    &= \vec{v} + \frac{\langle \vec{\mu} - \alpha \vec{\nu}, \vec{v}\rangle_\mathcal{L}}{\alpha + 1}(\vec{\nu} + \vec{\mu}) \\
+    
+    """
+
+    alpha = -lorentz_inner_product(nu, mu)
+    
+    # Clampin
+    alpha = torch.clamp(alpha, min=1.0)
+    
+    # c = <y - alpha*x, v>_L / (1 + alpha)
+    # y_minus_alpha_x = y - alpha*x
+    # c = <y_minus_alpha_x, v>_L / (1 + alpha)
+    numerator = lorentz_inner_product(mu - alpha.unsqueeze(-1) * nu, v)
+    denominator = 1.0 + alpha
+    
+    c = (numerator / denominator).unsqueeze(-1)
+    
+    # PT(v) = v + c * (x + y)
+    return v + c * (nu + mu)
+```
+
+2.Sample the wrapped gaussian and evaluate it's density (kinda the reverse of the sampling)
+
+```python
+def sample_wrapped_gaussian(mu, log_sigma, epsilon): 
+    # For my sanity we'll assume a diagonal covariance matrix
+    sigma = torch.diag_embed(torch.exp(log_sigma)) # (batch x n x n)
+    L = torch.linalg.cholesky(sigma) # (batch x n x n)
+    
+    # Assumes epsilon is already sampled and is size (b x n)
+
+    # (b x n)
+    v_prime = torch.bmm(L, epsilon.unsqueeze(-1)).squeeze(-1)
+    
+    # Chucking the zeros in the first dim so that are samples are in the tangent space
+        # the 'centre' $$\vec{\mu_0}$$
+    mu_0 = torch.zeros_like(mu)
+    mu_0[:, 0] = 1.0 # (batch x n+1)
+    v = torch.cat([torch.zeros_like(mu[:, 0]).unsqueeze(-1), v_prime], dim=-1) # (batch x n+1)
+
+    # Then PT --> exp
+    u = parallel_transport(mu_0, mu, v) # (batch x n+1)
+    z = exp_map(mu, u) # (batch x n+1)
+    
+    # Also gonna return u so we can immediately use it for density estimation 
+        # and don't waste time converting z back into u
+    return z, u 
 
 
+def log_prob_wrapped_gaussian(z, mu, log_sigma, n_dim):
+    u = inv_exp_map(mu, z) # (batch x n+1)
+    
+    mu_0 = torch.zeros_like(mu)
+    mu_0[:, 0] = 1.0
+    v = parallel_transport(mu, mu_0, u) # (batch x n+1)
+
+    # (batch x n)
+    v_prime = v[:, 1:] 
+        
+    log_2pi_term = n_dim * torch.log(torch.tensor(2.0 * torch.pi, device=z.device))
+    log_det_sigma = torch.sum(log_sigma, dim=-1) # (batch,)
+
+    a_sq = torch.sum(v_prime**2 * torch.exp(-log_sigma), dim=-1) # (batch,)
+    
+    log_N = -0.5 * (log_2pi_term + log_det_sigma + a_sq) # (batch,)
+
+    # Calculating the Log Jacobian
+    r = lorentz_norm(u) # (batch)
+    r_clamped = torch.clamp(r, min=1e-6) # Clampin
+    log_sinh_r_over_r = torch.log(torch.sinh(r_clamped) / r_clamped)
+    
+    log_det_J = (n_dim - 1) * log_sinh_r_over_r # (batch)
+
+    # And finally, we get the thing. I know very detailed.
+    log_p_z = log_N - log_det_J # (batch)
+    
+    return log_p_z
+```
+
+
+3.Evaluate the KL divergence term in the loss (same as the usual VAE)
+
+```python
+def kl_divergence_wrapped_gaussian(mu_q, log_sigma_q, n_dim):
+    # Sigma_q = diag(exp(log_sigma_q))
+    sigma_q = torch.exp(log_sigma_q) # (batch x n)
+
+    # tr(Sigma_q)
+    tr_sigma_q = torch.sum(sigma_q, dim=-1) # (batch)
+
+    # d(mu_q, mu_0)^2
+    mu_0 = torch.zeros_like(mu_q)
+    mu_0[:, 0] = 1.0
+    
+    alpha = -lorentz_inner_product(mu_q, mu_0) # alpha = cosh(d(mu_q, mu_0))
+    alpha = torch.clamp(alpha, min=1.0)
+    
+    # d(mu_q, mu_0) = arccosh(alpha)
+    distance_sq = torch.acosh(alpha)**2 # (batch)
+
+    # -log det(Sigma_q) = -sum(log_sigma_q)
+    log_det_sigma_q = torch.sum(log_sigma_q, dim=-1) # (batch)
+
+    # KL = 0.5 * [tr(Sigma_q) + d(mu_q, mu_0)^2 - n - log det(Sigma_q)]
+    kl_div = 0.5 * (tr_sigma_q + distance_sq - n_dim - log_det_sigma_q)
+    
+    return kl_div # (batch)
+```
+
+
+4.Chuck this all into a VAE. We'll structure it so that there is some central 'encoder' `fc1_enc` and then using that we'll have two smaller neural networks that will learn the mean and variances `fc_mu` and `fc_logsigma` (log to ensure positivity) and then a two layer decoder.
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import torch.nn.functional as F
+
+
+class HVAE(nn.Module):
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=2):
+        super().__init__()
+        self.latent_dim = latent_dim
+        self.n_dim = latent_dim  # The latent space dimension n
+        
+        #encoder
+        self.fc1_enc = nn.Linear(input_dim, hidden_dim)
+
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim + 1) 
+
+        self.fc_logsigma = nn.Linear(hidden_dim, latent_dim)
+
+        #dencoder
+        self.fc1_dec = nn.Linear(latent_dim + 1, hidden_dim) 
+        self.fc2_dec = nn.Linear(hidden_dim, input_dim)
+
+    def encode(self, x):
+        h = F.relu(self.fc1_enc(x))
+        mu_raw = self.fc_mu(h)
+        log_sigma = self.fc_logsigma(h)
+        
+        mu_norm_sq = torch.sum(mu_raw[:, 1:]**2, dim=-1, keepdim=True)
+        mu_0 = torch.sqrt(1 + mu_norm_sq)
+        mu = torch.cat([mu_0, mu_raw[:, 1:]], dim=-1)
+        
+        return mu, log_sigma
+
+    def decode(self, z):
+        h = F.relu(self.fc1_dec(z))
+        x_recon = torch.sigmoid(self.fc2_dec(h))
+        return x_recon
+
+    def forward(self, x):
+        # Flatten
+        x = x.view(x.size(0), -1) 
+        
+        mu_q, log_sigma_q = self.encode(x)
+        
+        # reparameterization trick
+        epsilon = torch.randn_like(log_sigma_q)
+        
+        z, u_q = sample_wrapped_gaussian(mu_q, log_sigma_q, epsilon)
+        
+        x_recon = self.decode(z)
+        
+        return x_recon, mu_q, log_sigma_q
+    
+    def loss_function(self, x_recon, x, mu_q, log_sigma_q):
+        # flatten input
+        x = x.view(x.size(0), -1) 
+        
+        RE = F.binary_cross_entropy(x_recon, x, reduction='sum') / x.size(0)
+
+        KL_H = kl_divergence_wrapped_gaussian(mu_q, log_sigma_q, self.n_dim)
+
+        KL_H = torch.mean(KL_H) 
+        
+        ELBO_loss = RE + KL_H
+        
+        return ELBO_loss, RE, KL_H
+```
 
 <br>
 
