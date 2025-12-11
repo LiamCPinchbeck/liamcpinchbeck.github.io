@@ -1813,53 +1813,101 @@ class HVAE(nn.Module):
 
 <br>
 
-# Image Classification and Generation for MNIST and CelebA with constant curavture VAEs
+# Image Classification and Generation for MNIST and CelebA with constant curvature VAEs
+
+
+Okay, so we (finally) have everything coded up and working (because I've run this beforehand). Let's compare the performance of the Spherical VAE (SVAE), the standard VAE or 'Euclidean' VAE (EVAE) and hyperbolic VAE (HVAE) on some image data.
+
+
 
 ## MNIST
 
+To start off with let's look at how the different VAEs tackle MNIST data with a 2D dimension latent dimension (meaning that the latent space manifold is two dimensional) with 2 layered neural networks with 128 nodes in the hiddens layers.
+
+
+Let's first see how well the different methods reconstruct different inputs.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_reconstructions.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/SVAE_2D_Reconstruction.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/EVAE_2D_Reconstruction.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/hvae_2d_reconstructions.png" 
       style="width: 99%; height: auto; border-radius: 8px;">
 </div>
 <br>
 
+It seems that the HVAE did the worst, but this may just be because of the varying implementations. 
+I'll do a more quantitative comparison after some fun visuals.
 
-<div style="text-align: center;">
-  <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_prior_samples.png" 
-      style="width: 99%; height: auto; border-radius: 8px;">
-</div>
-<br>
 
+We can also look at where some of the test values are mapped into the latent space. 
+It seems that the spherical VAE has the best separation which makes sense based on our reasons for constructing it.
 
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_disc_latent_space.png" 
-      style="width: 99%; height: auto; border-radius: 8px;">
-</div>
-<br>
-
-
-<div style="text-align: center;">
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/SVAE_MNIST_2d_mercator_projection_mpl.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_lorentz_latent_space.png" 
-      style="width: 99%; height: auto; border-radius: 8px;">
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/EVAE_2D_MNIST.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/hvae_2d_disc_latent_space.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
 </div>
 <br>
 
+
+Of course the curved space latent spaces are just projections, we can do a little better if we embed them in a high dimensional
+Euclidean space.
 
 
 <div style="text-align: center;">
 <iframe 
-    src="/files/BlogPostData/2025-constant-curvature-vaes/hyperboloid_hvae_latent_space.html" 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/hyperboloid_2d_hvae_latent_space.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
+<iframe 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/SVAE_MNIST_3d_scatter_with_sphere.html" 
     width="89%" 
     height="500px"
     style="border:none;"
 ></iframe>
 </div>
+
+We can also observe how coordinates in the latent space map into as outputs.
+
+--- SVAE Latent Space ---
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/MERCATOR_Latent_Overlayed.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+--- EVAE Latent Space ---
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/EVAE_Latent_Overlayed.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+--- HVAE Latent Space ---
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/poincare_grid_overlay.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+
 
 
 
