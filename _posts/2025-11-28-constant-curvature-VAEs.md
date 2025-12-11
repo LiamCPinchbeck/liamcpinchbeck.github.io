@@ -1573,6 +1573,7 @@ $$\begin{align}
 ## Putting the hyperbolic into the VAE
 
 
+So in the case of the VAE we have our 'gaussian' distribution where we can learn the mean and the variance $$\mathcal{G}(\vec{\mu}, \Sigma)$$, and $$\mathcal{G}(\vec{\mu}_0, \mathbb{I})$$ works as the prior on that space.
 
 
 
@@ -1581,6 +1582,56 @@ $$\begin{align}
 <br>
 
 # Image Classification and Generation for MNIST and CelebA with constant curavture VAEs
+
+## MNIST
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_reconstructions.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_prior_samples.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_disc_latent_space.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/hvae_lorentz_latent_space.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+
+
+<div style="text-align: center;">
+<iframe 
+    src="/files/BlogPostData/2025-constant-curvature-vaes/hyperboloid_hvae_latent_space.html" 
+    width="89%" 
+    height="500px"
+    style="border:none;"
+></iframe>
+</div>
+
+
+
+## Celeb A
 
 
 
