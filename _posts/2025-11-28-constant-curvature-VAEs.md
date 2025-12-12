@@ -1912,7 +1912,7 @@ This won't be exact because the ELBO is a lower bound on the actual evidence whe
 But the ELBO is very easy to get with my current code so we'll be using it regardless just to get a feel for the results are.
 
 
-We'll observe how well the different approaches do for varying latent dimensions, number of layers and number of nodes (the latter two basically to make sure our conclusions on the latent dimensions are more solid).
+We'll observe how well the different approaches do for varying latent dimensions, number of layers and number of nodes (the latter two basically to make sure our conclusions on the latent dimensions are more solid). Uncertainties are just derived from the variance of the loss on different batches of the testing dataset. And I should emphasize that this is not a _proper_ report on the performance of these methods just a quick check that I did with lots of stuff that one would do better if they wanted rigorous results, so grain of salt and everything. 
 
 
 
@@ -1920,25 +1920,45 @@ We'll observe how well the different approaches do for varying latent dimensions
 | :--- | :--- | :---: | :---: | :---: |
 | **Dim = 2** | **1** | -170.8 +/- 9.9 | ***-168.9+/- 10.1*** | -174.0 +/- 8.0 |
 | | **2** | -165.5 +/- 10.4 | ***-163.7 +/- 10.0*** | -170.4 +/- 7.3 |
-| | **3** | -166.8 +/- 10.8 | ***-160.2 +/- 9.8*** | Data C3 |
-| **Dim = 3** | **1** |  -160.4 +/- 9.0 | -159.9 +/- 9.6 | Data D3 |
-| | **2** | -156.6 +/- 9.4 | ***-152.8 +/- 8.5*** | Data E3 |
-| | **3** | -154.4 +/- 9.3 | -154.7 +/- 9.3 | Data F3 |
-| **Dim = 5** | **1** | ***-144.4 +/- 8.2*** | -146.2 +/- 7.5 | Data G3 |
-| | **2** | ***-140.7 +/- 7.8*** | -145.2 +/- 7.4 | Data H3 |
-| | **3** | ***-146.7 +/- 8.4*** | -156.0 +/- 8.2 | Data I3 |
-| **Dim = 10** | **1** | ***-130.7 +/- 5.9*** | -141.4 +/- 6.9 | Data J3 |
-| | **2** | ***-134.0 +/- 6.6*** | -145.6 +/- 6.8| Data K3 |
-| | **3** | ***-145.0 +/- 7.5*** | -164.4 +/- 9.1 | Data L3 |
-| **Dim = 50** | **1** | ***-131.9 +/- 6.4*** | -195.5 +/- 11.1 | Data J3 |
-| | **2** | ***-138.4 +/- 6.6*** | -201.2 +/- 11.6 | Data K3 |
-| | **3** | ***-146.2 +/- 8.0*** | -197.2 +/- 11.0 | Data L3 |
+| | **3** | -166.8 +/- 10.8 | ***-160.2 +/- 9.8*** | -171.5 +/- 7.3 |
+| **Dim = 3** | **1** |  -160.4 +/- 9.0 | -159.9 +/- 9.6 | ***-155.6 +/- 6.6*** |
+| | **2** | -156.6 +/- 9.4 | ***-152.8 +/- 8.5*** | 156.7 +/- 7.1 |
+| | **3** | -154.4 +/- 9.3 | -154.7 +/- 9.3 | -155.8 +/- 6.7 |
+| **Dim = 5** | **1** | -144.4 +/- 8.2 | -146.2 +/- 7.5 | ***-140.6+/- 5.5*** |
+| | **2** | -140.7 +/- 7.8 | -145.2 +/- 7.4 | ***-139.2 +/- 6.1*** |
+| | **3** | -146.7 +/- 8.4 | -156.0 +/- 8.2 | ***-138.6 +/- 5.7*** |
+| **Dim = 10** | **1** | -130.7 +/- 5.9 | -141.4 +/- 6.9 | ***-123.4 +/- 4.7*** |
+| | **2** | -134.0 +/- 6.6 | -145.6 +/- 6.8| ***-122.0 +/- 4.4*** |
+| | **3** | -145.0 +/- 7.5 | -164.4 +/- 9.1 | ***-121.2 +/- 4.5*** |
+| **Dim = 50** | **1** | ***-131.9 +/- 6.4*** | -195.5 +/- 11.1 | -163.1 +/- 6.6 |
+| | **2** | ***-138.4 +/- 6.6*** | -201.2 +/- 11.6 | -205.1 +/- 10.5 |
+| | **3** | ***-146.2 +/- 8.0*** | -197.2 +/- 11.0 |  -192.6 +/- 9.4 |
 
-<figcaption> Table Expressing the performance of the different VAEs on the MNIST dataset for varying hyperparameters via their final ELBO values </figcaption>
+<figcaption> Table Expressing the very rough performance of the different VAEs on the MNIST dataset for varying hyperparameters via their final ELBO values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. </figcaption>
+
+They do seem to roughly match up with what was reported in [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) and [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) at least in terms of the vanilla VAE outperforming the new methods in higher dimensions and the SVAE doing very well in low dimensions.
+Presumably because then the latent space has enough expressive power to kind of just do what I need to do, while the new methods of some instabilities that we had to introduce that may be coming out in higher dimensions but are more expressive in low dimensions as their structure matches the data. 
 
 
-## Celeb A
 
+The overall winner for the MNIST data seems to be the HVAE model with 10 latent dimensions ($$\mathbb{H}^{10}$$) with 3 hidden layers.
+
+
+## [Labeled Faces in the Wild](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset) 
+
+The labelled faces in the wild dataset ([kaggle](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset)/[formal](https://www.aiaaic.org/aiaaic-repository/ai-algorithmic-and-automation-incidents/labeled-faces-in-the-wild-lfw-dataset)) is described as ...
+
+> "Labeled Faces in the Wild (LFW) is an open source dataset aimed at researchers that was intended to establish a public benchmark for facial verification.
+Created by the University of Massachusetts, Amherst, and publicly released in 2007, LFW comprises over 13,000 facial images with different poses and expressions, under different lighting conditions. Each face is labeled with the name of the person, with 1,680 people having two or more distinct photos in the set." - _Labeled Faces in the Wild - dataset_ [www.aiaaic.org](https://www.aiaaic.org/aiaaic-repository/ai-algorithmic-and-automation-incidents/labeled-faces-in-the-wild-lfw-dataset)
+
+If we look at faces with more than 70 different images we over-sample different politicians.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/Example_LFW_images.png" 
+      style="width: 69%; height: auto; border-radius: 8px;">
+</div>
+<br>
 
 
 <br>
