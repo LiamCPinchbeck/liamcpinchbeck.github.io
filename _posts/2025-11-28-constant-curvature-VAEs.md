@@ -35,8 +35,10 @@ In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspher
 - [Hyperbolic VAE](#hyperbolic-vae)
     - [Hyperbolic Space](#hyperbolic-space)
     - [The Pseudo-Hyperbolic Gaussian / Wrapped Normalisation Distribution on Hyperbolic Space](#the-pseudo-hyperbolic-gaussian-or-wrapped-normal-distribution-on-hyperbolic-space)
-- [Image Classification and Generation with MNIST and CelebA](#image-classification-and-generation-with-mnist-and-celeba)
-- [Molecular Property Prediction with QM9](#molecular-property-prediction-with-qm9)
+- [Image Classification and Generation with MNIST and LFW](#image-classification-and-generation-for-mnist-and-lfw-with-constant-curvature-vaes)
+    - [MNIST](#mnist)
+    - [Labelled Faces in the Wild](#labeled-faces-in-the-wild)
+- [Molecular Property Prediction with QM9](#molecular-property-prediction-for-qm9-dataset-with-constant-curavture-vaes)
 - [Conclusions](#conclusions)
 
 ## Prerequisites 
@@ -1813,7 +1815,7 @@ class HVAE(nn.Module):
 
 <br>
 
-# Image Classification and Generation for MNIST and CelebA with constant curvature VAEs
+# Image Classification and Generation for MNIST and LFW with constant curvature VAEs
 
 
 Okay, so we (finally) have everything coded up and working (because I've run this beforehand). Let's compare the performance of the Spherical VAE (SVAE), the standard VAE or 'Euclidean' VAE (EVAE) and hyperbolic VAE (HVAE) on some image data.
