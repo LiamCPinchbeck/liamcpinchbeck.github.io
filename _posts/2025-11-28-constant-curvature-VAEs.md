@@ -1957,8 +1957,94 @@ If we look at faces with more than 70 different images we over-sample different 
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/Example_LFW_images.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/Example_LFW_images.png" 
       style="width: 69%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+So we'll quickly recap what we did in the last section. For a 2D dimensional latent space we can visualise how well each method reconstructs the data.... you ready for some nightmare fuel?
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_SVAE_2D_latent_reconstruction.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_EVAE_2D_latent_reconstruction.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_HVAE_2D_latent_reconstruction.png" 
+      style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+So ... not great? But this is to be expected coz the data is slightly more complicated (sarcasm).
+
+I'm not going to bother with showing how the latent space maps to the output as I could already tell that it would be uninterpretable, but we can at least look at how the inputs map to the latent space.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_SVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_EVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_HVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+In which we can see that there is no rhyme or reason when it comes to who is who (yet).
+
+Another fun thing we can do is train a classifier on the latent values and see how accurate it can get. 
+Essentially using the latent values as a compressed representation of the data.
+
+Now, for the purpose of standardized comparison, the latent embeddings (Euclidean $$\mathbb{R}^D$$, Spherical $$\mathbb{R}^{D+1}$$, and Hyperbolic $$\mathbb{R}^{D+1}$$) are going to be classified using a standard Euclidean RBF-kernel SVM from scikit-learn. This is because it's simple and I don't have to worry about hyperparameter tuning for a MLP classifier. 
+However, I note that the kernel that I'm using is obviously going to assume Euclidean distances. 
+
+So the reported accuracy for the SVAE and HVAE is likely underestimated compared to the true separability, which could be achieved if I could spend more time to do this thoroughly. 
+To do so with an SVM method Gemini tells this would be better measured using geodesic distance kernels, but I ain't got time for that and this post is long enough already.
+
+
+
+| Latent Dims | Hidden Layers | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| | | **ELBO** | **ELBO** | **ELBO** | **Acc (%)** | **Acc (%)** | **Acc (%)** |
+| **2** | 1 | A1 | A2 | A3 | A4 | A5 | A6 |
+| | 2 | B1 | B2 | B3 | B4 | B5 | B6 |
+| | 3 | C1 | C2 | C3 | C4 | C5 | C6 |
+| **3** | 1 | D1 | D2 | D3 | D4 | D5 | D6 |
+| | 2 | E1 | E2 | E3 | E4 | E5 | E6 |
+| | 3 | F1 | F2 | F3 | F4 | F5 | F6 |
+| **5** | 1 | G1 | G2 | G3 | G4 | G5 | G6 |
+| | 2 | H1 | H2 | H3 | H4 | H5 | H6 |
+| | 3 | I1 | I2 | I3 | I4 | I5 | I6 |
+| **10** | 1 | J1 | J2 | J3 | J4 | J5 | J6 |
+| | 2 | K1 | K2 | K3 | K4 | K5 | K6 |
+| | 3 | L1 | L2 | L3 | L4 | L5 | L6 |
+| **50** | 1 | M1 | M2 | M3 | M4 | M5 | M6 |
+| | 2 | N1 | N2 | N3 | N4 | N5 | N6 |
+| | 3 | O1 | O2 | O3 | O4 | O5 | O6 |
+
+
+<figcaption> Table Expressing the very rough performance of the different VAEs on the LFW dataset for varying hyperparameters via their final ELBO values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. "Acc" stands for "Accuracy", would have just make the table look uglier.</figcaption>
+
+
+
+
+Let's look at the best performing versions of each type of VAE and the quality of the reconstructions.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_SVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_EVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_HVAE_2D_latent_embeddings.png" 
+      style="width: 49%; height: auto; border-radius: 8px;">
 </div>
 <br>
 
