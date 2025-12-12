@@ -1840,7 +1840,7 @@ Let's first see how well the different methods reconstruct different inputs.
 </div>
 <br>
 
-It seems that the HVAE did the worst, but this may just be because of the varying implementations. 
+It seems that the SVAE did the best and HVAE did the worst, but this may just be because of the varying implementations. 
 I'll do a more quantitative comparison after some fun visuals.
 
 
@@ -1863,7 +1863,7 @@ It seems that the spherical VAE has the best separation which makes sense based 
 
 
 Of course the curved space latent spaces are just projections, we can do a little better if we embed them in a high dimensional
-Euclidean space.
+Euclidean space (still projections but less compressed).
 
 
 <div style="text-align: center;">
@@ -1907,8 +1907,34 @@ We can also observe how coordinates in the latent space map into as outputs.
 </div>
 <br>
 
+What we'll do from here is compare the negative log-likelihood or ELBO values for the different methods as a proxy for the evidence. 
+This won't be exact because the ELBO is a lower bound on the actual evidence where the difference is the KL divergence between the approximate and true distributions. 
+But the ELBO is very easy to get with my current code so we'll be using it regardless just to get a feel for the results are.
 
 
+We'll observe how well the different approaches do for varying latent dimensions, number of layers and number of nodes (the latter two basically to make sure our conclusions on the latent dimensions are more solid).
+
+
+
+| **Latent Dimensions** | **No. Hidden Layers** | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** |
+| :--- | :--- | :---: | :---: | :---: |
+| **Dim = 2** | **1** | -170.8 +/- 9.9 | ***-168.9+/- 10.1*** | -174.0 +/- 8.0 |
+| | **2** | -165.5 +/- 10.4 | ***-163.7 +/- 10.0*** | -170.4 +/- 7.3 |
+| | **3** | -166.8 +/- 10.8 | ***-160.2 +/- 9.8*** | Data C3 |
+| **Dim = 3** | **1** |  -160.4 +/- 9.0 | -159.9 +/- 9.6 | Data D3 |
+| | **2** | -156.6 +/- 9.4 | ***-152.8 +/- 8.5*** | Data E3 |
+| | **3** | -154.4 +/- 9.3 | -154.7 +/- 9.3 | Data F3 |
+| **Dim = 5** | **1** | ***-144.4 +/- 8.2*** | -146.2 +/- 7.5 | Data G3 |
+| | **2** | ***-140.7 +/- 7.8*** | -145.2 +/- 7.4 | Data H3 |
+| | **3** | ***-146.7 +/- 8.4*** | -156.0 +/- 8.2 | Data I3 |
+| **Dim = 10** | **1** | ***-130.7 +/- 5.9*** | -141.4 +/- 6.9 | Data J3 |
+| | **2** | ***-134.0 +/- 6.6*** | -145.6 +/- 6.8| Data K3 |
+| | **3** | ***-145.0 +/- 7.5*** | -164.4 +/- 9.1 | Data L3 |
+| **Dim = 50** | **1** | ***-131.9 +/- 6.4*** | -195.5 +/- 11.1 | Data J3 |
+| | **2** | ***-138.4 +/- 6.6*** | -201.2 +/- 11.6 | Data K3 |
+| | **3** | ***-146.2 +/- 8.0*** | -197.2 +/- 11.0 | Data L3 |
+
+<figcaption> Table Expressing the performance of the different VAEs on the MNIST dataset for varying hyperparameters via their final ELBO values </figcaption>
 
 
 ## Celeb A
