@@ -1,5 +1,5 @@
 ---
-title: 'Image Classification and Molecular Property Prediction with Constant Curvature VAEs'
+title: 'Image Classification and Molecular Structure Prediction with Constant Curvature VAEs'
 date: 2025-11-27
 permalink: /posts/2025/08/2025-11-27-constant-curvature-VAEs/
 tags:
@@ -38,7 +38,7 @@ In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspher
 - [Image Classification and Generation with MNIST and LFW](#image-classification-and-generation-for-mnist-and-lfw-with-constant-curvature-vaes)
     - [MNIST](#mnist)
     - [Labelled Faces in the Wild](#labeled-faces-in-the-wild)
-- [Molecular Property Prediction with QM9](#molecular-property-prediction-for-qm9-dataset-with-constant-curavture-vaes)
+- [Molecular Structure Prediction with QM9](#molecular-structure-prediction-for-qm9-dataset-with-constant-curavture-vaes)
 - [Conclusions](#conclusions)
 
 ## Prerequisites 
@@ -1936,7 +1936,7 @@ We'll observe how well the different approaches do for varying latent dimensions
 | | **2** | ***-138.4 +/- 6.6*** | -201.2 +/- 11.6 | -205.1 +/- 10.5 |
 | | **3** | ***-146.2 +/- 8.0*** | -197.2 +/- 11.0 |  -192.6 +/- 9.4 |
 
-<figcaption> Table Expressing the very rough performance of the different VAEs on the MNIST dataset for varying hyperparameters via their final ELBO values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. </figcaption>
+<figcaption> Table Expressing the very rough performance of the different VAEs on the MNIST dataset for varying hyperparameters via their final ELBO [bits/dim] values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. </figcaption>
 
 They do seem to roughly match up with what was reported in [Nagano et al. (2019)](https://arxiv.org/pdf/1902.02992) and [Davidson et al. (2018)](https://arxiv.org/abs/1804.00891) at least in terms of the vanilla VAE outperforming the new methods in higher dimensions and the SVAE doing very well in low dimensions.
 Presumably because then the latent space has enough expressive power to kind of just do what I need to do, while the new methods of some instabilities that we had to introduce that may be coming out in higher dimensions but are more expressive in low dimensions as their structure matches the data. 
@@ -1997,71 +1997,110 @@ I'm not going to bother with showing how the latent space maps to the output as 
 
 In which we can see that there is no rhyme or reason when it comes to who is who (yet).
 
-Another fun thing we can do is train a classifier on the latent values and see how accurate it can get. 
-Essentially using the latent values as a compressed representation of the data.
+Let's look at some quantitative estimates for how well the different methods are reconstructing the images
 
-Now, for the purpose of standardized comparison, the latent embeddings (Euclidean $$\mathbb{R}^D$$, Spherical $$\mathbb{R}^{D+1}$$, and Hyperbolic $$\mathbb{R}^{D+1}$$) are going to be classified using a standard Euclidean RBF-kernel SVM from scikit-learn. This is because it's simple and I don't have to worry about hyperparameter tuning for a MLP classifier. 
-However, I note that the kernel that I'm using is obviously going to assume Euclidean distances. 
-
-So the reported accuracy for the SVAE and HVAE is likely underestimated compared to the true separability, which could be achieved if I could spend more time to do this thoroughly. 
-To do so with an SVM method Gemini tells this would be better measured using geodesic distance kernels, but I ain't got time for that and this post is long enough already.
-
-
-
-| Latent Dims | Hidden Layers | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| | | **ELBO** | **ELBO** | **ELBO** | **Acc (%)** | **Acc (%)** | **Acc (%)** |
-| **2** | 1 | A1 | A2 | A3 | A4 | A5 | A6 |
-| | 2 | B1 | B2 | B3 | B4 | B5 | B6 |
-| | 3 | C1 | C2 | C3 | C4 | C5 | C6 |
-| **3** | 1 | D1 | D2 | D3 | D4 | D5 | D6 |
-| | 2 | E1 | E2 | E3 | E4 | E5 | E6 |
-| | 3 | F1 | F2 | F3 | F4 | F5 | F6 |
-| **5** | 1 | G1 | G2 | G3 | G4 | G5 | G6 |
-| | 2 | H1 | H2 | H3 | H4 | H5 | H6 |
-| | 3 | I1 | I2 | I3 | I4 | I5 | I6 |
-| **10** | 1 | J1 | J2 | J3 | J4 | J5 | J6 |
-| | 2 | K1 | K2 | K3 | K4 | K5 | K6 |
-| | 3 | L1 | L2 | L3 | L4 | L5 | L6 |
-| **50** | 1 | M1 | M2 | M3 | M4 | M5 | M6 |
-| | 2 | N1 | N2 | N3 | N4 | N5 | N6 |
-| | 3 | O1 | O2 | O3 | O4 | O5 | O6 |
-
+| $$D$$ (Latent Dims) | $$L$$ (Hidden Layers) | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** |
+| :---: | :---: | :---: | :---: | :---: |
+| | | **ELBO (bits/dim)** | **ELBO (bits/dim)** | **ELBO (bits/dim)** |
+| **2** | 1 | -975.2 +/- 66.0 | -1047.0 +/- 40.5 A2 | -1059.3 +/- 44.7 |
+| | 2 | -1065.0 +/- 40.4 | -1048.9 +/- 59.7 | -1041.8 +/- 47.1 |
+| | 3 | -1017.5 +/- 62.0 | -1056.2 +/- 76.1 | -1020.2 +/- 42.5 |
+| | 4 | -1009.1 +/- 64.7 | -1064.6+/- 50.5 | -1086.1 +/- 49.7 |
+| **3** | 1 | -966.9 +/- 57.1 | -1077.1 +/- 41.3 | -1004.6 +/- 51.7 |
+| | 2 | -1000.4 +/- 63.7 | -1067.4 +/- 52.5 | -1001.2 +/- 48.5 |
+| | 3 | -1014.2 +/- 63.2 | -1068.4 +/- 59.6 | -1008.6+/- 51.4 |
+| | 4 | -1020.2 +/- 61.0 | -1105.3 +/- 58.7 | -1006.1 +/- 47.7 |
+| **5** | 1 | -991.1 +/- 59.5 | -1136.4 +/- 35.9 | -987.0 +/- 55.6 |
+| | 2 | -1020.8 +/- 62.8 | -1054.8 +/- 61.4 | -1042.8 +/- 44.0 |
+| | 3 | -1018.2 +/- 64.5 | -1099.9 +/- 40.6 | -991.45 +/- 60.8 |
+| | 4 | -1017.7 +/- 68.4 | -1118.8 +/- 40.2 | -1014.7 +/- 44.1 |
+| **10** | 1 | -980.7 +/- 58.4 | -1133.7 +/- 36.6 | -1009.2 +/- 62.5 |
+| | 2 | -1032.6 +/- 62.9 | -1140.7 +/- 39.9 | -1022.7 +/- 66.0 |
+| | 3 | -1025.3 +/- 67.9 | -1110.1 +/- 44.5 | -1008.4 +/- 59.9 |
+| | 4 | -1026.8 +/- 70.8 | -1075.4 +/- 47.1 | -1018.3 +/- 54.0 |
+| **20** | 1 | -991.9 +/- 60.5 | -1141.3 +/- 37.5 | -1057.5+/- 61.2 |
+| | 2 | -1028.8 +/- 54.6 | -1137.8 +/- 43.6 | -1048.1 +/- 49.5 |
+| | 3 | -1025.2 +/- 60.5 | -1130.3 +/- 42.3 | -1007.2 +/- 56.6 |
+| | 4 | -1028.0 +/- 70.6 | -1136.8 +/- 41.9 | -1047.8 +/- 54.5 |
 
 <figcaption> Table Expressing the very rough performance of the different VAEs on the LFW dataset for varying hyperparameters via their final ELBO values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. "Acc" stands for "Accuracy", would have just make the table look uglier.</figcaption>
 
+And I can confirm that the values for higher layers and latent dimensions are in fact bad. The loss plateaus and I've implemented several what I thought were intelligent things to do with the learning rate scheduler but that didn't do anything...
 
+<br>
 
+# Molecular Structure Prediction for [QM9 dataset](https://www.kaggle.com/datasets/zaharch/quantum-machine-9-aka-qm9) with constant curavture VAEs
 
-Let's look at the best performing versions of each type of VAE and the quality of the reconstructions.
+The [QM9 dataset](https://springernature.figshare.com/collections/Quantum_chemistry_structures_and_properties_of_134_kilo_molecules/978904/5) is a dataset containing the structural information for ~130,000 molecules that is a pretty common benchmark for machine learning approaches to molecular property prediction. 
+
+In the words of [PyTorch Geometric or PyG](PyG Documentation) their [page](https://pytorch-geometric.readthedocs.io/en/2.5.0/generated/torch_geometric.datasets.QM9.html) that has the QM9 data (which I use), the dataset is described as...
+> The QM9 dataset from the “MoleculeNet: A Benchmark for Molecular Machine Learning” paper, consisting of about 130,000 molecules with 19 regression targets. Each molecule includes complete spatial information for the single low energy conformation of the atoms in the molecule.
+
+Here we are interested in seeing whether we can compress this data efficiently with the approaches above. 
+
+I thought it would be interesting, as I _thought_ the inherent data had _bits_ of spherical (angular) data and hierarchical (tree-like/compounding dependent) data.
+However, we believe the below results to be true (and in hindsight it should have been obvious), it seems one of the above clearly dominates when it comes to efficient compression.
+
+## Method
+
+What we do is throw away the relatively simple overall quantum property data and focus in on the structure of the molecules. We looks at the positions of different combinations of the molecules, groups of three defining a plane, and extract the angular positions between these planes. We encode these into x, y pairs of $$(cos(\theta), \sin(\theta))$$.
+
+We feed these positions in, which we say fall inbetween $$-180^\circ$$, and $$+180^\circ$$ for a consistent convention. Theoretically, the discontinuity that occurs because of the cutoffs at the bounds _should_ have been hard to learn...
+
+We feed the list of pairs of $$(cos(\theta), \sin(\theta))$$ into the VAEs (i.e. feed in all the angles between triplets of molecules in a given molecule), compress this into the latent space, decode these values to get new estimates $$(cos(\theta'), \sin(\theta'))$$, then run a simple $$\arctan$$ on the outputs to see if we get the right angles out! 
+
+The reconstruction loss (irrespective of the KL divergence/regularisation loss) is a simple [cosine similarity](https://en.wikipedia.org/wiki/Cosine_similarity) value of the angular output.
+
+## Results
+
+Below are some of the results of the training using [mpl-drip](https://pypi.org/project/mpl-drip/) for the colour scheme. First let's look at the loss curves of the different methods to see whether we trained them enough.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_SVAE_2D_latent_embeddings.png" 
-      style="width: 49%; height: auto; border-radius: 8px;">
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_training.png" 
+      style="width: 89%; height: auto; border-radius: 8px;">
+</div>
+<br>
+
+So right out of the gate, it seems that the HVAE (hyperbolic VAE) is getting something that the other VAE architectures don't. Let's see if that translates into performance though. 
+Let's look at the average angular error for the predictions, and the correlation of the angles with each other (if the VAE is picking up structure, we should find that the angles are related to each other --> higher correlations between the predictions).
+
+<div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_EVAE_2D_latent_embeddings.png" 
-      style="width: 49%; height: auto; border-radius: 8px;">
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_metrics.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+And while they do not do terrifically ... the HVAE is still a clear winner. Looking at the overall results we find.
+
+
+<div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/lfw_comparison_plots/LFW_HVAE_2D_latent_embeddings.png" 
-      style="width: 49%; height: auto; border-radius: 8px;">
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_summary.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+In which we can clearly see that the HVAE is picking up something that the EVAE and SVAE are not. Presumably this is because, as stated previously, the structure secretly has a lot of hierarchical structure because the molecule structures can be interpreted as very tree-like where the position of one angle depends on the previous and so on.
+
+And in one run that I wasn't able to reproduce after some bug fixes relating to the stability of the VAE training I was able to see,
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_angle_results.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
 </div>
 <br>
 
 
 <br>
 
-# Molecular Property Prediction for QM9 dataset with constant curavture VAEs
-
-
-
-
-<br>
-
 # Conclusions
 
+Take everything I've presented here with a grain of salt, it's just a blog post not a published article, it seems that there is utility in these methods at least, especially the HVAE to inherently hierarchical data it seems. 
 
-
+However, a major drawback to these methods is that it's all or nothing. In the above QM9 experiment, it would make sense to have a bit of spherical and a bit of hyperbolic space, but by the constructions above the whole latent space has to be one or the other. This motivates the idea of [Mixed-Curvature Autoencoders](https://arxiv.org/abs/1911.08411) that alleviate this assumption/generalise the approach, that is on my list of 'to do's for these posts but we'll see.
 
 
 
