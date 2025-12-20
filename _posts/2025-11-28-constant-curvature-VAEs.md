@@ -1,5 +1,5 @@
 ---
-title: 'Image Classification and Molecular Structure Prediction with Constant Curvature VAEs'
+title: 'Image Classification and Molecular Structure Reconstruction with Constant Curvature VAEs'
 date: 2025-11-27
 permalink: /posts/2025/08/2025-11-27-constant-curvature-VAEs/
 tags:
@@ -17,7 +17,7 @@ header-includes:
 ---
 
 
-In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspherical, and hyperbolic) for image data classification and molecular property prediction.
+In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspherical, and hyperbolic) for image data classification and molecular structure reconstruction.
 
 
 ---
@@ -38,7 +38,7 @@ In this post, I’ll go through Constant Curvature VAEs (traditional, hyperspher
 - [Image Classification and Generation with MNIST and LFW](#image-classification-and-generation-for-mnist-and-lfw-with-constant-curvature-vaes)
     - [MNIST](#mnist)
     - [Labelled Faces in the Wild](#labeled-faces-in-the-wild)
-- [Molecular Structure Prediction with QM9](#molecular-structure-prediction-for-qm9-dataset-with-constant-curavture-vaes)
+- [Molecular Structure Reconstruction with QM9](#molecular-structure-reconstruction-for-qm9-dataset-with-constant-curavture-vaes)
 - [Conclusions](#conclusions)
 
 ## Prerequisites 
@@ -1588,22 +1588,19 @@ import torch
 
 
 def lorentz_inner_product(x, y):
-    """ -x0*y0 + x1*y1 + ... + xn*yn """
+    # -x0*y0 + x1*y1 + ... + xn*yn 
     return -x[..., 0] * y[..., 0] + torch.sum(x[..., 1:] * y[..., 1:], dim=-1)
 
 def lorentz_norm_sq(x):
-    """||x||_L^2 = <x, x>_L."""
+    #||x||_L^2 = <x, x>_L
     return lorentz_inner_product(x, x)
 
 def lorentz_norm(x):
-    """||x||_L = sqrt(<x, x>_L)."""
+    #||x||_L = sqrt(<x, x>_L)
     return torch.sqrt(lorentz_norm_sq(x))
 
 def exp_map(mu, u):
-    """ T_\mu(\mathbb{H}^n) -> H^n
-    
-    \vec{v} = \exp_\vec{\mu}(\vec{u}) = \cosh(\lVert \vec{u}\rVert_\mathcal{L}) \vec{\mu} + \sinh(\lVert \vec{u} \rVert_\mathcal{L})\frac{\vec{u}}{\lVert \vec{u} \rVert_\mathcal{L}}
-    """
+    # T_\mu(\mathbb{H}^n) -> H^n
     r = lorentz_norm(u)
     
     # making sure that r isn't too small, making everything explode # not great
@@ -1611,7 +1608,7 @@ def exp_map(mu, u):
     return torch.cosh(r).unsqueeze(-1) * mu + torch.sinh(r).unsqueeze(-1) * (u / r.unsqueeze(-1).clamp(min=epsilon))
 
 def inv_exp_map(mu, z):
-    """exp_mu^{-1}(z) : H^n -> T_mu(H^n)"""
+    # exp_mu^{-1}(z) : H^n -> T_mu(H^n)
     alpha = -lorentz_inner_product(mu, z) # alpha = cosh(d(mu, z))
     
     # Similar thing to r above
@@ -1626,13 +1623,7 @@ def inv_exp_map(mu, z):
     return u
 
 def parallel_transport(nu, mu, v):
-    """PT_{x->y}(v) : T_nu(H^n) -> T_mu(H^n)
-    
-    \vec{u} &= \text{PT}){\vec{\nu}\rightarrow \vec{\mu}}(\vec{v}) \\
-    &= \vec{v} + \frac{\langle \vec{\mu} - \alpha \vec{\nu}, \vec{v}\rangle_\mathcal{L}}{\alpha + 1}(\vec{\nu} + \vec{\mu}) \\
-    
-    """
-
+    # PT_{x->y}(v) : T_nu(H^n) -> T_mu(H^n)
     alpha = -lorentz_inner_product(nu, mu)
     
     # Clampin
@@ -1997,31 +1988,30 @@ I'm not going to bother with showing how the latent space maps to the output as 
 
 In which we can see that there is no rhyme or reason when it comes to who is who (yet).
 
-Let's look at some quantitative estimates for how well the different methods are reconstructing the images
+Let's look at some quantitative estimates for how well the different methods are reconstructing the images (however note the uncertainties...)
 
 | $$D$$ (Latent Dims) | $$L$$ (Hidden Layers) | **Euclidean VAE** | **Spherical VAE** | **Hyperbolic VAE** |
 | :---: | :---: | :---: | :---: | :---: |
-| | | **ELBO (bits/dim)** | **ELBO (bits/dim)** | **ELBO (bits/dim)** |
-| **2** | 1 | -975.2 +/- 66.0 | -1047.0 +/- 40.5 A2 | -1059.3 +/- 44.7 |
-| | 2 | -1065.0 +/- 40.4 | -1048.9 +/- 59.7 | -1041.8 +/- 47.1 |
+| **2** | 1 | **-975.2 +/- 66.0** | -1047.0 +/- 40.5 A2 | -1059.3 +/- 44.7 |
+| | 2 | -1065.0 +/- 40.4 | -1048.9 +/- 59.7 | **-1041.8 +/- 47.1** |
 | | 3 | -1017.5 +/- 62.0 | -1056.2 +/- 76.1 | -1020.2 +/- 42.5 |
-| | 4 | -1009.1 +/- 64.7 | -1064.6+/- 50.5 | -1086.1 +/- 49.7 |
-| **3** | 1 | -966.9 +/- 57.1 | -1077.1 +/- 41.3 | -1004.6 +/- 51.7 |
+| | 4 | **-1009.1 +/- 64.7** | -1064.6+/- 50.5 | -1086.1 +/- 49.7 |
+| **3** | 1 | **-966.9 +/- 57.1** | -1077.1 +/- 41.3 | -1004.6 +/- 51.7 |
 | | 2 | -1000.4 +/- 63.7 | -1067.4 +/- 52.5 | -1001.2 +/- 48.5 |
 | | 3 | -1014.2 +/- 63.2 | -1068.4 +/- 59.6 | -1008.6+/- 51.4 |
-| | 4 | -1020.2 +/- 61.0 | -1105.3 +/- 58.7 | -1006.1 +/- 47.7 |
+| | 4 | **-1020.2 +/- 61.0** | -1105.3 +/- 58.7 | -1006.1 +/- 47.7 |
 | **5** | 1 | -991.1 +/- 59.5 | -1136.4 +/- 35.9 | -987.0 +/- 55.6 |
-| | 2 | -1020.8 +/- 62.8 | -1054.8 +/- 61.4 | -1042.8 +/- 44.0 |
-| | 3 | -1018.2 +/- 64.5 | -1099.9 +/- 40.6 | -991.45 +/- 60.8 |
+| | 2 | **-1020.8 +/- 62.8** | -1054.8 +/- 61.4 | -1042.8 +/- 44.0 |
+| | 3 | -1018.2 +/- 64.5 | -1099.9 +/- 40.6 | **-991.45 +/- 60.8** |
 | | 4 | -1017.7 +/- 68.4 | -1118.8 +/- 40.2 | -1014.7 +/- 44.1 |
-| **10** | 1 | -980.7 +/- 58.4 | -1133.7 +/- 36.6 | -1009.2 +/- 62.5 |
-| | 2 | -1032.6 +/- 62.9 | -1140.7 +/- 39.9 | -1022.7 +/- 66.0 |
-| | 3 | -1025.3 +/- 67.9 | -1110.1 +/- 44.5 | -1008.4 +/- 59.9 |
+| **10** | 1 | **-980.7 +/- 58.4** | -1133.7 +/- 36.6 | -1009.2 +/- 62.5 |
+| | 2 | -1032.6 +/- 62.9 | -1140.7 +/- 39.9 | **-1022.7 +/- 66.0** |
+| | 3 | -1025.3 +/- 67.9 | -1110.1 +/- 44.5 | **-1008.4 +/- 59.9** |
 | | 4 | -1026.8 +/- 70.8 | -1075.4 +/- 47.1 | -1018.3 +/- 54.0 |
-| **20** | 1 | -991.9 +/- 60.5 | -1141.3 +/- 37.5 | -1057.5+/- 61.2 |
-| | 2 | -1028.8 +/- 54.6 | -1137.8 +/- 43.6 | -1048.1 +/- 49.5 |
-| | 3 | -1025.2 +/- 60.5 | -1130.3 +/- 42.3 | -1007.2 +/- 56.6 |
-| | 4 | -1028.0 +/- 70.6 | -1136.8 +/- 41.9 | -1047.8 +/- 54.5 |
+| **20** | 1 | **-991.9 +/- 60.5** | -1141.3 +/- 37.5 | -1057.5+/- 61.2 |
+| | 2 | **-1028.8 +/- 54.6** | -1137.8 +/- 43.6 | -1048.1 +/- 49.5 |
+| | 3 | -1025.2 +/- 60.5 | -1130.3 +/- 42.3 | **-1007.2 +/- 56.6** |
+| | 4 | **-1028.0 +/- 70.6** | -1136.8 +/- 41.9 | -1047.8 +/- 54.5 |
 
 <figcaption> Table Expressing the very rough performance of the different VAEs on the LFW dataset for varying hyperparameters via their final ELBO values. "Best" values are emboldened but for low dimensions most of the values are within uncertainties anyways. "Acc" stands for "Accuracy", would have just make the table look uglier.</figcaption>
 
@@ -2029,7 +2019,7 @@ And I can confirm that the values for higher layers and latent dimensions are in
 
 <br>
 
-# Molecular Structure Prediction for [QM9 dataset](https://www.kaggle.com/datasets/zaharch/quantum-machine-9-aka-qm9) with constant curavture VAEs
+# Molecular Structure Reconstruction for [QM9 dataset](https://www.kaggle.com/datasets/zaharch/quantum-machine-9-aka-qm9) with constant curavture VAEs
 
 The [QM9 dataset](https://springernature.figshare.com/collections/Quantum_chemistry_structures_and_properties_of_134_kilo_molecules/978904/5) is a dataset containing the structural information for ~130,000 molecules that is a pretty common benchmark for machine learning approaches to molecular property prediction. 
 
@@ -2043,7 +2033,32 @@ However, we believe the below results to be true (and in hindsight it should hav
 
 ## Method
 
-What we do is throw away the relatively simple overall quantum property data and focus in on the structure of the molecules. We looks at the positions of different combinations of the molecules, groups of three defining a plane, and extract the angular positions between these planes. We encode these into x, y pairs of $$(cos(\theta), \sin(\theta))$$.
+What we do is throw away the relatively simple overall quantum property data and focus in on the structure of the molecules. We looks at the positions of different combinations of the molecules, groups of three defining a plane, and extract the angular positions between these planes. These are called _dihedral-angles_ and they can be used instead of bond angles, as far as I know. The gifs below are my attempt at showing how this works in the case of a cis- and trans- molecular configuration.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Dihedral_Angle_Explainers/cis_molecule.gif" 
+      style="width: 49%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Dihedral_Angle_Explainers/trans_molecule.gif" 
+      style="width: 49%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+The below two gifs then show how the dihedral angle, the angle between planes, changes based on the position of the node/atom 'D' from two different perspectives (for same angle, I show the same structure) (this is for definitional purposes, many of the angles are not physical).
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Dihedral_Angle_Explainers/dihedral_180_fixed_azim_n50.gif" 
+      style="width: 49%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/Dihedral_Angle_Explainers/dihedral_180_fixed_azim_n00.gif" 
+      style="width: 49%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+For our experiment on the QM9 dataset we encode the angles into x, y pairs of $$(cos(\theta), \sin(\theta))$$.
 
 We feed these positions in, which we say fall inbetween $$-180^\circ$$, and $$+180^\circ$$ for a consistent convention. Theoretically, the discontinuity that occurs because of the cutoffs at the bounds _should_ have been hard to learn...
 
@@ -2051,7 +2066,12 @@ We feed the list of pairs of $$(cos(\theta), \sin(\theta))$$ into the VAEs (i.e.
 
 The reconstruction loss (irrespective of the KL divergence/regularisation loss) is a simple [cosine similarity](https://en.wikipedia.org/wiki/Cosine_similarity) value of the angular output.
 
+### Quick Disclaimer
+
+For the below results I utilised Claude (the LLM) quite a bit to handle plotting, primarily so I didn't have to: pick out the right angles and put them in the right axis, make sure the colours were consistent, figure out how to make a polar projection with matplotlib (although after I did this, turns out it was actually pretty simple), automating the process so I could re-run it all efficiently, etc.
+
 ## Results
+
 
 Below are some of the results of the training using [mpl-drip](https://pypi.org/project/mpl-drip/) for the colour scheme. First let's look at the loss curves of the different methods to see whether we trained them enough.
 
@@ -2082,16 +2102,45 @@ And while they do not do terrifically ... the HVAE is still a clear winner. Look
 </div>
 <br>
 
-In which we can clearly see that the HVAE is picking up something that the EVAE and SVAE are not. Presumably this is because, as stated previously, the structure secretly has a lot of hierarchical structure because the molecule structures can be interpreted as very tree-like where the position of one angle depends on the previous and so on.
-
-And in one run that I wasn't able to reproduce after some bug fixes relating to the stability of the VAE training I was able to see,
+Looking a bit more at the distribution of errors, below I've made a plot that shows the angles on the unit circle for comparison (with some example connections to show true vs prediction) and the distribution of angular errors.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_angle_results.png" 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_circular.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_errors.png" 
       style="width: 99%; height: auto; border-radius: 1px;">
 </div>
 <br>
+
+In which we can clearly see that the HVAE is picking up something that the EVAE and SVAE are not. Presumably this is because, as stated previously, the structure secretly has a lot of hierarchical structure because the molecule structures can be interpreted as very tree-like where the position of one angle depends on the previous and so on.
+
+One extra thing that I thought might be happening is some imbalance in the set of target angles, so I used the best performing versions of the SVAE, EVAE and HVAE above and looked at there performances for specific ranges of angles. A particularly interesting region is ~-180 and ~+180, because theoretically the only network that can encode that these two values are exactly the same, would be the SVAE. However, in the above we can see a hint above that this behaviour isn't captured by the SVAE any better than the other two methods. 
+
+Below we have some plots trying to show just that.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_by_region.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_errors_by_range_evae.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_errors_by_range_svae.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+  <img 
+      src="/files/BlogPostData/2025-constant-curvature-vaes/qm9/dihedral_errors_by_range_hvae.png" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+Basically it seems to come down to: less samples --> less accuracy.
+
+
+
 
 
 <br>
