@@ -26,6 +26,11 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 ---
 
 ## Table of Contents
+- [Information and Fisher Information](#information-and-fisher-information)
+- [Example Cases of Fisher Information values](#example-cases-of-fisher-information-values)
+- [Uninformative (Jeffrey's) priors and the Fisher information](#uninformative-jeffreys-priors-and-the-fisher-information)
+- [Example Cases of Uninformative (Jeffrey's) priors](#example-cases-of-uninformative-jeffreys-priors)
+- [Summary/Conclusion](#summaryconclusion)
 
 ---
 
@@ -53,6 +58,9 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 
 
 
+# Summary/Conclusion
 
 
 
+---
+## Footnotes
