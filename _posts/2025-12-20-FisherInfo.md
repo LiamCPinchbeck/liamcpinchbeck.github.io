@@ -22,6 +22,14 @@ UNDER CONSTRUCTION
 - [A Tutorial on Fisher Information](https://arxiv.org/pdf/1705.01064) - Alexander Ly, Maarten Marsman, Josine Verhagen, Raoul
 Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 - [Stat 5102 Notes: Fisher Information and Confidence Intervals Using Maximum Likelihood - Charles J. Geyer](https://www.stat.umn.edu/geyer/s06/5102/notes/fish.pdf)
+- [The Fisher Information - Gregory Gunderson](https://gregorygundersen.com/blog/2019/11/21/fisher-information/)
+- [De Bruijn's Identity: Theory & Applications - Emergent Mind](https://www.emergentmind.com/topics/de-bruijn-s-identity)
+- [Generalization of the de Bruijn’s identity to general φ-entropies and φ-Fisher informations - Irene Valero Toranzo, Steeve Zozor and Jean-Marc Brossier](https://arxiv.org/abs/1611.09400)
+- [Information Geometry - Wikipedia](https://en.wikipedia.org/wiki/Information_geometry)
+- [Fisher information metric - Wikipedia](https://en.wikipedia.org/wiki/Fisher_information_metric)
+- [An Elementary Introduction to Information Geometry - Frank Nielson](https://www.mdpi.com/1099-4300/22/10/1100)
+- [Some inequalities satisfied by the quantities of information of Fisher and Shannon - A.J. Stam](https://www.sciencedirect.com/science/article/pii/S0019995859903481)
+
 
 ---
 
@@ -35,14 +43,93 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 ---
 
 
-# Information and Fisher Information
+# Definition of the Fisher Information
+
+The Fisher Information is defined as,
+
+$$\begin{align}
+\mathcal{I}_X(\theta) &= \mathbb{E}_{x \sim \mathcal{L}(x|\theta)}\left[\left(\frac{\partial}{\partial\theta} \log \mathcal{L}(x|\theta) \right)^2 \right] \\
+&=\begin{cases}
+\int_X dx \mathcal{L}(x|\theta) \left(\frac{\partial}{\partial\theta} \log \mathcal{L}(x|\theta) \right)^2 & \text{(Continuous)}\\
+\sum_{i=1}^{N_X} \mathcal{L}(x_i|\theta) \left(\frac{\partial}{\partial\theta} \log \mathcal{L}(x_i|\theta) \right)^2  & \text{(Discrete)}
+\end{cases}
+\end{align}$$
+
+
+But honestly this is just a little to esoteric for me to internalise. So I'm gonna make some pretty pictures.
+
+Below is a GIF with three rows and two columns. 
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/initial_defn_gif.gif" 
+      style="width: 89%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+The first column exemplifies what some transformations of normal distribution looks like with respect to the random variable it describes, with a mean of 0 and varying standard deviation values. It specifically show the log, the derivative of the log (score) and the second derivative of the log (hessian). 
+
+The right column are histograms of these same values with random samples taken from the given likelihood (kind like Monte Carlo [error propagation](https://en.wikipedia.org/wiki/Propagation_of_uncertainty) for nonlinear functions).
+
 
 
 
 
 # Example Cases of Fisher Information values
 
+## Normal
 
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/initial_defn_gif.gif" 
+      style="width: 89%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+## Cauchy
+
+Component,Formula
+
+Log-Likelihood: $$-\ln(\pi) - \ln(\gamma) - \ln\left( 1 + \frac{(x-x_0)^2}{\gamma^2} \right)$$
+
+Score: $$\frac{\partial}{\partial x_0} \ln f = \frac{2(x - x_0)}{\gamma^2 + (x - x_0)^2}$$
+
+Hessian: $$\frac{\partial^2}{\partial x_0^2} \ln f = \frac{2\left( (x - x_0)^2 - \gamma^2 \right)}{\left( \gamma^2 + (x - x_0)^2 \right)^2}$$​
+
+Fisher Info: $$1/2\gamma^2$$
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/cauchy_fisher_defn_gif.gif" 
+      style="width: 89%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+
+## Laplace
+
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/laplace_defn_gif.gif" 
+      style="width: 89%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+
+
+## Poisson
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/poisson_defn_gif.gif" 
+      style="width: 89%; height: auto; border-radius: 1px;">
+</div>
+<br>
 
 
 
