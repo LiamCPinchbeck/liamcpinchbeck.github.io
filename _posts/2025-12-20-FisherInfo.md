@@ -67,11 +67,15 @@ Below is a GIF with three rows and two columns.
 </div>
 <br>
 
-The first column exemplifies what some transformations of normal distribution looks like with respect to the random variable it describes, with a mean of 0 and varying standard deviation values. It specifically show the log, the derivative of the log (score) and the second derivative of the log (hessian). 
+The first column exemplifies what some transformations of normal distribution looks like with respect to the random variable it describes, with a mean of 0 and varying standard deviation values. It specifically show the log, the derivative of the log known as the [___score___](https://en.wikipedia.org/wiki/Informant_(statistics)), and the second derivative of the log-likelihood. 
 
 The right column are histograms of these same values with random samples taken from the given likelihood (kind like Monte Carlo [error propagation](https://en.wikipedia.org/wiki/Propagation_of_uncertainty) for nonlinear functions).
 
+The definition of the Fisher information, boils down to the variance of the second row second column distribution or equivalently the expected value of the bottom right. Which annoyingly for the normal distribution is always the same value so there isn't really a 'distribution'[^distribution]
 
+[^distribution]: And no you nerd, I don't mean in the strict 'mathematical' sense of the word 'distribution' in which case yes it is. I do love my Dirac Delta probability distribution that comes up all the time...(sarcasm)
+
+Okay, but what does this actually imply about our models? Well notice that as the log-likelihood distribution broadens, the distribution of the score
 
 
 
