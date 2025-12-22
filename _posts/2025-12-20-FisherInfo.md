@@ -30,6 +30,8 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 - [An Elementary Introduction to Information Geometry - Frank Nielson](https://www.mdpi.com/1099-4300/22/10/1100)
 - [Some inequalities satisfied by the quantities of information of Fisher and Shannon - A.J. Stam](https://www.sciencedirect.com/science/article/pii/S0019995859903481)
 - [Relations between Kullback-Leibler distance and Fisher information](https://www.ece.rice.edu/~dhj/distance.pdf) - Anand G. Dabak & Don H. Johnson
+- [THEORETICAL NEUROSCIENCE I $$\Vert$$ Lecture 16: Fisher information - Prof. Jochen Braun](https://bernstein-network.de/wp-content/uploads/2021/02/16_Lecture-16-Fisher-information.pdf)
+
 
 ---
 
@@ -353,7 +355,7 @@ $$\begin{align}
 \end{align}$$
 
 
-Although _sometimes_ the Fisher information as the negative hessian of the entropy, such as when we look at the mean of the normal distribution and I think the location parameters for distributions in the [location-scale family](https://en.wikipedia.org/wiki/Location%E2%80%93scale_family).
+Although _sometimes_ the Fisher information as the negative hessian of the entropy, such as when we look at the mean of the normal distribution and I think the location parameters for distributions in the [location-scale family](https://en.wikipedia.org/wiki/Location%E2%80%93scale_family). And there's something called [De Bruijn’s identity](https://www.emergentmind.com/topics/de-bruijn-s-identity) which I can't seem to find the assumptions for.
 
 
 ___In summary, you can think of the interpretation of the pull between the true distribution and our approximate as another reason why we have the___ log ___-likelihood in our definition of Fisher information.___
