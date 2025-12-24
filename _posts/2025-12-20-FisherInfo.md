@@ -1,5 +1,5 @@
 ---
-title: "Intuitive introduction to Fisher information, Jeffrey's priors and lower bounds on the variance of unbiased estimators (Cramer-Rao bound)"
+title: "Intuitive introduction to Fisher information, Jeffreys priors and lower bounds on the variance of unbiased estimators (Cramer-Rao bound)"
 date: 2025-12-20
 permalink: /posts/2025/12/2025-12-20-FisherInfo/
 tags:
@@ -11,7 +11,6 @@ header-includes:
 
 In this post I'm going to attempt to give an intuitive introduction to Fisher Information, (very briefly) Jeffrey priors, and the lower bounds on the variance of unbiased estimators i.e. the Cramer-Rao bound. 
 Hopefully this post will be shorter than my last couple...
-UNDER CONSTRUCTION
 
 ---
 ## Resources
@@ -31,7 +30,7 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
 - [Some inequalities satisfied by the quantities of information of Fisher and Shannon - A.J. Stam](https://www.sciencedirect.com/science/article/pii/S0019995859903481)
 - [Relations between Kullback-Leibler distance and Fisher information](https://www.ece.rice.edu/~dhj/distance.pdf) - Anand G. Dabak & Don H. Johnson
 - [THEORETICAL NEUROSCIENCE I $$\Vert$$ Lecture 16: Fisher information - Prof. Jochen Braun](https://bernstein-network.de/wp-content/uploads/2021/02/16_Lecture-16-Fisher-information.pdf)
-
+- [THE FORMAL DEFINITION OF REFERENCE PRIORS](https://people.eecs.berkeley.edu/~jordan/sail/readings/berger-bernardo-sun.pdf)
 
 ---
 
@@ -42,8 +41,11 @@ Grasman and Eric-Jan Wagenmakers (All University of Amsterdam)
     - [Poisson](#poisson)
     - [Laplace](#laplace)
     - [Cauchy](#cauchy)
-- [Uninformative (Jeffrey's) priors and the Fisher information](#uninformative-jeffreys-priors-and-the-fisher-information)
-- [Example Cases of Uninformative (Jeffrey's) priors](#example-cases-of-uninformative-jeffreys-priors)
+- [Fisher Information Derivation From Relative Entropy](#fisher-information-derivation-from-relative-entropy)
+- [Uninformative (Jeffreys) priors and the Fisher information](#uninformative-jeffreys-priors-and-the-fisher-information)
+    - [Example Cases of Uninformative (Jeffreys) priors](#example-cases-of-uninformative-jeffreys-priors)
+    - [Limitations of the Jeffreys prior](#limitations-of-the-jeffreys-prior)
+- [Cramer-Rao Bound](#lower-bounds-on-the-variance-of-unbiased-estimators-cramer-rao-bound)
 - [Summary/Conclusion](#summaryconclusion)
 
 ---
@@ -364,20 +366,268 @@ ___In summary, you can think of the interpretation of the pull between the true 
 
 
 
-# Uninformative (Jeffrey's) priors and the Fisher information
+# Uninformative (Jeffreys) priors and the Fisher information
+
+The key thing that Jeffreys priors try to be a non-informative prior that nicely transforms under reparameterisation. One example of this kind of prior, or _the_ example, is the Jeffreys prior given as,
+
+$$\begin{align}
+p(\theta) = \sqrt{\mathcal{I{(\theta)}}}.
+\end{align}$$
+
+But why? What 'niceness' does this encode?
+
+__The Problem__
+
+Well let's do an example, Alex and Casey are betting on some unfair/weighted coin flips and both trying to optimally calculate the probability of getting heads, $$p_H$$, to maximise their profits, as one does. Additionally they want to look at the odds $$\psi_H = \frac{p_H}{1-p_H} = \frac{p_H}{p_T}$$ for some other calculations they need to make optimal bets.
+
+They both don't want to bias any results so both assume what they think are uninformative priors: uniform priors.
+
+Alex thinks that a uniform prior on the probabilities is appropriate. This means that their posterior for $$k$$ flips follows,
+
+$$\begin{align}
+p(p_H|\text{data}) \propto p_H^k (1-p_H)^{n-k} \times 1.
+\end{align}$$
+
+Casey instead wants to look at the odds and thinks they should put a uniform prior on the odds. Their posterior then ends up being,
+
+$$\begin{align}
+p(\psi_Η|\text{data}) \propto \frac{\psi_H^k}{(1+\psi_H)^n} \times 1.
+\end{align}$$
+
+If we want to see how Alex's system looks from Casey's "odds" perspective, we can then look at how each of these assumptions translate into the other parameterisation.
+
+The Jacobian for the transformation is:
+
+$$\left| \frac{dp_H}{d\psi_Η} \right| = \frac{1}{(1+\psi_H)^2}$$
+
+Alex's posterior transformed to odds:
+
+$$p_{Alex}(\psi_H|\text{data}) = p(p_H|\text{data}) \left| \frac{dp_H}{d\psi_H} \right| \propto \frac{\psi_Η^k}{(1+\psi_H)^n} \times \mathbf{\frac{1}{(1+\psi_H)^2}}$$
+
+They disagree! Even though they both claimed to be "uninformative," the act of being flat in one space created a "hidden" bias in the other. 
+
+Alex’s prior implies that extreme odds are very unlikely, while Casey’s prior would imply that high probabilities are much more likely than low ones.
+
+This is one of the reasons that Bayesian perspectives on probability can be quite nice, as the explicit need to quantify assumptions through the priors means that you don't implicitly set the prior to a uniform distribution and get the kerfuffle above.
+
+__The Solution: Jeffreys Prior__
+
+Now, let's use the Jeffreys prior $$p(\theta) \propto \sqrt{\mathcal{I}(\theta)}$$. 
+
+For the Bernoulli (coin flip) likelihood:
+
+___In $$p_Η$$ - space:___
+
+$$\mathcal{I}(p_H) = \frac{1}{p_H(1-p_H)} \implies \pi(p_H) \propto \frac{1}{\sqrt{p_H(1-p_H)}}$$
+
+___In $$\psi_Η$$ - space:___
+
+$$\mathcal{I}(\psi_H) = \frac{1}{\psi_H(1+\psi_H)^2} \implies \pi(\psi_H) \propto \frac{1}{(1+\psi_H)\sqrt{\psi_H}}$$
+
+Let’s see if Alex and Casey agree now. If Alex uses the Jeffreys prior for $$p_H$$ and transforms it to $$\psi_H$$:
+
+$$\begin{align}
+\pi_{Alex}(\psi_H) &= \pi(p_H) \left| \frac{dp_H}{d\psi_H} \right| \\
+&= \frac{1}{\sqrt{\frac{\psi_Hi}{1+\psi_H}(1 - \frac{\psi_H}{1+\psi_H})}} \times \frac{1}{(1+\psi_H)^2} \\
+&= \frac{1}{\sqrt{\frac{\psi_H}{(1+\psi_H)^2}}} \times \frac{1}{(1+\psi_H)^2} \\
+&= \frac{1+\psi_H}{\sqrt{\psi_H}} \times \frac{1}{(1+\psi_H)^2} \\
+&= \frac{1}{(1+\psi_H)\sqrt{\psi_H}}
+\end{align}$$
+
+So if you transform the prior that Alex assumed for their model, you would get the prior that Casey assumed in their model! 
+
+So the "niceness" of the Jeffreys prior is _coordinate independence_. By using the square root of the Fisher Information, we ensure that:
+- Prior Invariance: The prior itself accounts for the "stretching" of the parameter space.Posterior 
+- Consistency: Alex and Casey can work in whatever units they want (probability, odds, log-odds) and they will always arrive at the same physical conclusion.
+- Information Symmetry: The prior puts equal weight on equal amounts of "distinguishable information" rather than equal intervals of a coordinate ruler.
+
+In essence, the Jeffreys prior interprets the parameter space as a manifold where the Fisher Information is the metric. The $$\sqrt{\mathcal{I}(\theta)}$$ is the "volume element" of that manifold, making the prior a uniform distribution over the geometry of the likelihood rather than the numbers on the axis.
+
+
+## But like ... why?
+
+But, why does the square root of the fisher information even work? Or make sense? Well you can interpret the Fisher info as a magnifying glass for how we perceive changes in a system.
+
+
+### 1. The "Dense" Region (High Information)
+
+A large $$I(\theta)$$ means the "distance"[^divergence] between the distribution $$\mathcal{L}(x\vert\theta)$$ and $$\mathcal{L}(x\vert\theta + \epsilon)$$ is huge even for a tinsy $$\epsilon$$.
+
+[^divergence]: But technically I'm referring to the perturbation of the Kullback–Leibler divergence, which isn't a distance.
+
+Because the distribution changes so quickly, the data is sensitive to the parameter. It is easy to tell the difference between $$\theta = 0.50$$ and $$\theta = 0.51$$.
+
+As a result your estimates will have a low variance because the data clearly "points" to the true parameter value.
+
+
+### 2. The "Sparse" Region (Low Information)
+
+A small $$I(\theta)$$ means the distribution $$\mathcal{L}(x\vert\theta)$$ is almost identical to $$\mathcal{L}(x\vert\theta + \epsilon)$$. They overlap almost perfectly.
+
+The data is "blind" to the parameter here. Whether the true $$\theta$$ is $$0.5$$ or $$0.7$$, the outcomes you observe look roughly the same.
+
+So your estimates will have high variance or you can think of it as the "information" being spread thin. You need more data to distinguish between nearby estimates of $$\theta$$.
+
+
+### How does this relate to the priors? 
+
+If a region is "dense" (large $$I(\theta)$$), a single unit of $$\theta$$ (say, from 0.5 to 0.6) actually contains more distinguishable "states" of the world than a unit in a sparse region.
+
+Uniform Priors ignore this; they give the same "weight" to the 0.5–0.6 interval regardless of how much the distributions actually change. 
+e.g. if you assume a uniform prior you load the prior with the same amount of information in areas that you would gain little information to areas where you _would_ get a lot.
+
+Jeffreys Priors use $$\sqrt{I(\theta)}$$ to "stretch" the prior mass in dense regions and "compress" it in sparse regions.
+
+By doing this, you aren't being "flat" over the numbers (which are arbitrary), you are being "flat" over the observable differences in the model. 
+
+This is why Jeffreys is often called a "representation-independent" prior—it cares about the statistical impact of the parameter! 
+
+(If this still doesn't make click well for you I'm gonna do some GIFs below and maybe that'll work better.)
 
 
 
+## Example Cases of Uninformative (Jeffreys) priors
 
-# Example Cases of Uninformative (Jeffrey's) priors
+Now I won't show the priors for the mean/median values for the above distributions coz they're all uniform with respect to the actual parameter, i.e. they're all flat priors to begin with, which is kind of interesting but not interesting to look at.
+I'll instead look at the Jeffreys priors on the scale parameters as those at least have 'shapes' but also to look at the priors on the kind of 'natural' parameters for these likelihoods where the information is distributed evenly/what coordinate system of the parameter space gives you a uniform prior. 
+
+### Normal
+
+The natural parameter here is $$\log(\sigma)$$ and the fisher info for $$\sigma$$ is $$2/\sigma^2$$.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/natural_prior_normal.gif" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+### Laplace
+
+The natural parameter here is $$\log(b)$$ and the fisher info for $$b$$ is $$1/b^2$$.
 
 
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/natural_prior_laplace.gif" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
 
+### Poisson
+
+The natural parameter here is $$\sqrt{\lambda}$$ and the fisher info for $$\lambda$$ is $$1/\lambda$$.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/natural_prior_poisson.gif" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+### Cauchy
+
+The natural parameter here is $$\log{\gamma}$$ and the fisher info for $$\gamma$$ is $$1/2\gamma^2$$.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-12-FisherInfo/natural_prior_cauchy.gif" 
+      style="width: 99%; height: auto; border-radius: 1px;">
+</div>
+<br>
+
+## Limitations of the Jeffreys prior
+
+Now I've made this sound great and all, but some issues come up in high-dimensional spaces, where they often fail to be "non-informative" and can lead to pathological conclusions/results. 
+
+In multiparameter problems, the Jeffreys prior is defined as the square root of the determinant of the Fisher Information Matrix, 
+$$\begin{align}
+p(\boldsymbol{\theta}) \propto \sqrt{\det \mathcal{I}(\boldsymbol{\theta})}.
+\end{align}$$ 
+
+Because this approach treats all parameters as a joint geometric block, it can accidentally introduce dependencies or "hidden" information that biases the marginal estimates. 
+
+An example is just the Normal distribution with unknown mean $$\mu$$ and variance $$\sigma^2$$. 
+The Jeffreys prior for this case is $$p(\mu, \sigma) \propto \sigma^{-2}$$ (which you can see above). 
+Using this leads to marginal inferences that are less efficient than those derived from the Reference Prior $$p(\mu, \sigma) \propto \sigma^{-1}$$. 
+
+In high dimensions, the volume of the information manifold can grow in a way that "pushes" the posterior mass toward extreme values, violating the very spirit of ignorance Jeffreys sought to capture[^spheres].
+
+[^spheres]: I think this is due to something called the 'soap bubble effect' that I discussed a little in my last post on [constant curvature VAEs](/posts/2025/08/2025-11-27-constant-curvature-VAEs).
+
+There's also some weird philosophical stuff with basing the Jeffreys prior strictly on the _likelihood_. Because $$\mathcal{I}(\theta) = \mathbb{E}_{x\sim \mathcal{L}(x\vert\theta)} [ (\frac{\partial}{\partial \theta} \log \mathcal{L}(x\vert\theta))^2 ]$$, the prior is calculated based on the expectation over the sample space—meaning can depend on the experimental design (the "stopping rule") rather than just the observed data. 
+
+Jeffreys priors are focused on geometric invariance (making the prior look the same in any coordinate system), but more often now the average statistician focuses on information maximization. This leads to the concept of the "Reference Prior", defined as the prior that maximizes the expected "missing information" about a parameter. Or more formally, it maximizes the Kullback-Leibler divergence between the prior and the posterior as the number of data points $$n \to \infty$$. 
+
+Nicely, in single-parameter models, the Reference Prior and the Jeffreys Prior are identical. So it's quite common in multi-parameter setups to use a product of single parameter Jeffreys priors. For a quick intro on reference priors I'd recommend [An introduction to reference priors](https://www.youtube.com/watch?v=pNkeDdFs0QQ) (video) by [Ben Lambert](https://www.youtube.com/@SpartacanUsuals).
+
+# Lower bounds on the variance of unbiased estimators (Cramer-Rao bound)
+
+In any real-world work we are interested in how much information we can get out of a given system, and often we would like to have an estimate of how much before we spend
+a billion dollars.
+The Cramer-Rao bound is one way of estimating a lower bound of the variance of a given quantity (presuming our model is correct). 
+
+Let's say you have some variable $$\hat{\theta}=u(X)$$ that is an unbiased estimate of $$\theta$$ where $$X\sim \mathcal{L}(x\vert\theta)$$. Which we can describe as,
+
+$$\begin{align}
+\theta &= \int_X u(x) \mathcal{L}(x|\theta) dx \\
+1 &= \frac{\partial}{\partial \theta} \int_X u(x) \mathcal{L}(x|\theta) dx \\
+&= \int_X u(x) \frac{\partial}{\partial \theta} \mathcal{L}(x|\theta) dx \\
+&= \int_X u(x) \mathcal{L}(x|\theta) \frac{\partial}{\partial \theta} \log \mathcal{L}(x|\theta) dx \\
+\end{align}$$
+
+Then to make the math a lil' easier, I'm gonna denote $$\partial_\theta \log \mathcal{L}(x\vert\theta) = \ell(x\vert\theta)$$ such that the above can be represented as,
+
+$$\begin{align}
+1 &= \int_X u(x) \mathcal{L}(x|\theta) \ell(x\vert\theta) dx \\
+&= \mathbb{E}[u(X) \cdot \ell(X|\theta)] \\
+\end{align}$$
+
+
+Then we'll use the following,
+
+
+$$\begin{align}
+\text{cov}(X, Y) &= \mathbb{E}\left[(X - \mathbb{E}(X))(Y - \mathbb{E}(Y)) \right] \\
+&= \mathbb{E}\left[XY\right] - \mathbb{E}\left[X\right]\mathbb{E}\left[Y\right] - \mathbb{E}\left[X\right]\mathbb{E}\left[Y\right] + \mathbb{E}\left[X\right]\mathbb{E}\left[Y\right] \\
+&= \mathbb{E}\left[XY\right] - \mathbb{E}\left[X\right]\mathbb{E}\left[Y\right]  \\
+\end{align}$$
+
+$$\mathbb{E}\left[\ell(X \vert \theta)\right]=0$$ as derived above, so ,
+
+$$\begin{align}
+1 &= \mathbb{E}[u(X) \cdot \ell(X|\theta)] \\
+&= \text{cov}(u(X), \ell(X|\theta)) \\
+&= \sigma_{u(X)} \sigma_{\ell(X|\theta)} \text{corr}(u(X), \ell(X|\theta))  \\
+\frac{1}{\sigma_{\ell(X|\theta)}} &= \sigma_{u(X)} \text{corr}(u(X), \ell(X|\theta))  \\
+
+\end{align}$$
+
+Then through the [Cauchy Schwarz inequality](https://en.wikipedia.org/wiki/Cauchy%E2%80%93Schwarz_inequality) or more simply through the fact that the correlation is less than or equal to 1, then,
+
+$$\begin{align}
+\frac{1}{\sigma_{\ell(X|\theta)}} &= \sigma_{u(X)} \text{corr}(u(X), \ell(X|\theta))   \\
+\frac{1}{\sigma_{\ell(X|\theta)}} &\leq \sigma_{u(X)}  \\
+\frac{1}{\text{Var}(\ell(X|\theta))} &\leq \text{Var}(u(X))  \\
+\frac{1}{\mathcal{I(\theta)}} &\leq \text{Var}(u(X))  \\
+\end{align}$$
+
+In plain-ish english, this says that the variance of any estimate of $$\theta$$ can only be as low as the reciprocal of the Fisher information. Or more plainly again the [precision](https://en.wikipedia.org/wiki/Precision_(statistics)) of an estimate on $$\theta$$ can only be as good as the Fisher information. 
+
+You can see that limit is satisfied (the inequality is an equality) for the normal, laplace and Poisson distributions above[^cauchyvar].
+
+[^cauchyvar]: The variance (and mean!) for the Cauchy distribution are not defined due to the heavy tails.
+
+If you want the multivariate version of the proof/derivation then [this video](https://www.youtube.com/watch?v=bXtpo2gcDGA) by [Mike, the Mathematician](https://www.youtube.com/@mikethemathematician) is very good.
 
 
 
 # Summary/Conclusion
 
+
+The Fisher Information and it's multivariate version the Fisher Information _matrix_ have widespread uses and underpin many statistical and machine learning methods. Hopefully, this post has elucidated where some of its properties come from, and if not, maybe one of the resources I link at the top of the post will be useful.
 
 
 ---
