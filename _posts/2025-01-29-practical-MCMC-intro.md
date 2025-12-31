@@ -313,8 +313,7 @@ For the _Metropolis_ algorithm to work, we presume that the proposal distributio
 1. Initialise: 
     1. Have a distribution you want to sample from (duh) $$f(x)$$,
     2. manually create a starting point for the algorithm $$x_0$$,
-    3. pick a symmetric distribution $$g(x\mid y)$$ to sample from 
-        - like a gaussian with a fixed covariance matrix such that $$g(x\mid y)=g(y\mid x)$$
+    3. pick a distribution $$g(x\mid y)$$ to sample from (now doesn't need to be symmetric)
     4. pick the number of samples you can be bothered waiting for $$N$$
 2. For each iteration $$n$$/Repeat $$N$$ times
     1. Sample a new _proposal point_ $$x^*$$ from the syymetric distribution centred at the previous sample 
