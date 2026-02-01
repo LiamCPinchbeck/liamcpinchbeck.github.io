@@ -7,6 +7,7 @@ tags:
   - Variational Inference
   - Normalising Flows
   - Flow Matching
+  - Stochastic Differential Equations
 header-includes:
    - \usepackage{amsmath}
 ---
@@ -753,3 +754,30 @@ Hope you learnt a little about flow matching! One thing that I left out is that 
 
 
 
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>

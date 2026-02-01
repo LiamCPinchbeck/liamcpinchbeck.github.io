@@ -8,6 +8,8 @@ tags:
   - Normalising Flows
   - Variational Inference
   - Conditional Density Estimation
+  - Deep Learning
+  - Conditional Normalising Flows
 header-includes:
    - \usepackage{amsmath}
    - \usepackage{dsfont}
@@ -556,3 +558,30 @@ Woo!
 Now this is fantastic (if I do say so myself) but isn't that useful in the general case of data analysis, where our conditional variables are data. In which case we can't just sample them willy-nilly as above as the inherent order of dependecies is switched. This would be fine with a couple modifications to approximate a single observation like this, which is quite useful in the case that it is intractable. However, doing all this for the case of a posterior for an entire set of data requires a little more work that I'll instead put into a post on Simulation-Based Inference which is the realm that this is in.
 
 
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
