@@ -1,7 +1,7 @@
 ---
 title: "But what are Gibbs and slice sampling?"
-date: 2026-01-30
-permalink: /posts/2026/01/2026-01-30-RCFM/
+date: 2027-01-30
+permalink: /posts/2027/01/2027-01-30-RCFM/
 tags:
 - Variational Inference
 - Simulation-Based Inference
@@ -136,4 +136,5 @@ In this post I'm going to go through Gibbs and slice sampling, you've probably s
         - Numerical precision problems
 
 7. Conclusion
+
 

@@ -1,7 +1,7 @@
 ---
 title: "Understanding AutoIAFNormal's Domain: Why It Struggles with Uniform Targets"
-date: 2025-12-11
-permalink: /posts/2025/12/2025-12-11-pyro-uniform/
+date: 2027-12-11
+permalink: /posts/2027/12/2027-12-11-pyro-uniform/
 tags:
   - PyTorch
   - Variational Inference
