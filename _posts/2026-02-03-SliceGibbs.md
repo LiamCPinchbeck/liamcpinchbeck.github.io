@@ -90,10 +90,9 @@ Yep that's it. An example of it in action is shown in the GIF below.
 
 
 
-## 1.2 Why It Works
+## 1.2 Detailed balance
 
-- Detailed balance via conditional distributions
-- Connection to MH with acceptance probability 1
+
 
 ## 1.3 A Simple Example: Bivariate Normal
 
