@@ -80,7 +80,15 @@ The core idea of Gibbs sampling is that you have access to conditional distribut
     1. Sample $$x_1^{n+1} \sim p(x_1^{n} \vert x_2^{n})$$
     2. Sample $$x_2^{n+1} \sim p(x_2^{n} \vert x_1^{n+1})$$
 
-Yep that's it.
+Yep that's it. An example of it in action is shown in the GIF below.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2026-01-LMC/gibbs_sampler.gif" 
+      style="width: 99%; height: auto; border-radius: 0px;">
+</div>
+
+
 
 ## 1.2 Why It Works
 
