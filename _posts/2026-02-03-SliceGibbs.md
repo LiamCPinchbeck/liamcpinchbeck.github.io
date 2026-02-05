@@ -167,17 +167,6 @@ Again, I'm just gonna let the GIF speak for itself here.
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
-#### The banana distribution problem
-
-
-
-
-## 1.5 Practical Tips
-
-- Block Gibbs sampling
-- Collapsed Gibbs sampling
-- Rao-Blackwellization for variance reduction
-
 
 
 # 2. Slice Sampling
@@ -217,23 +206,15 @@ Again, I'm just gonna let the GIF speak for itself here.
 
 
 
-
-# 4. Common Pitfalls and Debugging
-
-
-## 4.1 Gibbs Sampling Issues
-
-    - Detecting poor mixing
-    - The scan order matters (sometimes)
-    - Random vs. systematic scan
-
-## 4.2 Slice Sampling Issues
-
-    - Choosing initial interval width
-    - Computational cost with complex slices
-    - Numerical precision problems
-
-# 5. Conclusion
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2026-02-SliceGibbs/banana_Gibbs_sampler.gif" 
+      style="width: 99%; height: auto; border-radius: 0px;">
+</div>
 
 
-# A. HMC and slice sampling
+
+
+# 4. Conclusion
+
+
