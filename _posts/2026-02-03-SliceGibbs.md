@@ -1,14 +1,10 @@
 ---
 title: "But what are Gibbs and slice sampling?"
 date: 2026-02-03
-permalink: /posts/2026/02/2026-02-03-RCFM/
+permalink: /posts/2026/02/2026-02-03-SliceGibbs/
 tags:
-- Variational Inference
-- Simulation-Based Inference
-- SBI
-- VI
-- Flow Matching
-- Normalising Flows
+  - MCMC
+  - Introductory
 header-includes:
   - \usepackage{amsmath}
 
@@ -29,7 +25,9 @@ In this post I'm going to go through Gibbs and slice sampling, you've probably s
 
 - ["The Gibbs Sampler Revisited from the  Perspective of Conditional Modeling" - Kuo & Wang](https://arxiv.org/abs/2410.09559)
 - ["Explaining the Gibbs Sampler" - Casella & George](https://www2.stat.duke.edu/~scs/Courses/Stat376/Papers/Basic/CasellaGeorge1992.pdf)
+    - This is good, but I think the way they describe Gibbs sampling in general sounds more like specifically [collapsed Gibbs sampling](https://en.wikipedia.org/wiki/Gibbs_sampling#:~:text=backward%20algorithm.-,Collapsed%20Gibbs%20sampler,-%5Bedit%5D)
 - ["Gibbs Sampling" - Wikipedia](https://en.wikipedia.org/wiki/Gibbs_sampling)
+- ["Gibbs Sampling, Conjugate Priors and Coupling" - Diaconis, Khare and Coste](https://www.stat.berkeley.edu/~aldous/206-RWG/RWGpapers/diaconis_gibbs.pdf)
 
 ### Slice Sampling
 
@@ -92,22 +90,89 @@ Yep that's it. An example of it in action is shown in the GIF below.
 
 ## 1.2 Detailed balance
 
+Gibbs sampling is evidently a Markov Chain, as each new set of points only depends on the previous, and is ergodic (because the conditional distributions should allow any coordinate in parameter space to be sampled), so to be a valid MCMC method we only have to show that the sampling satifies detailed balance (or the weaker condition of [_Global Balance_](https://en.wikipedia.org/wiki/Balance_equation)).
+
+In Gibbs sampling, we move along one "axis" (one variable) at a time. Thus, to understand the transition kernel let's focus on the update for the $$i$$-th variable, $$x_i$$ for a target distribution $$\pi$$. You can just treat $$x_i$$ as the first block in the GIF above and every other variable $$\mathbf{x}_{-i}$$ as the second.
+
+Let our current state be $$\mathbf{x} = (x_i, \mathbf{x}_{-i})$$ and the proposed next state be $$\mathbf{x}' = (x_i', \mathbf{x}_{-i})$$. 
+
+Note that only the $$i$$-th component changes. The transition kernel (the probability of moving from $$\mathbf{x}$$ to $$\mathbf{x}'$$) for this step is:
+$$\begin{align}
+P_i(\mathbf{x} \to \mathbf{x}') = \pi(x_i' \mid \mathbf{x}_{-i})
+\end{align}$$
+
+Now, we check if $$\pi(\mathbf{x}) P_i(\mathbf{x} \to \mathbf{x}') = \pi(\mathbf{x}') P_i(\mathbf{x}' \to \mathbf{x})$$: 
+
+#### Left-Hand Side (Forward Flow):
+
+Using the chain rule $$\pi(A, B) = \pi(A \mid B)\pi(B)$$:
+
+$$\pi(x_i, \mathbf{x}_{-i}) \cdot \pi(x_i' \mid \mathbf{x}_{-i}) = \left[ \pi(x_i \mid \mathbf{x}_{-i}) \pi(\mathbf{x}_{-i}) \right] \cdot \pi(x_i' \mid \mathbf{x}_{-i})$$
+
+#### Right-Hand Side (Backward Flow):
+
+$$\pi(x_i', \mathbf{x}_{-i}) \cdot \pi(x_i \mid \mathbf{x}_{-i}) = \left[ \pi(x_i' \mid \mathbf{x}_{-i}) \pi(\mathbf{x}_{-i}) \right] \cdot \pi(x_i \mid \mathbf{x}_{-i})$$
+
+#### Together
+
+If you look at the final expressions for both sides you find:
+
+$$\pi(\mathbf{x}_{-i}) \cdot \pi(x_i \mid \mathbf{x}_{-i}) \cdot \pi(x_i' \mid \mathbf{x}_{-i})$$.
+
+Since the flow is equal in both directions, the $$i$$-th update satisfies detailed balance with respect to $$\pi$$.
+
+### Systematic vs. Random Scan
+
+There is a subtle distinction in how you apply these updates that affects whether the entire algorithm satisfies detailed balance.
+
+#### Random Scan Gibbs: 
+
+If you pick a variable $$i$$ at random to update in each step, the entire algorithm satisfies detailed balance. It is reversible.
+
+#### Systematic Scan Gibbs: 
+
+If you always update $$x_1, x_2, \dots, x_d$$ in a fixed order, the full cycle does not actually satisfy detailed balance (because you can't just reverse the order and get the same transition probability).
+
+However, even if the full cycle doesn't satisfy detailed balance, it still satisfies [_Global Balance_](https://en.wikipedia.org/wiki/Balance_equation). Because each individual step $$P_i$$ leaves $$\pi$$ invariant ($$\pi P_i = \pi$$), their composition also leaves $$\pi$$ invariant:
+
+$$\pi (P_1 P_2 \dots P_d) = \pi$$
+
+This is why systematic Gibbs sampling is still a valid MCMC algorithm, even though it is technically "non-reversible". You could also define the transition kernel as the whole process of sampling with the combination of kernels proposed above (going from one vector of $$\vec{x}$$ to one where every element has been sampled from a given conditional $$\vec{x}'$$) and that would satisfy detail balance. But that's pretty much the same as the global balance condition in this case.
 
 
-## 1.3 A Simple Example: Bivariate Normal
+#### But it doesn't have an accept-reject step?
 
-## 1.4 When Gibbs Sampling Excels
+The typical point for the accept-reject step in MCMC is to correct for the fact your proposal distribution or kernel (sans accept-reject) does not lead to the right target distribution. In this case, the kernel above does this already, and thus doesn't need an accept-reject. i.e. The acceptance probability is 1. This is regardless of dimensionality or complexity, if you have the conditional distributions. This does not mean that the mixing (convergence) time is fantastic, as we'll see below, highly correlated distributions can be tricky for Gibbs sampling.
 
-- Conjugate models (Beta-Binomial, Gamma-Poisson)
-- Hierarchical models
-- Missing data problems
 
-## 1.5 When Gibbs Sampling Struggles
+## 1.4 When Gibbs Sampling Struggles
 
-- High correlation between parameters
-- The banana distribution problem
+#### Separated modes
 
-## 1.6 Practical Tips
+I'm just gonna let the GIF speak for itself here.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2026-02-SliceGibbs/separated_modes_gibbs_sampler.gif" 
+      style="width: 99%; height: auto; border-radius: 0px;">
+</div>
+
+#### High correlation between parameters
+
+Again, I'm just gonna let the GIF speak for itself here.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2026-02-SliceGibbs/highly_correlated_gibbs_sampler.gif" 
+      style="width: 99%; height: auto; border-radius: 0px;">
+</div>
+
+#### The banana distribution problem
+
+
+
+
+## 1.5 Practical Tips
 
 - Block Gibbs sampling
 - Collapsed Gibbs sampling
