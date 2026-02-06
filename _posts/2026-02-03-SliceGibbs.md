@@ -87,12 +87,53 @@ Yep that's it. An example of it in action is shown in the GIF below.
 </div>
 
 
+And if you want to get fancy with it, you can generalise to arbitrary dimensions/number of blocks by scanning or sampling through the dimensions.
+
+Firstly we look at the one where scan through the dimensions. This is the most common version, where you visit every dimension in a fixed order (usually $1$ to $D$) during every iteration.
+
+>
+#### Gibbs Sampling (N-D, scan through dimensions)
+1. Initialise:
+    - Have a target distribution $$f(\mathbf{x})$$ where $$\mathbf{x} = (x_1, x_2, \dots, x_D)$$, and its full conditionals $$p(x_i \vert \mathbf{x}_{-i})$$ for all $$i \in \{1, \dots, D\}$$.
+        - Note: $$\mathbf{x}_{-i}$$ denotes all variables except $$x_i$$. 
+    - Manually create a starting point $$X^0 = (x_1^0, x_2^0, \dots, x_D^0)$$.
+    - Pick the number of samples $$N$$.
+2. For each iteration $$n$$ (Repeat $$N$$ times):
+>
+    1. Sample $$x_1^{n+1} \sim p(x_1 \vert x_2^{n}, x_3^{n}, \dots, x_D^{n})$$
+>
+    2. Sample $$x_2^{n+1} \sim p(x_2 \vert x_1^{n+1}, x_3^{n}, \dots, x_D^{n})$$
+>
+    3. Sample $$x_3^{n+1} \sim p(x_3 \vert x_1^{n+1}, x_2^{n+1}, \dots, x_D^{n})$$
+>
+    ...
+>
+    D. Sample $$x_D^{n+1} \sim p(x_D \vert x_1^{n+1}, x_2^{n+1}, \dots, x_{D-1}^{n+1})$$
+        - Note: As soon as a variable is updated, its new value is used for all subsequent conditional samples within that same iteration.
+
+Instead of updating every dimension, you pick one dimension at random to update during each step. This is often used in theoretical analysis and physics-based models.
+
+>
+#### Gibbs Sampling (N-D, Random Scan)
+1. Initialise:
+    - Have a target distribution $$f(\mathbf{x})$$ and its full conditionals $$p(x_i \vert \mathbf{x}_{-i})$$.
+    - Manually create a starting point $$X^0 = (x_1^0, x_2^0, \dots, x_D^0)$$.
+    - Pick the number of steps $$N$$.
+2. For each step $$n$$ (Repeat $$N$$ times):
+    1. Pick a dimension $$i$$ uniformly at random from $$\{1, 2, \dots, D\}$$.
+    2. Update that dimension: $$x_i^{n+1} \sim p(x_i \vert x_1^{n}, \dots, x_{i-1}^{n}, x_{i+1}^{n}, \dots, x_D^{n})$$
+    3. For all other dimensions $$j \neq i$$, keep the value the same: $$x_j^{n+1} = x_j^{n}$$
+
+General tips:
+- Systematic Scan (the first one) is generally more efficient for computers because it ensures every variable gets updated regularly, which usually leads to faster "mixing" through the space.
+- Random Scan is useful if you have a massive number of dimensions and updating all of them in one "iteration" is computationally too expensive, or if you want to avoid periodic patterns in your sampler.
+
 
 ## 1.2 Detailed balance
 
 Gibbs sampling is evidently a Markov Chain, as each new set of points only depends on the previous, and is ergodic (because the conditional distributions should allow any coordinate in parameter space to be sampled), so to be a valid MCMC method we only have to show that the sampling satifies detailed balance (or the weaker condition of [_Global Balance_](https://en.wikipedia.org/wiki/Balance_equation)).
 
-In Gibbs sampling, we move along one "axis" (one variable) at a time. Thus, to understand the transition kernel let's focus on the update for the $$i$$-th variable, $$x_i$$ for a target distribution $$\pi$$. You can just treat $$x_i$$ as the first block in the GIF above and every other variable $$\mathbf{x}_{-i}$$ as the second.
+In Gibbs sampling, we move along one "axis" (one variable) at a time. Thus, to understand the transition kernel let's focus on the update for the $$i$$-th variable, $$x_i$$ for a target distribution $$\pi$$. 
 
 Let our current state be $$\mathbf{x} = (x_i, \mathbf{x}_{-i})$$ and the proposed next state be $$\mathbf{x}' = (x_i', \mathbf{x}_{-i})$$. 
 
@@ -137,7 +178,7 @@ However, even if the full cycle doesn't satisfy detailed balance, it still satis
 
 $$\pi (P_1 P_2 \dots P_d) = \pi$$
 
-This is why systematic Gibbs sampling is still a valid MCMC algorithm, even though it is technically "non-reversible". You could also define the transition kernel as the whole process of sampling with the combination of kernels proposed above (going from one vector of $$\vec{x}$$ to one where every element has been sampled from a given conditional $$\vec{x}'$$) and that would satisfy detail balance. But that's pretty much the same as the global balance condition in this case.
+This is why systematic Gibbs sampling is still a valid MCMC algorithm, even though it is technically "non-reversible". You could also define the transition kernel as the whole process of sampling with the combination of kernels proposed above (going from one vector of $$\vec{x}$$ to one where every element has been sampled from a given conditional $$\vec{x}'$$, basically how I implemented in the algorithm for the systematic scan) and that would satisfy detail balance. But that's pretty much the same as the global balance condition in this case.
 
 
 #### But it doesn't have an accept-reject step?
