@@ -82,7 +82,7 @@ Yep that's it. An example of it in action is shown in the GIF below.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-01-LMC/Gibbs/gibbs_sampler.gif" 
+      src="/files/BlogPostData/2026-01-LMC/gibbs_sampler.gif" 
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
