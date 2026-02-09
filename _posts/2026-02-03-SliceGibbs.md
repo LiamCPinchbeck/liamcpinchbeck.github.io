@@ -50,16 +50,10 @@ In this post I'm going to go through Gibbs and slice sampling, you've probably s
 2. [Slice Sampling](#2-slice-sampling)
 
 
-
 3. [Examples](#3-examples)
 
 
-4. [Common Pitfalls and Debugging](#4-common-pitfalls-and-debugging)
-
-
-5. [Conclusion](#5-conclusion)
-
-6. [HMC and slice sampling](#a-hmc-and-slice-sampling)
+4. [Conclusion](#5-conclusion)
 
 
 --- 
@@ -351,7 +345,11 @@ Here's the algorithm for this.
             - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
 
 
-\<INSERT REALLY COOL DEMONSTRATIVE GIF HERE WHEN LIAM GETS AROUND TO IT\>
+<div style="text-align: center;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Slice_StepOut.gif" 
+    style="width: 99%; height: auto; border-radius: 8px;">
+</div>
 
 
 ### 2.2.2 The "Doubling" Algorithm
@@ -360,8 +358,10 @@ The doubling scheme follows a similar logic but attempts to find the boundaries 
 - Find the Slice: Same as above ($$y \sim U(0, f(x_0))$$).
 - Double the Interval: Double the size of the interval by randomly adding the current width $$w$$ to either the left or the right side.
 - Acceptance Test: Because doubling can "jump" over large regions of low density and land in a separate mode, you must perform a reversibility test. 
-    - When a point $$x_{prop}$$ is proposed, you have to verify that if you had started at $$x_{prop}$$, the doubling procedure could have produced the exact same interval you are currently using. 
+    - When a point $$x_{prop}$$ is proposed, you have to verify that if you had started at $$x_{prop}$$, the doubling procedure _could_ have produced the exact same interval you are currently using. 
+    - Particularly, you don't want to find that the procedure would stop before getting to the previously accepted point.
     - If this test fails, the point is rejected to prevent biasing the sampler toward wider regions of the distribution.
+    - In [Neal's paper](https://arxiv.org/abs/physics/0009028) this test is shown in Figure 6.
 
 And the algorithm...
 
@@ -383,22 +383,27 @@ And the algorithm...
                 - If Heads, move $$L$$ left by $$(R-L)$$. 
                 - If Tails, move $$R$$ right by $$(R-L)$$.
     - Shrinkage with Reversibility Check: Repeat until a point is accepted:
-        - Sample $$x_{prop} \sim U(L, R)$$.
-        - If $$f(x_{prop}) > y$$ AND the `AcceptCheck(x_prop, x_n, y, I)` is true: Accept: $$x_{n+1} = x_{prop}$$ and break.
-        - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
+        - Sample $$x_{\text{prop}} \sim U(L, R)$$.
+        - If $$f(x_{\text{prop}}) > y$$ AND the `AcceptCheck(x_prop, x_n, y, L, R, w)` is true: Accept: $$x_{n+1} = x_{\text{prop}}$$ and break.
+        - Else, Shrink: If $$x_{\text{prop}} < x_n$$, set $$L = x_{\text{prop}}$$. Else, set $$R = x_{\text{prop}}$$.
 >
-#### Func AcceptCheck(x_prop, x_n, y, L, R):
+#### Func AcceptCheck($$x_\text{prop}$$, $$x_n$$, $$y$$, $$L$$, $$R$$, $$w$$):
 1. Initialize:
-    - Let $$(\hat{L}, \hat{R})$$ be the interval of width $$w$$ containing $$x_{prop}$$.
+    - Let $$(\hat{L}, \hat{R}) \leftarrow (L, R) $$ .
     - Set rejected = False.
-2. Re-trace: For $$k = 1$$ to $$K$$ doublings:
-    - Determine if the $$k$$-th expansion was to the Left or Right (using the same seed).
-    - Update $$(\hat{L}, \hat{R})$$ to the new expanded bounds.
-    - Test: If the newly added section contains $$x_n$$ AND the density at both current endpoints $$f(\hat{L}), f(\hat{R}) < y$$:
-        - Set rejected = True.
-3. Return: not rejected.
+2. While $$\hat{R} - \hat{L} > 1.1w$$:
+    - M $$\leftarrow$$ $$(\hat{R} - \hat{L})/2$$
+    - if $$x_n < M$$ and $$x_{\text{prop}} \geq M$$ or $$x_n \geq M$$ and $$x_{\text{prop}} \lt M$$ then rejected = True
+    - if $$x_\text{prop} < M$$ then $$\hat{R} \leftarrow M$$ else $$\hat{L} \leftarrow M$$
+    - if rejected and $$y \geq f (\hat{L})$$ and $$y \geq f (\hat{R})$$ --> new point is not acceptable
+3. Return not(rejected)
 
-\<INSERT REALLY COOL DEMONSTRATIVE GIF HERE WHEN LIAM GETS AROUND TO IT\>
+<div style="text-align: center;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/doubling_slice_sampling.gif" 
+    style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+
 
 
 ### 2.2.3 Final thoughts on the algorithms
@@ -409,9 +414,14 @@ This means the sampler learns the shape of the slice during every single iterati
 
 This makes slice sampling much more stable than standard Metropolis-Hastings, where a bad proposal width $$w$$ can lead to an acceptance rate of 0% and a stalled chain. And I think is one reason why slice sampling was later used as part of HMC-NUTS.
 
+## 2.3 Are they valid MCMC algorithms?
+
+### Ergocity
 
 
-## 2.3 Extensions and Variants
+### Detailed Balance
+
+## 2.4 Extensions and Variants
 
     - Multivariate slice sampling (coordinate-wise)
     - Elliptical slice sampling (for Gaussian priors)
