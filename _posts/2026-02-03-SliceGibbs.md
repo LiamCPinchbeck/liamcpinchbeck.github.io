@@ -82,7 +82,7 @@ Yep that's it. An example of it in action is shown in the GIF below.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-01-LMC/gibbs_sampler.gif" 
+      src="/files/BlogPostData/2026-01-LMC/Gibbs/gibbs_sampler.gif" 
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
@@ -194,7 +194,7 @@ I'm just gonna let the GIF speak for itself here.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-02-SliceGibbs/separated_modes_gibbs_sampler.gif" 
+      src="/files/BlogPostData/2026-02-SliceGibbs/Gibbs/separated_modes_gibbs_sampler.gif" 
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
@@ -204,7 +204,7 @@ Again, I'm just gonna let the GIF speak for itself here.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-02-SliceGibbs/highly_correlated_gibbs_sampler.gif" 
+      src="/files/BlogPostData/2026-02-SliceGibbs/Gibbs/highly_correlated_gibbs_sampler.gif" 
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
@@ -212,10 +212,105 @@ Again, I'm just gonna let the GIF speak for itself here.
 
 # 2. Slice Sampling
 
+Slice sampling is an important technique that along with being a standard standalone sampler, is also used as part of HMC-NUTS and is implemented as part of other sampling schemes such as nested sampling. To me, the [introductory paper by Neal](https://arxiv.org/abs/physics/0009028) although exhaustive, was a little hard to follow imo.
+
 ## 2.1 The Core Idea
 
+Slice sampling, to me, is basically a smart combination of Gibbs (the same as above) and [Rejection sampling](https://liamcpinchbeck.github.io/posts/2025/01/2025-01-28-rejection-sampling/). 
 
-## 2.2 The Algorithm
+As a quick refresher for the second method, _rejection sampling_, samples a target distribution by uniformly sampling the volume under the density. This process if demonstrated below, using GIFs from my introductory post on the method.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/2025-01-28/norm_dist.gif" 
+      alt="GIF showing animation of rejection sampling principle with a normal distribution." 
+      title="GIF showing animation of rejection sampling principle with a normal distribution." 
+      style="width: 75%; height: auto; border-radius: 8px;">
+
+<img 
+    src="/files/BlogPostData/2025-01-28/argus_dist.gif" 
+    alt="GIF showing animation of rejection sampling principle with an ARGUS distribution." 
+    title="GIF showing animation of rejection sampling principle with an ARGUS distribution." 
+    style="width: 75%; height: auto; border-radius: 8px;">
+
+<img 
+    src="/files/BlogPostData/2025-01-28/powerlaw_dist.gif" 
+    alt="GIF showing animation of rejection sampling principle with an power law distribution (a=2)." 
+    title="GIF showing animation of rejection sampling principle with an power law distribution (a=2)." 
+    style="width: 75%; height: auto; border-radius: 8px;">
+
+</div>
+
+
+Throwing away real-world limitations for a sec, the fundamental method behind slice sampling is where the user pretends that the density values themselves $$f(x)$$ is a specific value of a variable $$y$$ (like in rejection sampling), and then a two part Gibbs sampling where you sample a $$y$$ value from between $$0$$ and $$f(x)$$, then you sample $$x$$ by uniformly sampling $$x \sim U(S)$$ where $$S = \{x: f(x) < y\}$$. This implies a joint density $$p(x, y)$$ that once one marginalises over $$y$$ (or in practice _throws out_ the samples of $$y$$) you attain $$p(x)$$ (or samples representative of it, the normalised $$f(x)$$).
+
+This may or may not immediately seem like rejection sampling, but the key point is that we don't have an envelope distribution, in this theoretical setup there are no _"rejected"_ samples! 
+
+Real world slice sampling is then an approximation to the above that is asymptotically correct. Below are some GIFs showing the exact case, as it's pretty easy to figure out the interval $$S = \{x: f(x) < y\}$$ in the case of the normal distribution. For the second plot I only show 100 of the coordinates at a time.
+
+<div style="text-align: center;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/slice_sampling.gif" 
+    style="width: 99%; height: auto; border-radius: 8px;">
+<img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/slice_sampling_long.gif" 
+    style="width: 99%; height: auto; border-radius: 8px;">
+</div>
+
+
+## 2.2 The Practical Algorithm
+
+Now, in almost all interesting cases we do not have enough information to efficiently derive (or derive at all) $$S = \{x: f(x) < y\}$$. So the question is how do we uniformly sample from $$S$$ without explicitly know what $$S$$ is?
+
+Well [Neal](https://arxiv.org/abs/physics/0009028) suggests 4 options (end of page 8 if you wanna double check):
+
+1. Git good and just figure it out (although they suggest this may not be feasible)
+2. If there is a hard bound on what values $$x_p$$ can take, i.e. it can only be between 0 and 3, then we just sample that whole interval and reject points where $$y>f(x_p)$$. But, similar to rejection sampling, this could be very inefficient. E.G. A beta distribution between 0 and 1, with an effective standard deviation of 0.01... and also doesn't apply if the distribution isn't bounded...
+3. Estimate a width scale for $$S$$, $$w$$, randomly picking an initial interval of size $$w$$, containing $$x_0$$ (previous accepted proposal), and then expand it via a ‘stepping out’ procedure. Similar to 2 we can reject points where $$y>f(x_p)$$ and possibly use that to expand our estimate of $$S$$ as a stopping criterion.
+4. Similar to 3, we can randomly pick an initial interval of size $$w$$, and then expand it by a doubling procedure and have a similar stopping criterion.
+
+
+Now, it would seem that the doubling procedure may be better in most cases as it can expand to larger sizes more quickly, making up for a potentially underestimated $$w$$. However, it requires a rejection test, that scheme 3 doesn't need/have, to ensure the transition is reversible. This added overhead means that more often than not the "step-out" scheme is used unless you are dealing with an extremely heavy-tailed distributions where a linear search would be slow enough to justify the added overhead of the doubling procedure.
+
+On top of some rules for expanding the intervals, both schemes are made more efficient by a shrinkage step that uses rejected samples after the initial growth to, you guessed it, shrink the intervals to focus in on more relevant areas. 
+
+The general process for both schemes is detailed in Figures 1 and 2 in [Neal's paper](https://arxiv.org/abs/physics/0009028) that I've copy-pasted below (not including the captions, head over to the paper on page 9 if you want those).
+
+<figure style="text-align: center; margin: 20px 0;">
+<div style="text-align: center;">
+    <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Neal_Fig12_dist.png" 
+    alt="Neal Figure 1" 
+    style="width: 100%; height: auto; border-radius: 8px;">
+    <p style="font-size: 0.9em; margin-top: 5px; color: #555;">Figure 1/2 distribution</p>
+</div>
+  <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+    <div style="flex: 1;">
+      <img 
+        src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Neal_Fig1_Steps.png" 
+        alt="Neal Figure 1" 
+        style="width: 100%; height: auto; border-radius: 8px;">
+      <p style="font-size: 0.9em; margin-top: 5px; color: #555;">Figure 1</p>
+    </div>
+    <div style="flex: 1;">
+      <img 
+        src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Neal_Fig2.png" 
+        alt="Neal Figure 2" 
+        style="width: 100%; height: auto; border-radius: 8px;">
+      <p style="font-size: 0.9em; margin-top: 5px; color: #555;">Figure 2</p>
+    </div>
+  </div>
+  <figcaption style="font-style: italic; font-size: 0.95em; color: #333; line-height: 1.5;">
+    Figures 1 and 2 from Neal (2000) (adapted) depicting the step-out and doubling schemes respectively. 
+    In step a the estimated interval is expanded, and in b the interval is shrunk 
+    and an accepted proposal is shown.
+  </figcaption>
+</figure>
+
+
+If this doesn't make 100% sense at the moment that's fine, we'll first go through the algorithms and then a couple GIFs to see how they work in detail.
+
+
 
 
 ## 2.3 A Simple Example: Univariate Distribution
@@ -249,7 +344,7 @@ Again, I'm just gonna let the GIF speak for itself here.
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-02-SliceGibbs/banana_Gibbs_sampler.gif" 
+      src="/files/BlogPostData/2026-02-SliceGibbs/Gibbs/banana_Gibbs_sampler.gif" 
       style="width: 99%; height: auto; border-radius: 0px;">
 </div>
 
