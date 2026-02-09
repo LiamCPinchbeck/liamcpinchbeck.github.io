@@ -5,8 +5,14 @@ permalink: /posts/2026/02/2026-02-03-SliceGibbs/
 tags:
   - MCMC
   - Introductory
+  - Gibbs Sampling
+  - Slice Sampling
 header-includes:
   - \usepackage{amsmath}
+manual_prev_url: /posts/2025/02/2025-02-04-mcmc-diagnostics/
+manual_prev_title: "Markov Chain Monte Carlo convergence diagnostics"
+manual_next_url: /posts/2026/01/2026-01-18-LMC/
+manual_next_title: "Speeding up MCMC with Langevin and Hamiltonian dynamics and stochastic gradient estimates"
 
 ---
 
@@ -310,22 +316,102 @@ The general process for both schemes is detailed in Figures 1 and 2 in [Neal's p
 
 If this doesn't make 100% sense at the moment that's fine, we'll first go through the algorithms and then a couple GIFs to see how they work in detail.
 
+### 2.2.1 The "Stepping-Out" Algorithm
+
+The stepping-out scheme is the most commonly used scheme for slice sampling because it is robust and preserves detailed balance without extra checks. 
+
+The process is as follows:
+- Find the Slice: Given the current $$x_0$$, pick a vertical height $$y \sim U(0, f(x_0))$$. (not changes to above)
+- Expand the Interval: Randomly position an interval $$(L, R)$$ of width $$w$$ around $$x_0$$. 
+    - If $$f(L) > y$$, move $$L$$ left by $$w$$. If $$f(R) > y$$, move $$R$$ right by $$w$$. 
+    - Repeat until both endpoints are outside the slice (i.e., $$f(L) < y$$ and $$f(R) < y$$).
+- Shrink and Sample: Pick $$x_{prop} \sim U(L, R)$$. 
+    - If $$f(x_{prop}) > y$$, accept it. 
+    - If not, shrink the interval by setting $$L$$ or $$R$$ to $$x_{prop}$$ (whichever side $$x_{prop}$$ was on relative to $$x_0$$) and try again.
+    
+
+Here's the algorithm for this.
+
+>
+#### Slice Sampling: Stepping-Out Scheme
+1. Initialize:
+    - Have a target density $$f(x)$$, 
+    - Propose an initial point $$x_0$$, a
+    - Propose an estimated scale width $$w$$.
+    - Figure out how many iterations of the algorithm you can be bothered waiting around for $$N$$.
+2. For each iteration $$n$$ from $$1$$ to $$N$$:
+    - Slice: Pick a vertical height $$y \sim U(0, f(x_n))$$.
+    - Stepping-Out:
+        - Create an initial interval $$I = (L, R)$$ by picking $$U \sim U(0, 1)$$ and setting $$L = x_n - w \cdot U$$ and $$R = L + w$$.
+        - While $$y < f(L)$$, subtract $$w$$ from $$L$$.
+        - While $$y < f(R)$$, add $$w$$ to $$R$$.
+        - Shrinkage (The Proposal): Repeat until a point is accepted:
+            - Sample a proposal $$x_{prop} \sim U(L, R)$$.
+            - If $$f(x_{prop}) > y$$, Accept: $$x_{n+1} = x_{prop}$$ and break.
+            - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
+
+
+\<INSERT REALLY COOL DEMONSTRATIVE GIF HERE WHEN LIAM GETS AROUND TO IT\>
+
+
+### 2.2.2 The "Doubling" Algorithm
+
+The doubling scheme follows a similar logic but attempts to find the boundaries of the slice exponentially faster:
+- Find the Slice: Same as above ($$y \sim U(0, f(x_0))$$).
+- Double the Interval: Double the size of the interval by randomly adding the current width $$w$$ to either the left or the right side.
+- Acceptance Test: Because doubling can "jump" over large regions of low density and land in a separate mode, you must perform a reversibility test. 
+    - When a point $$x_{prop}$$ is proposed, you have to verify that if you had started at $$x_{prop}$$, the doubling procedure could have produced the exact same interval you are currently using. 
+    - If this test fails, the point is rejected to prevent biasing the sampler toward wider regions of the distribution.
+
+And the algorithm...
+
+
+>
+#### Slice Sampling: Doubling Scheme
+1. Initialize:
+    - Have a target density $$f(x)$$, 
+    - Propose an initial point $$x_0$$, a
+    - Propose an estimated scale width $$w$$.
+    - Figure out how many iterations of the algorithm you can be bothered waiting around for $$N$$.
+    - Figure out a limit on the number of doublings $$K$$.
+2. For each iteration $$n$$ from $$1$$ to $$N$$:
+    - Slice: Pick a vertical height $$y \sim U(0, f(x_n))$$.
+    - Doubling:
+        - Create an initial interval $$I = (L, R)$$ as above.
+        - Repeat $$K$$ times (or until both $$f(L) < y$$ and $$f(R) < y$$):
+            - Flip a coin. 
+                - If Heads, move $$L$$ left by $$(R-L)$$. 
+                - If Tails, move $$R$$ right by $$(R-L)$$.
+    - Shrinkage with Reversibility Check: Repeat until a point is accepted:
+        - Sample $$x_{prop} \sim U(L, R)$$.
+        - If $$f(x_{prop}) > y$$ AND the `AcceptCheck(x_prop, x_n, y, I)` is true: Accept: $$x_{n+1} = x_{prop}$$ and break.
+        - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
+>
+#### Func AcceptCheck(x_prop, x_n, y, L, R):
+1. Initialize:
+    - Let $$(\hat{L}, \hat{R})$$ be the interval of width $$w$$ containing $$x_{prop}$$.
+    - Set rejected = False.
+2. Re-trace: For $$k = 1$$ to $$K$$ doublings:
+    - Determine if the $$k$$-th expansion was to the Left or Right (using the same seed).
+    - Update $$(\hat{L}, \hat{R})$$ to the new expanded bounds.
+    - Test: If the newly added section contains $$x_n$$ AND the density at both current endpoints $$f(\hat{L}), f(\hat{R}) < y$$:
+        - Set rejected = True.
+3. Return: not rejected.
+
+\<INSERT REALLY COOL DEMONSTRATIVE GIF HERE WHEN LIAM GETS AROUND TO IT\>
+
+
+### 2.2.3 Final thoughts on the algorithms
+
+Notice that in step 3 of both algorithms, if we pick a point outside the slice, we don't just throw it away and stay at $$x_0$$ (like in Metropolis-Hastings). We use that "failed" point to define a new, smaller boundary. 
+
+This means the sampler learns the shape of the slice during every single iteration. If $$w$$ was way too large, the shrinkage step quickly brings it down to size. 
+
+This makes slice sampling much more stable than standard Metropolis-Hastings, where a bad proposal width $$w$$ can lead to an acceptance rate of 0% and a stalled chain. And I think is one reason why slice sampling was later used as part of HMC-NUTS.
 
 
 
-## 2.3 A Simple Example: Univariate Distribution
-
-    - Implementing basic slice sampling
-    - Visualization of the slice
-    - Comparison with rejection sampling
-
-## 2.4 Why Slice Sampling is cool as f*!$
-
-    - No tuning required
-    - Automatically adapts to local scale
-    - Handles multimodality nicely
-
-## 2.5 Extensions and Variants
+## 2.3 Extensions and Variants
 
     - Multivariate slice sampling (coordinate-wise)
     - Elliptical slice sampling (for Gaussian priors)
@@ -354,3 +440,33 @@ If this doesn't make 100% sense at the moment that's fine, we'll first go throug
 # 4. Conclusion
 
 
+
+<hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+  
+  <div style="width: 48%; text-align: left;">
+    {% if page.manual_prev_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        &larr; Previous post
+      </div>
+      <a href="{{ page.manual_prev_url }}" style="text-decoration: underline;">
+        {{ page.manual_prev_title }}
+      </a>
+    {% endif %}
+  </div>
+
+  <div style="width: 48%; text-align: right;">
+    {% if page.manual_next_url %}
+      <div style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">
+        Next post &rarr;
+      </div>
+      <a href="{{ page.manual_next_url }}" style="text-decoration: underline;">
+        {{ page.manual_next_title }}
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
+# Footnotes

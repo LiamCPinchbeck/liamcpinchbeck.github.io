@@ -9,6 +9,8 @@ header-includes:
    - \usepackage{amsmath}
 manual_prev_url: /posts/2025/02/2025-02-01-mcmc-guide/
 manual_prev_title: "Markov Chain (+) Monte Carlo methods"
+manual_next_url: /posts/2026/02/2026-02-03-SliceGibbs/
+manual_next_title: "But what are Gibbs and slice sampling?"
 ---
 
 In this post, I will detail popular diagnostic tests to quantify how well or if your MCMC sampling has converged.
@@ -638,6 +640,8 @@ And keep in mind that even if you do all this is doesn't mean that your MCMC has
 In the future I'll try and detail some more commonly used "pure" MCMC methods including [Hamiltonian Monte Carlo](https://en.wikipedia.org/wiki/Hamiltonian_Monte_Carlo), [Gibbs Sampling](https://en.wikipedia.org/wiki/Gibbs_sampling), [Metropolis-Adjusted Langevin Algorithm](https://en.wikipedia.org/wiki/Metropolis-adjusted_Langevin_algorithm) and [Slice Sampling](https://en.wikipedia.org/wiki/Slice_sampling). 
 
 Future Me Note (07/10/2025): I in fact likely will not get to many of these within the forseeable future due to my work in [Variational Inference](https://liamcpinchbeck.github.io/posts/2025/05/2025-05-10-variational-inference/) methods of which I have quite a few posts on now. So this post will likely be the last one in my kind of introductory series to Bayesian analysis.
+
+Future Me Note (09/02/2026): I in fact did get to all of these methods and they should be included in my posts and on the 'Next Post' link.
 
 
 <hr style="margin-top: 40px; margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
