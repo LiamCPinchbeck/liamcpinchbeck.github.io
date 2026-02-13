@@ -38,7 +38,7 @@ In this post I'm going to go through Gibbs and slice sampling, you've probably s
 ### Slice Sampling
 
 - ["Slice Sampling" - Wikipedia](https://en.wikipedia.org/wiki/Slice_sampling)
-
+- ["Information Theory, Pattern Recognition, and Neural Networks - Lecture 13: Approximating Probability Distributions" - David Mackay](https://www.youtube.com/watch?v=-f55OUS44kU)
 
 
 --- 
@@ -212,7 +212,7 @@ Again, I'm just gonna let the GIF speak for itself here.
 
 # 2. Slice Sampling
 
-Slice sampling is an important technique that along with being a standard standalone sampler, is also used as part of HMC-NUTS and is implemented as part of other sampling schemes such as nested sampling. To me, the [introductory paper by Neal](https://arxiv.org/abs/physics/0009028) although exhaustive, was a little hard to follow imo.
+Slice sampling is an important technique that is commonly used as part of other algorithms (nowadays). For example NUTS uses a slice variable to define acceptable Hamiltonian states, which is conceptually related to slice sampling. To me, the [introductory paper by Neal](https://arxiv.org/abs/physics/0009028) although exhaustive, was a little hard to follow imo.
 
 ## 2.1 The Core Idea
 
@@ -242,11 +242,11 @@ As a quick refresher for the second method, _rejection sampling_, samples a targ
 </div>
 
 
-Throwing away real-world limitations for a sec, the fundamental method behind slice sampling is where the user pretends that the density values themselves $$f(x)$$ is a specific value of a variable $$y$$ (like in rejection sampling), and then a two part Gibbs sampling where you sample a $$y$$ value from between $$0$$ and $$f(x)$$, then you sample $$x$$ by uniformly sampling $$x \sim U(S)$$ where $$S = \{x: f(x) < y\}$$. This implies a joint density $$p(x, y)$$ that once one marginalises over $$y$$ (or in practice _throws out_ the samples of $$y$$) you attain $$p(x)$$ (or samples representative of it, the normalised $$f(x)$$).
+Throwing away real-world limitations for a sec, the fundamental method behind slice sampling is where the user pretends that the density values themselves $$f(x)$$ is a specific value of a variable $$y$$ (like in rejection sampling), and then a two part Gibbs sampling where you sample a $$y$$ value from between $$0$$ and $$f(x)$$, then you sample $$x$$ by uniformly sampling $$x \sim U(S)$$ where $$S = \{x: f(x) \geq y\}$$. This implies a joint density $$p(x, y)$$ that once one marginalises over $$y$$ (or in practice _throws out_ the samples of $$y$$) you attain $$p(x)$$ (or samples representative of it, the normalised $$f(x)$$).
 
 This may or may not immediately seem like rejection sampling, but the key point is that we don't have an envelope distribution, in this theoretical setup there are no _"rejected"_ samples! 
 
-Real world slice sampling is then an approximation to the above that is asymptotically correct. Below are some GIFs showing the exact case, as it's pretty easy to figure out the interval $$S = \{x: f(x) < y\}$$ in the case of the normal distribution. For the second plot I only show 100 of the coordinates at a time.
+Real world slice sampling is then an approximation to the above that is asymptotically correct. Below are some GIFs showing the exact case, as it's pretty easy to figure out the interval $$S = \{x: f(x) \geq y\}$$ in the case of the normal distribution. For the second plot I only show 100 of the coordinates at a time.
 
 <div style="text-align: center;">
   <img 
@@ -260,7 +260,7 @@ Real world slice sampling is then an approximation to the above that is asymptot
 
 ## 2.2 The Practical Algorithm
 
-Now, in almost all interesting cases we do not have enough information to efficiently derive (or derive at all) $$S = \{x: f(x) < y\}$$. So the question is how do we uniformly sample from $$S$$ without explicitly know what $$S$$ is?
+Now, in almost all interesting cases we do not have enough information to efficiently derive (or derive at all) $$S = \{x: f(x) \geq y\}$$. So the question is how do we uniformly sample from $$S$$ without explicitly know what $$S$$ is?
 
 Well [Neal](https://arxiv.org/abs/physics/0009028) suggests 4 options (end of page 8 if you wanna double check):
 
@@ -315,7 +315,7 @@ If this doesn't make 100% sense at the moment that's fine, we'll first go throug
 The stepping-out scheme is the most commonly used scheme for slice sampling because it is robust and preserves detailed balance without extra checks. 
 
 The process is as follows:
-- Find the Slice: Given the current $$x_0$$, pick a vertical height $$y \sim U(0, f(x_0))$$. (not changes to above)
+- Find the Slice: Given the current $$x_0$$, pick a vertical height $$y \sim U(0, f(x_0))$$. (no changes to above)
 - Expand the Interval: Randomly position an interval $$(L, R)$$ of width $$w$$ around $$x_0$$. 
     - If $$f(L) > y$$, move $$L$$ left by $$w$$. If $$f(R) > y$$, move $$R$$ right by $$w$$. 
     - Repeat until both endpoints are outside the slice (i.e., $$f(L) < y$$ and $$f(R) < y$$).
@@ -330,7 +330,7 @@ Here's the algorithm for this.
 #### Slice Sampling: Stepping-Out Scheme
 1. Initialize:
     - Have a target density $$f(x)$$, 
-    - Propose an initial point $$x_0$$, a
+    - Propose an initial point $$x_0$$,
     - Propose an estimated scale width $$w$$.
     - Figure out how many iterations of the algorithm you can be bothered waiting around for $$N$$.
 2. For each iteration $$n$$ from $$1$$ to $$N$$:
@@ -392,7 +392,7 @@ And the algorithm...
     - Let $$(\hat{L}, \hat{R}) \leftarrow (L, R) $$ .
     - Set rejected = False.
 2. While $$\hat{R} - \hat{L} > 1.1w$$:
-    - M $$\leftarrow$$ $$(\hat{R} - \hat{L})/2$$
+    - M $$\leftarrow$$ $$(\hat{R} + \hat{L})/2$$
     - if $$x_n < M$$ and $$x_{\text{prop}} \geq M$$ or $$x_n \geq M$$ and $$x_{\text{prop}} \lt M$$ then rejected = True
     - if $$x_\text{prop} < M$$ then $$\hat{R} \leftarrow M$$ else $$\hat{L} \leftarrow M$$
     - if rejected and $$y \geq f (\hat{L})$$ and $$y \geq f (\hat{R})$$ --> new point is not acceptable
@@ -416,10 +416,46 @@ This makes slice sampling much more stable than standard Metropolis-Hastings, wh
 
 ## 2.3 Are they valid MCMC algorithms?
 
-### Ergocity
+
+### Ergodicity
+
+Under mild regularity conditions (connected support, positive density on compact subsets, etc.), univariate slice sampling is irreducible and aperiodic.
 
 
 ### Detailed Balance
+
+#### 1. The Stepping-Out Procedure
+
+In the case of the 'stepping-out' procedure, the probability of transitioning from $$x$$ to $$x'$$ entirely depends on the interval $$I$$ being chosen. 
+
+Letting $$P(I\vert x, y)$$ be the probability of expanding to interval $$I$$ given starting point $$x$$. Because the expansion happens in discrete steps of $$w$$ and the initial placement is $$U(0, w)$$, any interval $$I$$ that could be generated from $$x$$ and contains $$x'$$ could also be generated if you started at $$x'$$ and moved toward $$x$$. 
+
+If $$x, x' \in I$$ and the stepping-out condition is met for both ends of $$I$$, the expansion process is identical regardless of where within $$I$$ you started thus $$P(I\vert x, y) = P(I\vert x', y)$$
+
+Since the proposal $$x'$$ is uniform within the slice-restricted interval, the transition densities are equal, and detailed balance holds for the stepout procedure (and any other conditions are satisfied in accordance with it being a specific case of Gibbs sampling).
+
+#### 2. The Doubling Procedure
+
+Simple doubling doesn't automatically satisfy detailed balance, because it's possible to reach an interval $$I$$ from $$x$$ that couldn't be reached from $$x'$$.
+
+To fix this, [Neal (2000)](https://arxiv.org/abs/physics/0009028) introduced an acceptance test, i.e. the `AcceptCheck` function above.
+
+A transition from $$x$$ to $$x'$$ is only allowed if $$x'$$ _could have produced the same interval $$I$$_ using the same doubling sequence.
+
+Let $$S$$ be the subset of the interval $$I$$ that is "admissible." For detailed balance to hold: 
+
+- The slice level $$y$$ is chosen uniformly.
+- The probability of picking $$I$$ from $$x$$ must equal the probability of picking $$I$$ from $$x'$$.
+
+If the doubling procedure produces an interval $$I$$ from $$x$$, we check if $$x'$$ is "constrained." 
+
+Simulating the doubling process starting from $x'$, we see if it ever produces an interval that excludes the original $$x$$. 
+
+If it does, the move is rejected. This "symmetry correction" ensures that $$P(x \to x' \vert y) = P(x' \to x \vert y)$$.
+
+Because the density $$\pi(x, y)$$ is constant (uniform) over the slice, the equality of transition probabilities directly satisfies the detailed balance equation (and any other conditions are satisfied in accordance with it being a specific case of Gibbs sampling).
+
+
 
 ## 2.4 Extensions and Variants
 
