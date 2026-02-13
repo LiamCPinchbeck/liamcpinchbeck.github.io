@@ -449,7 +449,7 @@ Let $$S$$ be the subset of the interval $$I$$ that is "admissible." For detailed
 
 If the doubling procedure produces an interval $$I$$ from $$x$$, we check if $$x'$$ is "constrained." 
 
-Simulating the doubling process starting from $x'$, we see if it ever produces an interval that excludes the original $$x$$. 
+Simulating the doubling process starting from $$x'$$, we see if it ever produces an interval that excludes the original $$x$$. 
 
 If it does, the move is rejected. This "symmetry correction" ensures that $$P(x \to x' \vert y) = P(x' \to x \vert y)$$.
 
