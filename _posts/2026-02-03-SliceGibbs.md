@@ -339,10 +339,10 @@ Here's the algorithm for this.
         - Create an initial interval $$I = (L, R)$$ by picking $$U \sim U(0, 1)$$ and setting $$L = x_n - w \cdot U$$ and $$R = L + w$$.
         - While $$y < f(L)$$, subtract $$w$$ from $$L$$.
         - While $$y < f(R)$$, add $$w$$ to $$R$$.
-        - Shrinkage (The Proposal): Repeat until a point is accepted:
-            - Sample a proposal $$x_{prop} \sim U(L, R)$$.
-            - If $$f(x_{prop}) > y$$, Accept: $$x_{n+1} = x_{prop}$$ and break.
-            - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
+    - Shrinkage (The Proposal): Repeat until a point is accepted:
+        - Sample a proposal $$x_{prop} \sim U(L, R)$$.
+        - If $$f(x_{prop}) > y$$, Accept: $$x_{n+1} = x_{prop}$$ and break.
+        - Else, Shrink: If $$x_{prop} < x_n$$, set $$L = x_{prop}$$. Else, set $$R = x_{prop}$$.
 
 
 <div style="text-align: center;">
@@ -459,26 +459,63 @@ Because the density $$\pi(x, y)$$ is constant (uniform) over the slice, the equa
 
 ## 2.4 Extensions and Variants
 
-    - Multivariate slice sampling (coordinate-wise)
-    - Elliptical slice sampling (for Gaussian priors)
-    - Shrinking rank slice sampling
+The above slice sampling details are from the perspective of single variable sampling. There are various extensions to this method to enable multivariate density sampling. I will put the genearl descriptions, algorithms and representative gifs for how the sampling methods progress, but will otherwise leave to the reader to refer to [Neal (2000)](https://arxiv.org/abs/physics/0009028) or the [multivariate methods section of the Slice sampling Wikipedia page](https://en.wikipedia.org/wiki/Slice_sampling#:~:text=%5B7%5D-,Multivariate%20methods,-%5Bedit%5D) (although the proofs are similar/the same). Also presume not gradient information.
 
 
-# 3. Examples
 
-## 3.1 Plain ol' gaussian example
+### Multivariate slice sampling (hyperrectangle)
 
-## 3.2 Bivariate normal example
+The basic form of Multivariate slice sampling is to construct hyperrectangles[^rectangles] in place of the intervals in the univariate case. In absence of any stepping out or doubling procedure for simplicity, a rudimentary algorithm (adapted from [Neal (2000)](https://arxiv.org/abs/physics/0009028)) is shown below.
 
-## 3.3 Ba-nana-nana-nana-nana Banan
 
+[^rectangles]: generalised term for rectangles in higher dimensions if unfamiliar, in this post we just look at plain ol' rectangles
+
+>
+#### Multivariate Slice Sampling: Hyperrectangle Scheme
+1. Initialize:
+    - Have a target density $$f(\vec{x})$$, 
+    - Propose an initial point $$\vec{x_0} \in \mathbb{R}^n$$,
+    - Propose estimated scale widths $$\vec{w}$$ (one for each dim of $$\vec{x}$$).
+    - Figure out how many iterations of the algorithm you can be bothered waiting around for $$K$$.
+2. For each iteration $$k$$ from $$1$$ to $$K$$:
+    - Slice: Pick a vertical height $$y \sim U(0, f(\vec{x}_n))$$.
+    - Create an initial interval $$H = (L_1, R_1) \times (L_2, R_2) \times ... \times (L_n, R_n)$$ by picking $$U_i \sim U(0, 1)$$ and setting $$L_i = x_i^{k-1} - w_i \cdot U_i$$ and $$R_i = L_i + w_i$$.
+    - Shrinkage and sampling: 
+        - Sample a proposal:
+            - For $$i$$ from $$1$$ to $$n$$:
+                - $$U_i$$ $$\sim U(0, 1)$$ 
+                - $$x_i^\text{prop}$$ $$\leftarrow L_i + U_i \cdot (R_i - L_i)$$ 
+        - If $$f(x_i^\text{prop}) > y$$, Accept: $$x_i^{k} = x_i^\text{prop}$$ and break.
+        - Else, Shrink: If $$x_i^{prop} < x_i^{k-1}$$, set $$L_i = x_i^\text{prop}$$. Else, set $$R_i = x_i^\text{prop}$$.
+
+
+In essence, we construct intervals in the exact same way as before for the univariate case, one dimension of $$\vec{x}$$ at a time, and then shrink these intervals when a point is rejected. Examples of this process are shown below: one for showing the steps, and then the other two are sped up with different choices of $$\vec{w}$$ (to show the importance of the stepping out/doubling schemes that I'm not including here).
 
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/2026-02-SliceGibbs/Gibbs/banana_Gibbs_sampler.gif" 
-      style="width: 99%; height: auto; border-radius: 0px;">
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Slice_HyperRect_Iter3.gif" 
+    style="width: 89%; height: auto; border-radius: 8px;">
 </div>
+
+
+<div style="text-align: center;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Slice_HyperRect_we1.gif" 
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Slice_HyperRect_we2.gif" 
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Slice/Slice_HyperRect_we3.gif" 
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+
+
+
+### Reflective Slice Sampling
+
 
 
 
