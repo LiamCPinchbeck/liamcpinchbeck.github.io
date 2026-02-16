@@ -516,9 +516,9 @@ In essence, we construct intervals in the exact same way as before for the univa
 
 ### Reflective Slice Sampling
 
-I had a bit of trouble finding references for this one outside of [Neal (2000)](https://arxiv.org/abs/physics/0009028), but reflective slice sampling is another commonly used method. For example (I'm 95% sure that) it is used in the nested sampling package [dynesty](https://dynesty.readthedocs.io/en/stable/index.html) as part of the rslice (random direction) sampling method
+I had a bit of trouble finding references for this one outside of [Neal (2000)](https://arxiv.org/abs/physics/0009028), but reflective slice sampling is another commonly used method.
 
-The main draw for _reflective_ slice sampling is that while the hyperrectangle approach is straightforward, it struggles when variables are highly correlated (i.e., the "slice" is a long, thin diagonal ellipsoid). In these cases, the axis-aligned box is a poor fit, and the sampler gets stuck taking tiny steps. 
+The main draw for _reflective_ slice sampling is that while the hyperrectangle approach is straightforward, it struggles when variables are highly correlated (i.e., the "slice" is a long, thin diagonal ellipsoid, the same thing that standard Gibbs sampling struggles with above). In these cases, the axis-aligned box is no bueno, and the sampler gets stuck taking tiny steps. 
 
 Reflective Slice Sampling solves this by moving along a straight line (a ray) and "bouncing" off the boundaries of the slice. Instead of shrinking a box, we maintain our momentum.
 
@@ -552,28 +552,29 @@ For some intuition, imagine a particle moving inside the slice. When it hits the
     4. Accept: $$\vec{x}_k = \vec{x}_{M}$$.
 
 
-This seems pretty neat (besides the nested loop, but that will only significantly impact a run if you pick the step size to be too large hopefully), let's code it up in the case of a standard 2D normal and make a GIF out of the process (examples shown below).
-
-<div style="text-align: center;">
-  <img 
-    src="Really cool billiard ball trajectory gif" 
-    alt="Really cool billiard ball trajectory gif"
-    style="width: 49%; height: auto; border-radius: 8px;">
-  <img 
-    src="Really cool billiard ball trajectory gif with large step size" 
-    alt="Really cool billiard ball trajectory gif with large step size"
-    style="width: 49%; height: auto; border-radius: 8px;">
-</div>
+This seems pretty neat (besides the nested loop, but that will only significantly impact a run if you pick the step size to be too large hopefully), let's code it up in the case of a standard 2D normal and make a GIF out of the process (examples shown below, hover over for different parameters).
 
 
 <div style="text-align: center;">
   <img 
-    src="Really reflective slice sampling in action" 
-    alt="Really reflective slice sampling in action"
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_sw_1.gif" 
+    alt="Really reflective slice sampling in action with step size 1 and path length 10"
+    title="Really reflective slice sampling in action with step size 1 and path length 10" 
     style="width: 49%; height: auto; border-radius: 8px;">
   <img 
-    src="Really reflective slice sampling in action with large step size" 
-    alt="Really reflective slice sampling in action with large step size"
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_sw_3.gif" 
+    alt="Really reflective slice sampling in action with step size 3 and path length 10"
+    title="Really reflective slice sampling in action with step size 3 and path length 10"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_sw_1_L_3.gif" 
+    alt="Really reflective slice sampling in action with step size 1 and path length 3"
+    title="Really reflective slice sampling in action with step size 1 and path length 3"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_sw_3_L_3.gif" 
+    alt="Really reflective slice sampling in action with step size 3 and path length 3"
+    title="Really reflective slice sampling in action with step size 3 and path length 3"
     style="width: 49%; height: auto; border-radius: 8px;">
 </div>
 
@@ -588,13 +589,18 @@ What we can do in practice, is reflect off of the last point that was inside the
 
 i.e. If going backward in time is different to going forward, throw it out.
 
+
+I then made a few GIFs of this and found the rejections looked quite boring, so instead we'll do the other method mentioned in [Neal (2000)](https://arxiv.org/abs/physics/0009028) that instead reflects based on simply the last point, i.e. the one outside the boundary. We accept a point at the end of the reflections if it lies within the boundary in the end.
+
+>
+"Note that for this method to be valid, one must reflect whenever the current point is outside the slice, even if this leads one away from the slice rather than toward it. This will sometimes result in the trajectory never returning to the slice, and hence being rejected, but other times, as in [Figre 14 in Neal], it does return eventually."
+
 >
 #### Multivariate Slice Sampling: (Practical) Reflection Scheme
 1. Initialize:
     - Have a target density $$f(\vec{x})$$ and its gradient $$\nabla f(\vec{x})$$,
     - Propose an initial point $$\vec{x}_0 \in \mathbb{R}^n$$.
     - Propose a step size $$w$$ (scalar).
-    - Set a maximum number of reflections per sub-step $$J$$.
     - Figure out how many iterations of the total algorithm $$K$$ you can be bothered to wait for.
     - Figure out how many steps in a slice trajectory $$M$$ you can be bothered to wait for.
 2. For each iteration $$k$$ from $$1$$ to $$K$$:
@@ -602,42 +608,40 @@ i.e. If going backward in time is different to going forward, throw it out.
     2. Pick a random direction vector $$\vec{p}$$ from a rotationally symmetric distribution (e.g. standard multivariate normal) and normalise: $$\vec{p} \leftarrow \vec{p} / \|\vec{p}\|$$.
         - Let first position of the below loop be $$\vec{x}_{m=0} = \vec{x}_{k-1}$$.
     3. (Trajectory Loop) For $$m$$ from $$1$$ to $$M$$:
-        - Propose: $$\vec{x}_{prop} = \vec{x}_{m-1} + w \cdot \vec{p}$$.
-        - If $$f(\vec{x}_{prop}) \geq y$$: set $$\vec{x}_{m} = \vec{x}_{prop}$$ (move is successful).
-        - Else (outside the slice — approximate reflection):
-            - Compute the normalised inward normal at the *last interior point*: $$\hat{n} = \nabla f(\vec{x}_{m-1}) / \|\nabla f(\vec{x}_{m-1})\|$$.
+        - Propose: $$\vec{x}_{m} = \vec{x}_{m-1} + w \cdot \vec{p}$$.
+        - If $$f(\vec{x}_{m}) \geq y$$: the move is inside the slice. Continue.
+        - Else (outside the slice):
+            - Compute the normalised gradient at the **outside point**: $$\hat{n} = \nabla f(\vec{x}_{m}) / \|\nabla f(\vec{x}_{m})\|$$.
             - Reflect direction: $$\vec{p} \leftarrow \vec{p} - 2(\vec{p} \cdot \hat{n})\hat{n}$$.
-            - **Reversibility check**: test whether $$f(\vec{x}_{m-1} - w \cdot \vec{p}) < y$$.
-                - If yes (reverse step also leaves the slice): the reflection is valid. Set $$\vec{x}_{m} = \vec{x}_{m-1}$$ and continue with the new $$\vec{p}$$ (the particle "bounces" from where it was).
-                - If no (reverse step stays inside the slice): the reflection violates detailed balance. Reverse the trajectory: $$\vec{p} \leftarrow -\vec{p}$$ and set $$\vec{x}_{m} = \vec{x}_{m-1}$$ (retrace path).
-    4. Accept: $$\vec{x}_k = \vec{x}_{M}$$.
-
+            - (The particle has moved to $$\vec{x}_{m}$$ regardless — it does **not** stay at $$\vec{x}_{m-1}$$.)
+    4. If $$f(\vec{x}_{M}) \geq y$$: Accept $$\vec{x}_k = \vec{x}_{M}$$.
+    5. Else: Reject the trajectory, set $$\vec{x}_k = \vec{x}_{k-1}$$ (keep previous sample).
 
 And now some GIFs of this more practical algorithm.
 
-<div style="text-align: center;">
-  <img 
-    src="Really cool billiard ball trajectory for practical algorithm gif" 
-    alt="Really cool billiard ball trajectory for practical algorithm gif"
-    style="width: 49%; height: auto; border-radius: 8px;">
-  <img 
-    src="Really cool billiard ball trajectory for practical algorithm gif with large step size" 
-    alt="Really cool billiard ball trajectory for practical algorithm gif with large step size"
-    style="width: 49%; height: auto; border-radius: 8px;">
-</div>
-
 
 <div style="text-align: center;">
   <img 
-    src="Really reflective slice sampling in action for practical algorithm " 
-    alt="Really reflective slice sampling in action for practical algorithm "
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_Practical_sw_1_L_10.gif" 
+    alt="Really reflective slice sampling in action with step size 1 and path length 10"
+    title="Really reflective slice sampling in action with step size 1 and path length 10" 
     style="width: 49%; height: auto; border-radius: 8px;">
   <img 
-    src="Really reflective slice sampling in action for practical algorithm with large step size" 
-    alt="Really reflective slice sampling in action for practical algorithm with large step size"
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_Practical_sw_3_L_10.gif" 
+    alt="Really reflective slice sampling in action with step size 3 and path length 10"
+    title="Really reflective slice sampling in action with step size 3 and path length 10"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_Practical_sw_1_L_3.gif" 
+    alt="Really reflective slice sampling in action with step size 1 and path length 3"
+    title="Really reflective slice sampling in action with step size 1 and path length 3"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="/files/BlogPostData/2026-02-SliceGibbs/Reflective_Slice/Slice_Reflective_Practical_sw_3_L_3.gif" 
+    alt="Really reflective slice sampling in action with step size 3 and path length 3"
+    title="Really reflective slice sampling in action with step size 3 and path length 3"
     style="width: 49%; height: auto; border-radius: 8px;">
 </div>
-
 
 <br>
 
