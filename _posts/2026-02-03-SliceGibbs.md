@@ -459,13 +459,13 @@ Because the density $$\pi(x, y)$$ is constant (uniform) over the slice, the equa
 
 ## 2.4 Extensions and Variants
 
-The above slice sampling details are from the perspective of single variable sampling. There are various extensions to this method to enable multivariate density sampling. I will put the genearl descriptions, algorithms and representative gifs for how the sampling methods progress, but will otherwise leave to the reader to refer to [Neal (2000)](https://arxiv.org/abs/physics/0009028) or the [multivariate methods section of the Slice sampling Wikipedia page](https://en.wikipedia.org/wiki/Slice_sampling#:~:text=%5B7%5D-,Multivariate%20methods,-%5Bedit%5D) (although the proofs are similar/the same). Also presume not gradient information.
+The above slice sampling details are from the perspective of single variable sampling. There are various extensions to this method to enable multivariate density sampling. I will put the general descriptions, algorithms and representative gifs for how the sampling methods progress, but will otherwise leave to the reader to refer to [Neal (2000)](https://arxiv.org/abs/physics/0009028) or the [multivariate methods section of the Slice sampling Wikipedia page](https://en.wikipedia.org/wiki/Slice_sampling#:~:text=%5B7%5D-,Multivariate%20methods,-%5Bedit%5D) (although the proofs are similar/the same). Also presume not gradient information.
 
 
 
 ### Multivariate slice sampling (hyperrectangle)
 
-The basic form of Multivariate slice sampling is to construct hyperrectangles[^rectangles] in place of the intervals in the univariate case. In absence of any stepping out or doubling procedure for simplicity, a rudimentary algorithm (adapted from [Neal (2000)](https://arxiv.org/abs/physics/0009028)) is shown below.
+The basic form of Multivariate slice sampling is to construct hyperrectangles[^rectangles] in place of the intervals in the univariate case. In absence of any stepping out or doubling procedure for simplicity (although as far as I know usual implementations just do the above for each dimension), a rudimentary algorithm (adapted from [Neal (2000)](https://arxiv.org/abs/physics/0009028)) is shown below.
 
 
 [^rectangles]: generalised term for rectangles in higher dimensions if unfamiliar, in this post we just look at plain ol' rectangles
@@ -516,11 +516,136 @@ In essence, we construct intervals in the exact same way as before for the univa
 
 ### Reflective Slice Sampling
 
+I had a bit of trouble finding references for this one outside of [Neal (2000)](https://arxiv.org/abs/physics/0009028), but reflective slice sampling is another commonly used method. For example (I'm 95% sure that) it is used in the nested sampling package [dynesty](https://dynesty.readthedocs.io/en/stable/index.html) as part of the rslice (random direction) sampling method
+
+The main draw for _reflective_ slice sampling is that while the hyperrectangle approach is straightforward, it struggles when variables are highly correlated (i.e., the "slice" is a long, thin diagonal ellipsoid). In these cases, the axis-aligned box is a poor fit, and the sampler gets stuck taking tiny steps. 
+
+Reflective Slice Sampling solves this by moving along a straight line (a ray) and "bouncing" off the boundaries of the slice. Instead of shrinking a box, we maintain our momentum.
+
+For some intuition, imagine a particle moving inside the slice. When it hits the "wall" (where $$f(x) < y$$), we don't stop; we calculate the gradient at that boundary and reflect the particle's velocity vector, like a billiard ball in pool.
+
+>
+#### Multivariate Slice Sampling: (Idealized) Reflection Scheme
+1. Initialize:
+    - Have a target density $$f(\vec{x})$$ and its gradient $$\nabla f(\vec{x})$$,
+    - Propose an initial point $$\vec{x}_0 \in \mathbb{R}^n$$.
+    - Propose a total travel distance (step size) $$w$$ (not a vector, a scalar).
+    - Figure out how many iterations of the total algorithm $$K$$ you can be bothered to wait for.
+    - Figure out how many steps in a slice trajectory $$M$$ you can be bothered to wait for.
+2. For each iteration $$k$$ from $$1$$ to $$K$$:
+    1. Pick a vertical height $$y \sim U(0, f(\vec{x}_{k-1}))$$.
+    2. Pick a random direction/momentum vector $$\vec{p}$$ from rotational symmetric distribution (e.g. standard multivariate normal) and make it a unit vector.
+        - Let first position of the below loop to be $$\vec{x}_{m=0} = \vec{x}_{k-1}$$
+    3. (Reflection Loop) For $$m$$ from $$1$$ to $$M$$:
+        - Propose a new point: $$\vec{x}_{prop} = \vec{x}_{m-1} + w \cdot \vec{p}$$.
+        - If $$f(\vec{x}_{prop}) \geq y$$ i.e. the move is successful. Then $$\vec{x}_{m} = \vec{x}_{prop}$$.
+        - Else (Hit the Boundary):
+            - Set $$s=w$$, $$j=1$$ and $$\vec{x}_{j=0} = \vec{x}_{m-1}$$ and $$\vec{x}_{j=1} = \vec{x}_{prop}$$
+            - While $$f(\vec{x}_{j}) < y$$:
+                - Find the boundary point $$\vec{x}_b$$ between $$\vec{x}_{j}$$ and $$\vec{x}_{j-1}$$ where $$f(\vec{x}_b) = y$$.
+                - Calculate the distance $$\text{dist}(\vec{x}_b, \vec{x}_{j})$$ and set $$s = s - \text{dist}(\vec{x}_b, \vec{x}_{s})$$.
+                - Calculate the normalised inward normal $$\vec{n}$$ (the unit vector in the direction of the gradient $$\nabla f$$ at $$\vec{x}_b$$).
+                - Reflect: Update direction $$\vec{p} = \vec{p} - 2(\vec{p} \cdot \vec{n})\vec{n}$$.
+                - Set $$\vec{x}_{j+1} = \vec{x}_b + s \cdot \vec{p}$$ 
+                - Set $$j = j+1$$
+            - Set $$\vec{x}_{m}=\vec{x}_{j}$$
+    4. Accept: $$\vec{x}_k = \vec{x}_{M}$$.
 
 
+This seems pretty neat (besides the nested loop, but that will only significantly impact a run if you pick the step size to be too large hopefully), let's code it up in the case of a standard 2D normal and make a GIF out of the process (examples shown below).
 
+<div style="text-align: center;">
+  <img 
+    src="Really cool billiard ball trajectory gif" 
+    alt="Really cool billiard ball trajectory gif"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="Really cool billiard ball trajectory gif with large step size" 
+    alt="Really cool billiard ball trajectory gif with large step size"
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+
+<div style="text-align: center;">
+  <img 
+    src="Really reflective slice sampling in action" 
+    alt="Really reflective slice sampling in action"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="Really reflective slice sampling in action with large step size" 
+    alt="Really reflective slice sampling in action with large step size"
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+<br>
+
+But then there's a particular step which in (interesting) real-world problems, is next to impossible; "Find the boundary point $$\vec{x}_b$$ between $$\vec{x}_{m-1}$$ and $$\vec{x}_{prop}$$ where $$f(\vec{x}_b) = y$$." We could do this with the standard 2D normal because we can analytically solve for the regions given any $$y$$ pretty simply. 
+
+What we can do in practice, is reflect off of the last point that was inside the boundary. Although to satisfy detailed balance, as Neal notes 
+
+>
+"...for this method to be valid, we must check that the reverse trajectory would also reflect at this point, by verifying that a step in the direction opposite to our new heading would take us outside the slice. If this is not so, we must either reject the entire trajectory of which this reflection step forms a part, or alternatively, set $$\vec{p}$$ and $$\vec{x}$$ so that we retrace the path taken to this point (starting at the inside point where the reflection failed)" - [Neal (2000)](https://arxiv.org/abs/physics/0009028)
+
+i.e. If going backward in time is different to going forward, throw it out.
+
+>
+#### Multivariate Slice Sampling: (Practical) Reflection Scheme
+1. Initialize:
+    - Have a target density $$f(\vec{x})$$ and its gradient $$\nabla f(\vec{x})$$,
+    - Propose an initial point $$\vec{x}_0 \in \mathbb{R}^n$$.
+    - Propose a step size $$w$$ (scalar).
+    - Set a maximum number of reflections per sub-step $$J$$.
+    - Figure out how many iterations of the total algorithm $$K$$ you can be bothered to wait for.
+    - Figure out how many steps in a slice trajectory $$M$$ you can be bothered to wait for.
+2. For each iteration $$k$$ from $$1$$ to $$K$$:
+    1. Pick a vertical height $$y \sim U(0, f(\vec{x}_{k-1}))$$.
+    2. Pick a random direction vector $$\vec{p}$$ from a rotationally symmetric distribution (e.g. standard multivariate normal) and normalise: $$\vec{p} \leftarrow \vec{p} / \|\vec{p}\|$$.
+        - Let first position of the below loop be $$\vec{x}_{m=0} = \vec{x}_{k-1}$$.
+    3. (Trajectory Loop) For $$m$$ from $$1$$ to $$M$$:
+        - Propose: $$\vec{x}_{prop} = \vec{x}_{m-1} + w \cdot \vec{p}$$.
+        - If $$f(\vec{x}_{prop}) \geq y$$: set $$\vec{x}_{m} = \vec{x}_{prop}$$ (move is successful).
+        - Else (outside the slice — approximate reflection):
+            - Compute the normalised inward normal at the *last interior point*: $$\hat{n} = \nabla f(\vec{x}_{m-1}) / \|\nabla f(\vec{x}_{m-1})\|$$.
+            - Reflect direction: $$\vec{p} \leftarrow \vec{p} - 2(\vec{p} \cdot \hat{n})\hat{n}$$.
+            - **Reversibility check**: test whether $$f(\vec{x}_{m-1} - w \cdot \vec{p}) < y$$.
+                - If yes (reverse step also leaves the slice): the reflection is valid. Set $$\vec{x}_{m} = \vec{x}_{m-1}$$ and continue with the new $$\vec{p}$$ (the particle "bounces" from where it was).
+                - If no (reverse step stays inside the slice): the reflection violates detailed balance. Reverse the trajectory: $$\vec{p} \leftarrow -\vec{p}$$ and set $$\vec{x}_{m} = \vec{x}_{m-1}$$ (retrace path).
+    4. Accept: $$\vec{x}_k = \vec{x}_{M}$$.
+
+
+And now some GIFs of this more practical algorithm.
+
+<div style="text-align: center;">
+  <img 
+    src="Really cool billiard ball trajectory for practical algorithm gif" 
+    alt="Really cool billiard ball trajectory for practical algorithm gif"
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="Really cool billiard ball trajectory for practical algorithm gif with large step size" 
+    alt="Really cool billiard ball trajectory for practical algorithm gif with large step size"
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+
+<div style="text-align: center;">
+  <img 
+    src="Really reflective slice sampling in action for practical algorithm " 
+    alt="Really reflective slice sampling in action for practical algorithm "
+    style="width: 49%; height: auto; border-radius: 8px;">
+  <img 
+    src="Really reflective slice sampling in action for practical algorithm with large step size" 
+    alt="Really reflective slice sampling in action for practical algorithm with large step size"
+    style="width: 49%; height: auto; border-radius: 8px;">
+</div>
+
+
+<br>
 
 # 4. Conclusion
+
+Hope this post comes in handy, especially for the slice sampling which I couldn't find a lot of resources for... As always, if something didn't make sense, or you think the figures/GIFs could communicate a point better with some tweaks/a different figure, please shoot me an email. 
+
+For now, if you want more fun sampling stuff, I made this post as a bit of an explainer for a couple minor points in another post titled _"Speeding up MCMC with Langevin and Hamiltonian dynamics and stochastic gradient estimates"_ which should be linked as the next post below.
 
 
 
