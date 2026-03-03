@@ -89,7 +89,7 @@ This is what `log_prob` returns.
 
 ## The transdimensional support
 
-The paper (eq. 1) defines the transdimensional support as the disjoint union:
+The paper defines the transdimensional support as the disjoint union:
 
 $$\mathcal{X} = \bigsqcup_{m \in \mathcal{M}} \left(\{m\} \times \Theta_m\right)$$
 
@@ -121,7 +121,7 @@ The target density factorises as (paper: $$\eta(m, \theta_m) = \eta(\theta_m \mi
 
 ## Dimension saturation and the augmented target
 
-To handle varying dimensions, VTI adopts the dimension saturation approach of Brooks et al. (2003), cited as ref [5] in the paper. Let $$d_{\max} = \max_m d_m = 2 K_{\max}$$. For model $$m$$ with $$d_m < d_{\max}$$, introduce auxiliary variables $$\mathbf{u}_{\setminus m} \in \mathbb{R}^{d_{\max} - d_m}$$ drawn from the reference distribution $$\nu_{\setminus m}$$ (standard normal in each coordinate). The *saturated* parameter vector $$(\boldsymbol{\theta}_m, \mathbf{u}_{\setminus m}) \in \mathbb{R}^{d_{\max}}$$ has the same dimension for all models. The augmented unnormalized target density is (paper eq. 3):
+To handle varying dimensions, VTI adopts the dimension saturation approach of Brooks et al. (2003), cited as ref [5] in the paper. Let $$d_{\max} = \max_m d_m = 2 K_{\max}$$. For model $$m$$ with $$d_m < d_{\max}$$, introduce auxiliary variables $$\mathbf{u}_{\setminus m} \in \mathbb{R}^{d_{\max} - d_m}$$ drawn from the reference distribution $$\nu_{\setminus m}$$ (standard normal in each coordinate). The *saturated* parameter vector $$(\boldsymbol{\theta}_m, \mathbf{u}_{\setminus m}) \in \mathbb{R}^{d_{\max}}$$ has the same dimension for all models. The augmented unnormalized target density is (paper eq. 2):
 
 $$\tilde{\eta}(\boldsymbol{\theta}_m, \mathbf{u}_{\setminus m} \mid m) = \eta(\boldsymbol{\theta}_m \mid m) \cdot \nu_{\setminus m}(\mathbf{u}_{\setminus m})$$
 
@@ -129,7 +129,7 @@ This is the joint density of "real" parameters and auxiliary variables. The auxi
 
 ## The IAF variational density on saturated space
 
-The variational family (paper eq. 4–5) is an IAF on $$\mathbb{R}^{d_{\max}}$$ conditioned on $$m$$:
+The variational family (paper eq. 3–4) is an IAF on $$\mathbb{R}^{d_{\max}}$$ conditioned on $$m$$:
 
 $$\tilde{q}_\phi(\boldsymbol{\theta}_m, \mathbf{u}_{\setminus m} \mid m) := \nu_{d_{\max}}(z) \cdot \vert\det \nabla T_\phi(z \mid m)\vert^{-1}$$
 
@@ -139,39 +139,39 @@ In code: `log q(θ\vert k) = base_log_prob - log_det`, where `base_log_prob` = $
 
 ## The CoSMIC construction: making the Jacobian block-diagonal
 
-The paper proves (Lemma 2.1, Proposition 2.2) that if the flow is constructed via the CoSMIC masking mechanism, the saturated density factorises as (paper eq. 6):
+The paper proves (Lemma 2.1, Proposition 2.2) that if the flow is constructed via the CoSMIC masking mechanism, the saturated density factorises as (paper eq. 5):
 
 $$\tilde{q}_\phi(\boldsymbol{\theta}_m, \mathbf{u}_{\setminus m} \mid m) = q_\phi(\boldsymbol{\theta}_m \mid m) \cdot \nu_{d_{\setminus m}}(\mathbf{u}_{\setminus m})$$
 
 This is the key result. It says that the CoSMIC flow simultaneously approximates $$q_\phi(\boldsymbol{\theta}_m \mid m)$$ for the active dimensions *and* leaves the auxiliary dimensions as $$\nu$$ (standard normal), matching the augmented target exactly on those dimensions. The variational density factorises correctly.
 
-The construction relies on two ingredients. First, the context-to-mask map $$C(m)$$ (paper eq. 7):
+The construction relies on two ingredients. First, the context-to-mask map $$C(m)$$ (paper eq. 6):
 
 $$C(m) := (C_1(m), \ldots, C_{d_{\max}}(m)) \in \{0,1\}^{\vert\rho\vert}$$
 
 For each dimension $$i$$, $$A_i: \mathcal{M} \to \{0,1\}$$ indicates whether coordinate $$i$$ is active in model $$m$$. $$B_i$$ broadcasts this bit to the full parameter block $$\vert\rho_i\vert$$ of the $$i$$-th autoregressive transform. The composition $$C_i = B_i \circ A_i$$ selects which NN outputs to use (active) versus which to replace with the identity point $$\rho^{\text{Id}}$$ (inactive). In code, $$A(m)$$ is `mk_to_mask` and $$C(m)$$ is what gets passed to each coupling layer's `context_to_mask` argument.
 
-Second, for each IAF step with bijection $$\tau_{\rho_i}: \mathbb{R} \to \mathbb{R}$$, the CoSMIC masking (paper eq. 8) linearly interpolates between the learned parameters $$\rho_i$$ and the identity point $$\rho^{\text{Id}}$$:
+Second, for each IAF step with bijection $$\tau_{\rho_i}: \mathbb{R} \to \mathbb{R}$$, the CoSMIC masking (paper eq. 7) linearly interpolates between the learned parameters $$\rho_i$$ and the identity point $$\rho^{\text{Id}}$$:
 
 $$\rho_i^C = (1 - C_i(m)) \cdot \rho^{\text{Id}} + C_i(m) \cdot \rho_i$$
 
 When $$C_i(m) = 0$$ (inactive), $$\rho_i^C = \rho^{\text{Id}}$$ and $$\tau_{\rho^{\text{Id}}}(z^{(i)}) = z^{(i)}$$ — exact identity, zero log-det contribution. When $$C_i(m) = 1$$ (active), $$\rho_i^C = \rho_i$$ and the full learned transform applies.
 
-Lemma 2.1 then shows $$\mathbf{u}_{\setminus m} = \mathbf{z}_{\setminus m}$$ (the inactive outputs equal the inactive inputs — the identity is preserved). Proposition 2.2 shows that the left-right permutation $$P_m$$ (placing active dimensions before inactive ones) makes the Jacobian block-diagonal, so $$\vert\det \nabla T_\phi(\mathbf{z} \mid m)\vert$$ depends only on the active coordinates. This is what makes the density factorisation in eq. 6 exact.
+Lemma 2.1 then shows $$\mathbf{u}_{\setminus m} = \mathbf{z}_{\setminus m}$$ (the inactive outputs equal the inactive inputs — the identity is preserved). Proposition 2.2 shows that the left-right permutation $$P_m$$ (placing active dimensions before inactive ones) makes the Jacobian block-diagonal, so $$\vert\det \nabla T_\phi(\mathbf{z} \mid m)\vert$$ depends only on the active coordinates. This is what makes the density factorisation in eq. 5 exact.
 
 ## The VTI loss function
 
-By Corollary 2.3 (paper eq. 9–11), the dimension saturation cancels out of the ELBO:
+By Corollary 2.3 (paper eq. 8–9), the dimension saturation cancels out of the ELBO:
 
 $$\frac{\nu_{d_{\max}}(\mathbf{z}) \cdot \vert\det \nabla T_\phi(\mathbf{z} \mid m)\vert^{-1}}{\tilde{\eta}(T_\phi(\mathbf{z} \mid m) \mid m)} = \underbrace{\frac{\nu_{d_m}(\mathbf{z}_m) \cdot \vert\det \nabla T_\phi(\mathbf{z} \mid m)\vert^{-1}}{\eta(\boldsymbol{\theta}_m \mid m)}}_{:= h_\phi(\mathbf{z} \mid m)}$$
 
 The auxiliary $$\nu_{\setminus m}(\mathbf{z}_{\setminus m})$$ terms cancel exactly between the numerator (from $$\nu_{d_{\max}}(\mathbf{z}) = \nu_{d_m}(\mathbf{z}_m) \nu_{d_{\setminus m}}(\mathbf{z}_{\setminus m})$$) and the denominator (from $$\tilde{\eta} = \eta \cdot \nu_{\setminus m}$$). This means in practice we only need to evaluate the reference density $$\nu_{d_m}$$ on the *active* dimensions, which is what `reference_log_prob` does (it evaluates $$\nu_{\setminus m}$$ on the *inactive* dimensions to match the augmented target, not the active reference).
 
-The full VTI loss (paper eq. 10) is:
+The full VTI loss (paper eq. 9) is:
 
 $$L(\psi, \phi) = \mathbb{E}_{m \sim q_\psi}\!\left[\ell(m;\phi) - \log p(m) + \log q_\psi(m)\right]$$
 
-where $$\ell(m; \phi) := \mathbb{E}_{\mathbf{z} \sim \nu_{d_{\max}}}[\log h_\phi(\mathbf{z} \mid m)]$$ (paper eq. 11). Substituting $$h_\phi$$:
+where $$\ell(m; \phi) := \mathbb{E}_{\mathbf{z} \sim \nu_{d_{\max}}}[\log h_\phi(\mathbf{z} \mid m)]$$. Substituting $$h_\phi$$:
 
 $$\ell(m; \phi) = \mathbb{E}_\mathbf{z}\!\left[\log \nu_{d_m}(\mathbf{z}_m) - \log\vert\det \nabla T_\phi(\mathbf{z} \mid m)\vert - \log \eta(\boldsymbol{\theta}_m \mid m)\right]$$
 
@@ -259,7 +259,7 @@ The method is polymorphic over three input types because VTI calls it at differe
 def mk_to_mask(mk) → [N, 2K]
 ```
 
-This implements the global context-to-mask map $$C(m) \in \{0,1\}^{\vert\rho\vert}$$ from paper eq. 7. It determines, for each dimension $$i \in \{1, \ldots, d_{\max}\}$$, whether the CoSMIC masking formula (eq. 8) uses the learned transform $$\rho_i$$ (active, $$C_i(m) = 1$$) or the identity point $$\rho^{\text{Id}}$$ (inactive, $$C_i(m) = 0$$).
+This implements the global context-to-mask map $$C(m) \in \{0,1\}^{\vert\rho\vert}$$ from paper eq. 6. It determines, for each dimension $$i \in \{1, \ldots, d_{\max}\}$$, whether the CoSMIC masking formula (eq. 8) uses the learned transform $$\rho_i$$ (active, $$C_i(m) = 1$$) or the identity point $$\rho^{\text{Id}}$$ (inactive, $$C_i(m) = 0$$).
 
 For model $$m = k$$ ($$k$$ components), the active dimensions are $$\{1, \ldots, 2k\}$$ — the $$k$$ $$x$$-coordinates and $$k$$ $$y$$-coordinates. In our flattened layout the first $$K$$ slots hold $$\mu_x$$-coordinates and the next $$K$$ slots hold $$\mu_y$$-coordinates, so:
 
@@ -271,7 +271,7 @@ return slot_mask.repeat(1, 2)          # [N, 2K]
 
 The mask has two roles:
 
-1. **At each CoSMIC coupling layer**: passed as `context_to_mask` to determine $$\rho_i^C$$ in eq. 8, making the transform identity for inactive dimensions.
+1. **At each CoSMIC coupling layer**: passed as `context_to_mask` to determine $$\rho_i^C$$ in eq. 7, making the transform identity for inactive dimensions.
 2. **In `reference_log_prob`**: the complement $$1 - C(m)$$ identifies inactive dimensions; their log-density under $$\nu$$ is computed and added to `log_prob` as the auxiliary variable term.
 
 ## `mk_to_component_mask`
@@ -317,7 +317,7 @@ The Jacobian $$\vert J_i\vert$$ is the correction that makes the prior in $$\bol
 def log_prob(mk, theta) → [N]
 ```
 
-Returns $$\log \eta(\boldsymbol{\theta}_m \mid m) = \log p(\mathbf{y} \mid \boldsymbol{\theta}_m, m) + \log p(\boldsymbol{\theta}_m \mid m) + \log p(m) + \log \nu_{\setminus m}(\boldsymbol{\theta}_{\setminus m})$$. This is the numerator of $$h_\phi(\mathbf{z} \mid m)$$ (paper eq. 9), evaluated at the flow output $$\boldsymbol{\theta} = T_\phi(\mathbf{z} \mid m)$$.
+Returns $$\log \eta(\boldsymbol{\theta}_m \mid m) = \log p(\mathbf{y} \mid \boldsymbol{\theta}_m, m) + \log p(\boldsymbol{\theta}_m \mid m) + \log p(m) + \log \nu_{\setminus m}(\boldsymbol{\theta}_{\setminus m})$$. This is the numerator of $$h_\phi(\mathbf{z} \mid m)$$ (paper eq. 8), evaluated at the flow output $$\boldsymbol{\theta} = T_\phi(\mathbf{z} \mid m)$$.
 
 **Term 1. Data log-likelihood** — $$\log p(\mathbf{y} \mid \boldsymbol{\theta}_m, m)$$
 
@@ -347,7 +347,7 @@ Each additional component beyond the first costs $$\lambda \cdot \tfrac{1}{2}\lo
 reference_lp = self.reference_log_prob(mk, theta)
 ```
 
-This term corresponds to $$\log \nu_{\setminus m}(\mathbf{u}_{\setminus m})$$ from the augmented target (paper eq. 3). It evaluates $$\log \mathcal{N}(\boldsymbol{\theta}_{\text{inactive}}; \mathbf{0}, \mathbf{I})$$ for the *inactive* parameter slots — those where `mk_to_mask = 0`. By Lemma 2.1, the CoSMIC flow maps $$\mathbf{z}_{\setminus m} \mapsto \mathbf{u}_{\setminus m} = \mathbf{z}_{\setminus m}$$ (identity), so ideally $$\boldsymbol{\theta}_{\text{inactive}} = \mathbf{z}_{\text{inactive}} \sim \nu$$. Including this term in `log_prob` ensures that the ELBO penalises the flow for moving inactive dimensions away from the reference distribution. Without it, inactive dimensions have no likelihood signal and drift freely, wasting flow capacity.
+This term corresponds to $$\log \nu_{\setminus m}(\mathbf{u}_{\setminus m})$$ from the augmented target (paper eq. 2). It evaluates $$\log \mathcal{N}(\boldsymbol{\theta}_{\text{inactive}}; \mathbf{0}, \mathbf{I})$$ for the *inactive* parameter slots — those where `mk_to_mask = 0`. By Lemma 2.1, the CoSMIC flow maps $$\mathbf{z}_{\setminus m} \mapsto \mathbf{u}_{\setminus m} = \mathbf{z}_{\setminus m}$$ (identity), so ideally $$\boldsymbol{\theta}_{\text{inactive}} = \mathbf{z}_{\text{inactive}} \sim \nu$$. Including this term in `log_prob` ensures that the ELBO penalises the flow for moving inactive dimensions away from the reference distribution. Without it, inactive dimensions have no likelihood signal and drift freely, wasting flow capacity.
 
 The method is provided by `AbstractDGP` and simply evaluates:
 
@@ -371,7 +371,7 @@ Samples $$\mathbf{z}^{(1)}, \ldots, \mathbf{z}^{(B)} \overset{\text{iid}}{\sim} 
 
 $$\log \nu_{d_{\max}}(\mathbf{z}) = -\tfrac{d_{\max}}{2}\log(2\pi) - \tfrac{1}{2}\|\mathbf{z}\|^2$$
 
-This is $$\log \nu_{d_{\max}}(\mathbf{z})$$ from paper eq. 5 — the reference density at the pre-image of $$\boldsymbol{\theta}$$ under the flow. It enters the ELBO as `base_log_prob` in the expression `log q(θ\vert k) = base_log_prob - log_det`. The dimension here is `num_inputs()` = $$2K_{\max}$$.
+This is $$\log \nu_{d_{\max}}(\mathbf{z})$$ in proposition 2.2 — the reference density at the pre-image of $$\boldsymbol{\theta}$$ under the flow. It enters the ELBO as `base_log_prob` in the expression `log q(θ\vert k) = base_log_prob - log_det`. The dimension here is `num_inputs()` = $$2K_{\max}$$.
 
 ## `reference_log_prob`: the auxiliary variable prior
 
@@ -379,7 +379,7 @@ This is $$\log \nu_{d_{\max}}(\mathbf{z})$$ from paper eq. 5 — the reference d
 def reference_log_prob(mk, theta) → [N]
 ```
 
-Evaluates $$\log \nu_{\setminus m}(\mathbf{u}_{\setminus m})$$ from paper eq. 3 — the reference density restricted to *inactive* dimensions. Uses `1 - mk_to_mask(mk)` to identify which of the $$2K_{\max}$$ slots are inactive for each model in the batch, then:
+Evaluates $$\log \nu_{\setminus m}(\mathbf{u}_{\setminus m})$$ from paper eq. 5 — the reference density restricted to *inactive* dimensions. Uses `1 - mk_to_mask(mk)` to identify which of the $$2K_{\max}$$ slots are inactive for each model in the batch, then:
 
 $$\log \nu_{\setminus m}(\boldsymbol{\theta}_{\text{inactive}}) = \sum_{i: C_i(m) = 0} \log \mathcal{N}(\theta_i; 0, 1)$$
 
@@ -391,7 +391,7 @@ This is called from `log_prob` as the fourth term of the log-joint. As explained
 def mk_prior_dist() → Categorical
 ```
 
-Returns $$p(m) = \text{Categorical}(1/K_{\max}, \ldots, 1/K_{\max})$$ — a uniform distribution over models. This is the prior $$p(m)$$ from paper eq. 10. It appears in two places in the training loop:
+Returns $$p(m) = \text{Categorical}(1/K_{\max}, \ldots, 1/K_{\max})$$ — a uniform distribution over models. This is the prior $$p(m)$$ from paper eq. 9/11. It appears in two places in the training loop:
 
 1. `log_prior_mk = prior_mk_dist.log_prob(mk)` — the $$\log p(m)$$ term in the VTI loss
 2. `mk_prior_log_prob` is negated and added to the loss to form `loss_hat2 = -log_prior_mk + log_q_mk`, which is the KL $$\text{KL}(q_\psi \| p)$$ between the sampler and the prior
@@ -480,11 +480,11 @@ The naming (`.inverse` for generation, `.forward` for density evaluation) follow
 
 ## The optimal model distribution $$q^*(m)$$
 
-The VTI loss (paper eq. 12) can be rewritten as a max-entropy objective over $$q_\psi$$:
+The VTI loss (paper eq. 9) can be rewritten as an objective over $$q_\psi$$ (eq. 10):
 
 $$\max_{q_\psi} \, \mathbb{E}_{m \sim q_\psi}[-\ell(m;\phi) + \log p(m)] + H[q_\psi]$$
 
-This is a free energy maximisation. If we optimise over the full space $$\mathcal{P}(\mathcal{M})$$, the optimal distribution has a closed-form expression (paper eq. 13):
+This is a free energy maximisation. If we optimise over the full space $$\mathcal{P}(\mathcal{M})$$, the optimal distribution has a closed-form expression (paper eq. 11):
 
 $$q^*_{\ell,\phi}(m) = \frac{p(m)\exp(-\ell(m;\phi))}{\sum_{m'} p(m')\exp(-\ell(m';\phi))}$$
 
@@ -558,7 +558,7 @@ def utility_UCB() → [K]:     return self.mean() + 2 * self.sd()
 def utility_Thompson() → [K]: return self.mean() + randn(K) * 2 * self.sd()
 ```
 
-These implement the UCB acquisition function from paper eq. 14:
+These implement the UCB acquisition function from paper used in eq. 12:
 
 $$u_t(m) = \mu_t(m) + \beta \sigma_t(m), \quad \beta = 2$$
 
@@ -577,7 +577,7 @@ i.e. the surrogate-based model distribution converges to the optimal model distr
 class SoftmaxSurrogateSampler(AbstractModelSampler)
 ```
 
-Wraps `DiagonalGaussianSurrogate` and implements the surrogate model distribution $$q_{u,t}(m)$$ from paper eq. 14:
+Wraps `DiagonalGaussianSurrogate` and implements the surrogate model distribution $$q_{u,t}(m)$$ in eq. 12 in the paper:
 
 $$q_{u,t}(m) = \frac{p(m)\exp(u_t(m))}{\sum_{m'} p(m')\exp(u_t(m'))} \stackrel{p(m)=1/K}{=} \text{softmax}(u_t)_m$$
 
@@ -602,7 +602,7 @@ $$q^{\text{train}}(m) \propto \exp(\text{softmax}(\mathbf{u}_t)_m)$$
 
 This double-softmax compresses the dynamic range of $$\mathbf{u}_t$$. Early in training, $$\mathbf{u}_t$$ has high variance — a model visited once with a lucky ELBO might have UCB 500, while an unvisited model has UCB $$\approx 2\sqrt{10^4} = 200$$ (from the prior variance). Without squishing, $$\text{softmax}(500, 200, \ldots) \approx (1, 0, 0, \ldots)$$ — the sampler collapses to one model. After squishing, $$\text{softmax}(500, 200, \ldots) \approx (0.99, 0.01, \ldots)$$ which after the second softmax gives a distribution with meaningful spread. This corresponds to controlling the exploration–exploitation trade-off by bounding information gain, as discussed in paper section 3.4.
 
-`action_sample_and_log_prob(batch_size) → ([B], [B])` samples $$m^{(b)} \sim q^{\text{train}}$$ and returns both samples and $$\log q^{\text{train}}(m^{(b)})$$. The log-probabilities enter `loss_hat2 = -log_prior_mk + log_q_mk`, which is the KL $$\text{KL}(q^{\text{train}} \| p)$$ appearing in the VTI loss (paper eq. 10).
+`action_sample_and_log_prob(batch_size) → ([B], [B])` samples $$m^{(b)} \sim q^{\text{train}}$$ and returns both samples and $$\log q^{\text{train}}(m^{(b)})$$. The log-probabilities enter `loss_hat2 = -log_prior_mk + log_q_mk`, which is the $$\text{KL}(q^{\text{train}} \| p)$$.
 
 `log_prob(mk_catsamples) → [N]` evaluates $$\log q^{\text{train}}(m)$$ for given indices under the current `action_dist()`. After training this is called as:
 
@@ -685,7 +685,7 @@ Must be called before `zero_init` because the optimiser must be built before its
 def loss_and_sample_and_log_prob(batch_size, i) → (loss, ell, mk_samples)
 ```
 
-Assembles the VTI loss (paper eq. 10) in one function. The computation:
+Assembles the VTI loss. The computation:
 
 ```python
 z, log_p_ref   = dgp.reference_dist_sample_and_log_prob(batch_size)
@@ -704,7 +704,7 @@ ell            = -loss_hat1.detach()          # ELBO = -ℓ(m;ϕ), passed to sur
 
 `loss_hat2` is $$-\log p(m) + \log q_\psi(m)$$ per sample — the per-sample contribution to $$\text{KL}(q_\psi \| p)$$.
 
-The full loss $$L = \text{mean}(\ell + \text{KL})$$ is an unbiased Monte Carlo estimate of the VTI objective (paper eq. 10).
+The full loss $$L = \text{mean}(\ell + \text{KL})$$ is an unbiased Monte Carlo estimate of the VTI objective.
 
 `nanmean` silently drops NaN batch elements. NaNs arise when the flow maps $$\mathbf{z}$$ to a degenerate $$\boldsymbol{\theta}$$ (e.g. identical component means), making the log-likelihood $$-\infty$$. Dropping these is safer than averaging them in.
 
@@ -774,7 +774,7 @@ mk_cat   = torch.arange(K_max, dtype=torch.long)
 mk_probs = sampler.log_prob(mk_cat).exp()
 ```
 
-`sampler.log_prob` evaluates `action_dist().log_prob` = $$\log \text{softmax}(\text{softmax}(\boldsymbol{\mu}_t + 2\boldsymbol{\sigma}_t))$$. For a well-converged surrogate (small $$\sigma_m$$ for all $$m$$), $$\boldsymbol{\mu}_t + 2\boldsymbol{\sigma}_t \approx \boldsymbol{\mu}_t$$ and `mk_probs[m]` $$\approx \text{softmax}(\text{softmax}(\boldsymbol{\mu}))_m$$. This approximates $$q^*(m)$$ from paper eq. 13.
+`sampler.log_prob` evaluates `action_dist().log_prob` = $$\log \text{softmax}(\text{softmax}(\boldsymbol{\mu}_t + 2\boldsymbol{\sigma}_t))$$. For a well-converged surrogate (small $$\sigma_m$$ for all $$m$$), $$\boldsymbol{\mu}_t + 2\boldsymbol{\sigma}_t \approx \boldsymbol{\mu}_t$$ and `mk_probs[m]` $$\approx \text{softmax}(\text{softmax}(\boldsymbol{\mu}))_m$$. This approximates $$q^*(m)$$ from paper eq. 11.
 
 ## Sampling the parameter posterior for model $$k$$
 
