@@ -17,10 +17,6 @@ manual_next_title: "Speeding up MCMC with Langevin and Hamiltonian dynamics and 
 ---
 
 In this post I'm going to go through Gibbs and slice sampling, you've probably seen them used everywhere if you're a statistician, but have you ever looked into _why_ they work in detail? 
-(UNDER CONSTRUCTION)
-
-
-# UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION
 
 
 ---
@@ -131,7 +127,7 @@ General tips:
 
 ## 1.2 Detailed balance
 
-Gibbs sampling is evidently a Markov Chain, as each new set of points only depends on the previous, and is ergodic (because the conditional distributions should allow any coordinate in parameter space to be sampled), so to be a valid MCMC method we only have to show that the sampling satifies detailed balance (or the weaker condition of [_Global Balance_](https://en.wikipedia.org/wiki/Balance_equation)).
+Gibbs sampling is evidently a Markov Chain, as each new set of points only depends on the previous, and is ergodic (because the conditional distributions should allow any coordinate in parameter space to be sampled), so to be a valid MCMC method we only have to show that the sampling satifies detailed balance (or the weaker but generally more annoying to prove condition of [_Global Balance_](https://en.wikipedia.org/wiki/Balance_equation)).
 
 In Gibbs sampling, we move along one "axis" (one variable) at a time. Thus, to understand the transition kernel let's focus on the update for the $$i$$-th variable, $$x_i$$ for a target distribution $$\pi$$. 
 
@@ -244,7 +240,7 @@ As a quick refresher for the second method, _rejection sampling_, samples a targ
 
 Throwing away real-world limitations for a sec, the fundamental method behind slice sampling is where the user pretends that the density values themselves $$f(x)$$ is a specific value of a variable $$y$$ (like in rejection sampling), and then a two part Gibbs sampling where you sample a $$y$$ value from between $$0$$ and $$f(x)$$, then you sample $$x$$ by uniformly sampling $$x \sim U(S)$$ where $$S = \{x: f(x) \geq y\}$$. This implies a joint density $$p(x, y)$$ that once one marginalises over $$y$$ (or in practice _throws out_ the samples of $$y$$) you attain $$p(x)$$ (or samples representative of it, the normalised $$f(x)$$).
 
-This may or may not immediately seem like rejection sampling, but the key point is that we don't have an envelope distribution, in this theoretical setup there are no _"rejected"_ samples! 
+This may or may not immediately seem like rejection sampling, but the key thing is that we don't have an envelope distribution, in this theoretical setup there are no _"rejected"_ samples! 
 
 Real world slice sampling is then an approximation to the above that is asymptotically correct. Below are some GIFs showing the exact case, as it's pretty easy to figure out the interval $$S = \{x: f(x) \geq y\}$$ in the case of the normal distribution. For the second plot I only show 100 of the coordinates at a time.
 
@@ -270,7 +266,7 @@ Well [Neal](https://arxiv.org/abs/physics/0009028) suggests 4 options (end of pa
 4. Similar to 3, we can randomly pick an initial interval of size $$w$$, and then expand it by a doubling procedure and have a similar stopping criterion.
 
 
-Now, it would seem that the doubling procedure may be better in most cases as it can expand to larger sizes more quickly, making up for a potentially underestimated $$w$$. However, it requires a rejection test, that scheme 3 doesn't need/have, to ensure the transition is reversible. This added overhead means that more often than not the "step-out" scheme is used unless you are dealing with an extremely heavy-tailed distributions where a linear search would be slow enough to justify the added overhead of the doubling procedure.
+Now, it kinda seems that the doubling procedure may be better in most cases as it can expand to larger sizes more quickly, making up for a potentially underestimated $$w$$. However, it requires a rejection test, that scheme 3 doesn't need/have, to ensure the transition is reversible. This added overhead means that more often than not the "step-out" scheme is used, unless you are dealing with an extremely heavy-tailed distributions where a linear search would be slow enough to justify the added overhead of the doubling procedure.
 
 On top of some rules for expanding the intervals, both schemes are made more efficient by a shrinkage step that uses rejected samples after the initial growth to, you guessed it, shrink the intervals to focus in on more relevant areas. 
 
@@ -408,11 +404,11 @@ And the algorithm...
 
 ### 2.2.3 Final thoughts on the algorithms
 
-Notice that in step 3 of both algorithms, if we pick a point outside the slice, we don't just throw it away and stay at $$x_0$$ (like in Metropolis-Hastings). We use that "failed" point to define a new, smaller boundary. 
+In step 3 of both algorithms, if we pick a point outside the slice, we don't just throw the thing away and stay at $$x_0$$ (like in Metropolis-Hastings). We the "failed" point to define a new smaller boundary. 
 
-This means the sampler learns the shape of the slice during every single iteration. If $$w$$ was way too large, the shrinkage step quickly brings it down to size. 
+This means the sampler learns the shape of the slice during every single iteration. If $$w$$ was way too large the shrinkage step quickly brings it down to size. 
 
-This makes slice sampling much more stable than standard Metropolis-Hastings, where a bad proposal width $$w$$ can lead to an acceptance rate of 0% and a stalled chain. And I think is one reason why slice sampling was later used as part of HMC-NUTS.
+This makes slice sampling much more stable than standard Metropolis-Hastings, where a bad proposal width $$w$$ can lead to an acceptance rate of 0% and a bad chain. And I think is one reason why slice sampling was later used as part of HMC-NUTS.
 
 ## 2.3 Are they valid MCMC algorithms?
 
