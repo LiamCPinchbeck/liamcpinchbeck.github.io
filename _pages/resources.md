@@ -90,3 +90,5 @@ A series of websites, papers and packages that I've found particularly helpful f
 - 🖥️ [PyTorch Tutorials](https://docs.pytorch.org/tutorials/index.html)
 
 - 🖥️ [Pyro Documentation](https://docs.pyro.ai/en/stable/)
+
+- Learn Git: https://learngitbranching.js.org/
