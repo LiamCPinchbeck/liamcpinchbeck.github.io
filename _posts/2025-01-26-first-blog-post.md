@@ -15,6 +15,12 @@ manual_next_title: "Inverse Transform Sampling"
 First blog post, outlining what I'm going to try and do in the next few posts and some basics of Bayesian analysis.
 
 
+
+## Executive Summary
+
+In statistics we need clear ways to quantify how we think data behaves, and what assumptions we have about the data. In this post I outline how this first idea translate into the 'likelihood' and how the second translates into the 'prior', and together allows us to create clear and natural ways to recover the probability of our model parameters in light of data.
+
+
 ## Table of Contents
 - [Introduction](#statistics-is-cool-trust-me)
 - [Fitting a Line to Data](#fitting-a-line-to-data-gotta-start-somewhere)

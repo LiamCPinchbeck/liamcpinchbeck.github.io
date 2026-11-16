@@ -16,6 +16,11 @@ manual_next_title: "Rejection Sampling"
 
 Introduction to inverse transform sampling for continuous and discrete probability distributions.
 
+## Executive Summary
+
+Very often in statistics, we need to generate representative samples of our models (encoded as probability distribution). There are various ways of doing this (I detail many more in later posts), but the inverse transform sampling method which I detail in this post is a _perfectly_ efficient tool (no wasted computation) to sample, particularly univariate (single variable), distributions.
+
+
 
 ### Introduction
 The end goal of the next few posts is to build up to an intuitive understanding of how **Markov Chain Monte Carlo (MCMC)** methods work, following a similar method as the YouTuber [ritvikmath's](https://www.youtube.com/@ritvikmath) videos on the topic. 
@@ -248,7 +253,7 @@ And then if we produce uniform random samples and feed them into these functions
 </div>
 
 
-You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function, it would likely be better to use something like `np.abs(input - cdf_outputs).argmin()` to get the index of the exact input/output.
+You can also see how you can immediately expand this to discrete distributions, except instead of an interpolation function, it would likely be better to use something like `np.abs(input - cdf_outputs).argmin()` to get the index of the exact input/output. This could then be used to sample discretised multivariate distributions (such as flux maps for the physicists reading this), but one would soon run into the curse of dimensionality and as one of my professor's during my physics career says "binning is sinning", binning an inherently continuous distribution can also cause some issues (particularly if you're running machine learning approaches were anything different between data and real life could be not goood to say the least).
 
 
 ## Next Steps
