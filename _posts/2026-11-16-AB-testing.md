@@ -31,16 +31,41 @@ UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDE
 - [Statement of the problem](#statement-of-the-problem)
   - A button, landing page, medical tests, drug effectiveness
 - [Structuring your hypothesis: Constructing a rigorous and sensible primary metric]
+    - What is a primary metric
+        - What do we REALLY want to measure?
+    - Success metric: Clicks vs sales
+    - Conversion rate
+    - Metric Sensitivity
+    - Key Questions you want to ask before going ahead with an A/B test
+        - Big enough dataset
+        - Long enough timeframe/large enough effect
+        - Will it take too long --> Early Predictors
+        - Hunches
+        - One or more changes --> Buttons vs Vibes
+        - A/B/C/D/E/F/G/H tests
+    - What do you think the result will be? No tests, just hunches and predictions
 - [Framing Results, and what can go wrong and how to avoid it]
-  - [Peeking, multiple testing and observer bias]
-  - [Novelty effects]
-  - []
+    - [Peeking, multiple testing and observer bias]
+    - [Objective Results, Subjective Interpretations]
+        - Correlations/causation/confounding variables/indirect causation || "Looking backward"
+            - Flickering
+            - Returning customers and the novelty effect
+        - Observer bias, cherry picking and p-value peaking
+            - Finishing an A/B test experiment because the result you wanted is significant or discounting it because it doesn't support the "new shiny feature"
+        - [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)
+    - A/A testing
+    - 80% vs 99% --> 20x better
+    - False positive, false negative (TABLE)
+    - More _diagnostics_ the better, but don't get confused or cherry pick
+    - Ethics
+    - Power vs significance
+
 - [A TLDR of going about an experiment]
 - [The Mathematics of Null Hypothesis Testing]
-  - [Basic two group tests]
-  - [Two-way ANOVA]
-  - [Viewing the experiment as a random walk (stochastic process)]
-  - [CUPED control variates]
+    - [Basic two group tests]
+    - [Two-way ANOVA]
+    - [Viewing the experiment as a random walk (stochastic process)]
+    - [CUPED control variates]
 - [Bayesian A/B testing]
 - [Final Rules of Thumb]
 
