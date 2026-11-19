@@ -9,6 +9,10 @@
 //   BLOCK_WORDS        text, optional; comma-separated words that send a comment to review
 //   HOLD_LINKS         text, optional; "false" to publish comments with links instantly (default: hold them)
 //   HOLD_ALL           text, optional; "true" to hold every comment for approval
+//   RESERVED_NAMES     text, optional; comma-separated extra reserved name fragments (default: "pinch,admin,moderator")
+//   OWNER_KEY          secret, optional; type "Your Name #OWNER_KEY" in the name box to post under a reserved name
+//   NTFY_TOPIC         text, optional; ntfy.sh topic name for phone push notifications on new comments
+//   NOTIFY_WEBHOOK     secret, optional; Slack or Discord incoming-webhook URL for new-comment messages
 //
 // Endpoints:
 //   GET  /comments?page=/path/      public, approved comments for a page
@@ -25,7 +29,7 @@ const DEFAULT_BLOCK_WORDS =
   "casino,viagra,cialis,crypto,bitcoin,forex,loan,payday,essay writing,backlink,seo service,escort,porn,betting";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const cors = corsHeaders(request.headers.get("Origin") || "", env);
 
@@ -33,7 +37,7 @@ export default {
 
     try {
       if (url.pathname === "/comments" && request.method === "GET") return await listComments(url, env, cors);
-      if (url.pathname === "/comments" && request.method === "POST") return await postComment(request, env, cors);
+      if (url.pathname === "/comments" && request.method === "POST") return await postComment(request, env, cors, ctx);
       if (url.pathname === "/admin" && request.method === "GET") return adminPage();
       if (url.pathname.startsWith("/admin/api/")) return await adminApi(request, url, env);
       return json({ error: "Not found" }, 404, cors);
@@ -105,7 +109,7 @@ async function listComments(url, env, cors) {
   return json({ comments: results || [] }, 200, { ...cors, "Cache-Control": "no-store" });
 }
 
-async function postComment(request, env, cors) {
+async function postComment(request, env, cors, ctx) {
   if (!cors["Access-Control-Allow-Origin"]) return json({ error: "Origin not allowed" }, 403, cors);
 
   let body;
@@ -115,7 +119,18 @@ async function postComment(request, env, cors) {
     return json({ error: "Bad request" }, 400, cors);
   }
 
-  const name = String(body.name || "").trim().slice(0, MAX_NAME) || "Anonymous";
+  // Owner pass: "Liam Pinchbeck #OWNER_KEY" lets you use a reserved name; the key is stripped before saving.
+  let rawName = String(body.name || "").trim();
+  let isOwner = false;
+  const hashAt = rawName.lastIndexOf("#");
+  if (env.OWNER_KEY && hashAt > -1 && rawName.slice(hashAt + 1).trim() === env.OWNER_KEY) {
+    isOwner = true;
+    rawName = rawName.slice(0, hashAt).trim();
+  }
+  const name = rawName.slice(0, MAX_NAME) || "Anonymous";
+  if (!isOwner && isReservedName(name, env)) {
+    return json({ error: "That name is reserved. Please use a different name." }, 400, cors);
+  }
   const message = String(body.message || "").trim();
   const page = cleanPage(body.page);
 
@@ -143,17 +158,71 @@ async function postComment(request, env, cors) {
     return json({ error: "You've commented a few times already. Please wait a few minutes." }, 429, cors);
   }
 
-  const status = needsReview(message, name, env) ? "pending" : "approved";
+  const status = !isOwner && needsReview(message, name, env) ? "pending" : "approved";
   const createdAt = new Date().toISOString();
   const res = await env.DB.prepare(
     "INSERT INTO comments (page, name, message, created_at, ip_hash, status) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(page, name, message, createdAt, ipHash, status).run();
+
+  // fire-and-forget notification; never blocks or fails the comment
+  if (ctx) ctx.waitUntil(notify(env, { page, name, message, status }, new URL(request.url).origin).catch(function (e) { console.error(e); }));
 
   return json(
     { ok: true, status, comment: { id: res.meta.last_row_id, name, message, created_at: createdAt } },
     200,
     cors
   );
+}
+
+// ---------- reserved names ----------
+
+// Look-alike characters (Cyrillic/Greek) and leetspeak mapped to plain letters.
+const CONFUSABLES = {
+  "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "і": "i", "ӏ": "l", "к": "k", "н": "h", "в": "b", "т": "t", "м": "m",
+  "α": "a", "ε": "e", "ο": "o", "ρ": "p", "ι": "i", "κ": "k", "ν": "v",
+  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i", "|": "l",
+};
+
+function normaliseName(s) {
+  return String(s)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")       // strip accents
+    .toLowerCase()
+    .replace(/./gu, (ch) => CONFUSABLES[ch] || ch)
+    .replace(/[^a-z]/g, "");                  // drop spaces, dots, dashes, emoji, zero-width chars
+}
+
+function isReservedName(name, env) {
+  const n = normaliseName(name);
+  const frags = (env.RESERVED_NAMES || "pinch,admin,moderator")
+    .split(",").map(normaliseName).filter(Boolean);
+  return frags.some((f) => n.includes(f));
+}
+
+// ---------- notifications ----------
+
+async function notify(env, c, origin) {
+  const held = c.status === "pending";
+  const title = (held ? "Held for review: " : "New comment: ") + c.page;
+  const body = c.name + ": " + (c.message.length > 300 ? c.message.slice(0, 300) + "..." : c.message);
+  const jobs = [];
+  if (env.NTFY_TOPIC) {
+    jobs.push(fetch("https://ntfy.sh/" + encodeURIComponent(env.NTFY_TOPIC), {
+      method: "POST",
+      body: body,
+      headers: { Title: title, Click: origin + "/admin", Tags: held ? "warning" : "speech_balloon", Priority: held ? "high" : "default" },
+    }));
+  }
+  if (env.NOTIFY_WEBHOOK) {
+    const text = title + "\n" + body + "\n" + origin + "/admin";
+    // Slack uses `text`, Discord uses `content`; send both
+    jobs.push(fetch(env.NOTIFY_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text, content: text }),
+    }));
+  }
+  await Promise.all(jobs);
 }
 
 // ---------- admin ----------

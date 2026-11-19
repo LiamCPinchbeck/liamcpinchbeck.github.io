@@ -4,6 +4,7 @@
 {% assign cw_url = site.comments.selfhosted.worker_url | strip %}
 {% assign ts_key = site.comments.selfhosted.turnstile_sitekey | strip %}
 {% if cw_url.size > 0 %}
+<div class="bc-wrap">
 <p class="page__comments-note">Spotted an error, or have feedback (good or bad)? Leave a comment. No sign-in needed.</p>
 
 <div id="blog-comments" data-endpoint="{{ cw_url }}" data-page="{{ page.url }}">
@@ -46,6 +47,15 @@
 
 <script>
 (function () {
+  // The theme includes this snippet twice (in the post and in the footer scripts),
+  // and Liquid can't share a guard between layouts. Keep the first copy, remove the rest.
+  if (window.__blogCommentsInit) {
+    var wraps = document.querySelectorAll('.bc-wrap');
+    for (var i = 1; i < wraps.length; i++) wraps[i].parentNode.removeChild(wraps[i]);
+    return;
+  }
+  window.__blogCommentsInit = true;
+
   var root = document.getElementById('blog-comments');
   if (!root || !window.fetch) return;
   var endpoint = root.getAttribute('data-endpoint').replace(/\/+$/, '');
@@ -129,6 +139,7 @@
   });
 })();
 </script>
+</div>
 {% endif %}
 {% endunless %}
 <!-- end custom comments snippet -->
