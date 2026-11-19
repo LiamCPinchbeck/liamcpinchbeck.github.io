@@ -21,3 +21,8 @@ package-lock.json
 
 # Ignore files created by MacOS
 .DS_Store
+
+
+
+_posts/planned_posts.md
+_cloudflare/notes

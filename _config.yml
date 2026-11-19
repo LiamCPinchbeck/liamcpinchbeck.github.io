@@ -28,8 +28,8 @@ author:
   bio              : "PhD student at Monash University studying Bayesian methods for analysing very high energy gamma ray event data in the search for dark matter"
   location         : "Melbourne, Australia"
   employer         : "Monash University"
-  uri              : # URL
-  email            : "Liam.Pinchbeck@monash.edu" 
+  uri              : "https://liamcpinchbeck.github.io/"
+  email            : "[firstname]c[lastname]@gmail.com" 
 
   # Academic websites
   academia         : # URL
@@ -100,8 +100,8 @@ talkmap_link             : false      #change to true to add link to talkmap on 
 comments:
   provider               : "custom" # false (default), "disqus", "discourse", "facebook", "google-plus", "staticman", "custom"
   selfhosted:
-    worker_url           : "" # e.g. "https://blog-comments.YOUR-SUBDOMAIN.workers.dev" (no trailing slash)
-    turnstile_sitekey    : "" # optional: Cloudflare Turnstile site key (spam check, no sign-in)
+    worker_url           : "https://blog-comments.workpinchy.workers.dev"  # (no trailing slash)
+    turnstile_sitekey    : "0x4AAAAAAGIeAEh9xR5pkpac" # optional: Cloudflare Turnstile site key (spam check, no sign-in)
   disqus:
     shortname            :
   discourse:
