@@ -39,68 +39,6 @@ UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDE
 
 
 
-
-## Table of Contents
-
-- [Statement of the problem](#statement-of-the-problem)
-        - A button, a landing page, medical tests, drug effectiveness
-        - A/B testing (the design) vs null hypothesis testing (one way to analyse it)
-- [Part I: Running a good experiment](#part-i-running-a-good-experiment)
-    
-    - Designing the experiment before you collect data
-        - The primary metric: what do we REALLY want to measure?
-            - Success metric: clicks vs sales; conversion rate
-            - Guardrail metrics: what must not get worse
-            - Metric sensitivity
-        - Write down your hypothesis and prediction first
-        - Errors and power
-            - False positive / false negative (TABLE)
-            - Significance vs power; 80% vs 99% (a 20% vs 1% miss rate)
-            - Minimum detectable effect
-        - Practical questions before you start
-            - Is the dataset big enough? Is the timeframe long enough?
-            - Will it take too long? Early predictors / surrogate metrics
-            - Randomisation unit: user vs session vs page view
-            - One change or many: buttons vs vibes
-            - A/B/C/.../H tests
-        - Ethics
-    - What can go wrong
-        - Peeking
-        - Multiple testing
-        - The winner's curse
-        - When randomisation breaks
-            - Sample ratio mismatch; A/A tests
-            - Returning customers, novelty effects, flickering
-            - Simpson's paradox
-        - Objective results, subjective interpretations
-            - Observer bias and cherry-picking
-            - More diagnostics are better, but don't go fishing
-    - Checklist: running an experiment
-
-- [Part II: How it works and other fun asides](#part-ii-how-it-works-and-other-fun-asides)
-    - Basic two-group tests
-        - z-test, t-test, chi-squared test of independence, matched pairs
-        - Deriving the sample-size / power formula
-    - Variance reduction: CUPED as control variates
-    - More than two groups: one-way ANOVA and the F-statistic (brief; links to the follow-up post)
-    - Peeking, formally
-        - The experiment as a random walk
-        - A physicist's view: the look-elsewhere effect and trials factors
-        - Fixes: group-sequential designs (O'Brien–Fleming)
-        - Fixes: always-valid inference (mSPRT, confidence sequences)
-    - Multiple testing corrections: Bonferroni vs Benjamini–Hochberg
-    - Bayesian A/B testing
-        - Beta-binomial posteriors and P(B > A)
-        - Expected loss as a stopping rule
-        - Does Bayes fix peeking? (Not really)
-    - Case study: from A/B tests to adaptive clinical trials
-        - A simulated drug trial with early stopping
-    - Final rules of thumb
-
-
-
-
-
 # Statement of the problem
 
 A/B testing is a widespread approach to tackling decision making in scienfitic and industry settings. If you are unfamiliar, on the surface all that it amounts to is quantitatively asking whether Option B (our _alternative hypothesis_) performs better than or is different to some option A. A typical example is something like you suspect that your website landing page isn't clear enough and lowering the fraction of visitors who buy the product. 
@@ -109,7 +47,7 @@ With a little help from AI, I've chocked up the two websites below.
 
 {% include ab-landing-demo.html %}
 
-The right is obviously better, so much so that it begs the question of why even do the A/B test? In this case likely we probably shouldn't bother, the benefit to using design B is so obviously better that we DO NOT need to run an A/B test. However, we'll use it as an example here nonetheless.
+The right is obviously better: it's clear what the site is for, what they're selling and more. It's so much better that it begs the question of why even do the A/B test? In this case likely we probably shouldn't bother. The benefit to using design B is so obviously better that we DO NOT need to run an A/B test. However, we'll use it as an example here nonetheless.
 
 
 Another common example is asking whether Drug B performs better than Drug A. 
@@ -139,10 +77,114 @@ All of these questions can be designed and analysed as an A/B test. All you need
 
 
 
+
+
+## Table of Contents
+
+- [Statement of the problem](#statement-of-the-problem)
+        
+- [Part I: Running a good experiment](#part-i-running-a-good-experiment)
+    - Intro
+        - A/B testing (the design) vs null hypothesis testing (one way to analyse it)
+        - Why randomise at all? Correlation, confounding and the counterfactual
+    - [Designing the experiment before you collect data](#designing-the-experiment-before-you-collect-data)
+        - The primary metric: what do we REALLY want to measure?
+            - Success metric: clicks vs sales; conversion rate
+            - Guardrail metrics: what must not get worse
+            - Metric sensitivity
+            - Ratio metrics (clicks per page view) vs per-user metrics
+            - Heavy-tailed metrics: revenue and the one whale customer
+        - Write down your hypothesis, prediction and decision rule first
+        - Errors and power
+            - False positive / false negative (TABLE)
+            - Significance vs power; 80% vs 99% (a 20% vs 1% miss rate)
+            - Minimum detectable effect
+            - Worked example: "you need ~31k users per arm"
+        - Practical questions before you start
+            - Is the dataset big enough? Is the timeframe long enough?
+            - Will it take too long? Early predictors / surrogate metrics
+            - Randomisation unit: user vs session vs page view
+            - Interference: when treatment leaks into control (social networks, marketplaces)
+            - One change or many: buttons vs vibes
+            - A/B/C/.../H tests
+        - Ethics
+    - Reading the result
+        - What a p-value is (and the five things it isn't)
+        - Effect sizes and confidence intervals over p-values
+        - Statistical vs practical significance
+        - Ship, don't ship, or iterate
+    - What can go wrong
+        - Peeking
+        - Multiple testing
+        - The winner's curse
+        - When randomisation breaks
+            - Sample ratio mismatch; A/A tests
+            - Returning customers, novelty effects, flickering
+        - Long-term effects: holdout groups and short-term metrics that mislead
+        - Objective results, subjective interpretations
+            - Segment analysis: "it worked on mobile users in Tasmania"
+            - Simpson's paradox
+            - Observer bias and cherry-picking
+            - More diagnostics are better, but don't go fishing
+    - Checklist: running an experiment
+
+- [Part II: How it works and other fun asides](#part-ii-how-it-works-and-other-fun-asides)
+    - The causal foundation
+        - Potential outcomes (Rubin): the effect we can never observe
+        - Why randomisation makes the difference in means unbiased
+        - SUTVA, and cluster / switchback designs when it fails
+    - Basic two-group tests
+        - Which test when: proportions vs means vs counts
+        - z-test, t-test, chi-squared test of independence, matched pairs
+        - Fisher's exact test and the lady tasting tea
+        - The Neyman–Pearson lemma: why likelihood ratios are optimal
+        - Deriving the sample-size / power formula
+        - Power by simulation: Monte Carlo when the formula doesn't apply
+    - When the CLT lets you down
+        - Heavy tails and slow convergence (simulation)
+        - Permutation tests: exact inference from shuffling labels
+        - Bootstrap confidence intervals
+        - Mann–Whitney U, and what it actually tests
+    - Ratio metrics and the delta method
+        - Why naive standard errors are too small
+        - Deriving the delta-method variance
+    - Variance reduction
+        - Stratification and post-stratification
+        - CUPED as control variates
+    - More than two groups: one-way ANOVA and the F-statistic (brief; links to the follow-up post)
+    - Peeking, formally
+        - The experiment as a random walk
+        - How bad is it? Simulating false-positive rates under peeking
+        - A physicist's view: the look-elsewhere effect and trials factors
+        - Wald's sequential probability ratio test (a WWII story)
+        - Fixes: group-sequential designs (O'Brien–Fleming)
+        - Fixes: always-valid inference (mSPRT, confidence sequences)
+    - Multiple testing corrections: Bonferroni vs Benjamini–Hochberg
+    - The winner's curse, formally
+        - Selection bias in estimated effects
+        - Shrinkage: James–Stein and hierarchical models to the rescue
+    - Bayesian A/B testing
+        - Beta-binomial posteriors and P(B > A)
+        - Expected loss as a stopping rule
+        - Does Bayes fix peeking? (Not really)
+        - Hierarchical priors from past experiments
+    - Beyond fixed experiments: multi-armed bandits
+        - Explore vs exploit, and regret
+        - ε-greedy, UCB and Thompson sampling
+        - When to use a bandit instead of an A/B test (and when not to)
+    - Case study: from A/B tests to adaptive clinical trials
+        - A simulated drug trial with early stopping
+        - Response-adaptive randomisation (bandits in medicine)
+
+- Final rules of thumb
+
+
+
+
 # Part I: Running a good experiment
 
 
-
+## Designing the experiment before you collect data
 
 
 
