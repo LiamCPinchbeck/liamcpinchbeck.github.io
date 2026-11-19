@@ -160,7 +160,7 @@ Where $$q_i$$ represents a factorised probability over the $$i^{\text{th}}$$ com
 
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-05-10/cavi_progress_w_mcmc.gif" 
     alt="Progression of mean field approximation to posterior with gaussian mean field approximation and CAVI with MCMC comparison" 
     title="Progression of mean field approximation to posterior with gaussian mean field approximation and CAVI with MCMC comparison" 

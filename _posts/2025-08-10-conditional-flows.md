@@ -543,7 +543,7 @@ trained_nvp_model, loss = train(NVP_model, data_to_train_with, epochs = 500, lr=
 With this and some additional training, we can get the following. The red dots represent the approximated distribution and the density in the back use the relevant exact sample distribution.
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-08-cond-flows/fitted_double_moons.png" 
     alt   = "Image showing example approximated realisations of double moon distribution for different conditional parameter values" 
     title = "Image showing example approximated realisations of double moon distribution for different conditional parameter values" 

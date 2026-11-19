@@ -372,7 +372,7 @@ Now we have an approximate conditional distribution for our posterior! Meaning t
 
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-08-sbi/example_npe_posterior_1.png" 
     alt="Example data realisations of the double moon distribution for different hyper-parameter values"
     title="Example data realisations of the double moon distribution for different hyper-parameter values"

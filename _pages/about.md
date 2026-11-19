@@ -29,6 +29,8 @@ redirect_from:
   </div>
 </div>
 
+{% include recent-posts.html limit=4 %}
+
 ## Current Research Interests (in no particular order)
 
 <div style="display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap;">

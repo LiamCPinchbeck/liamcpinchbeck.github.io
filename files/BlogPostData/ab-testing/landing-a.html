@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base target="_blank"> 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Version A: Brindle &amp; Bowl (fictional)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.6 "Helvetica Neue", Arial, sans-serif; color: #3d3a4b; background: #fbf9ff; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; }
+  .logo { font-weight: 300; letter-spacing: .35em; font-size: 13px; text-transform: uppercase; }
+  .menu { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+  .menu span { margin-left: 14px; }
+  .menu a { margin-left: 14px; color: inherit; text-decoration: none; }
+  .hero { position: relative; overflow: hidden; padding: 56px 24px 64px; text-align: center; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(30px); opacity: .55; }
+  .b1 { width: 260px; height: 260px; background: #c9b6ff; top: -60px; left: -60px; }
+  .b2 { width: 220px; height: 220px; background: #ffc6e0; bottom: -80px; right: -40px; }
+  .b3 { width: 140px; height: 140px; background: #a7e8ff; top: 40px; right: 30%; }
+  .hero h1 { position: relative; font-weight: 300; font-size: 30px; line-height: 1.2; margin: 0 0 16px; }
+  .hero p { position: relative; max-width: 440px; margin: 0 auto 26px; font-size: 14px; opacity: .8; }
+  .btn { position: relative; display: inline-block; padding: 11px 26px; border: 1px solid #3d3a4b; border-radius: 30px; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: inherit; text-decoration: none; }
+  section { padding: 40px 24px; }
+  h2 { font-weight: 300; font-size: 21px; text-align: center; margin: 0 0 24px; letter-spacing: .04em; }
+  .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; text-align: center; }
+  .orb { width: 58px; height: 58px; margin: 0 auto 10px; border-radius: 50%; background: linear-gradient(135deg, #c9b6ff, #ffc6e0); }
+  .pillars h3 { font-weight: 400; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 6px; }
+  .pillars p { font-size: 13px; opacity: .75; margin: 0; }
+  .quote { max-width: 440px; margin: 0 auto; text-align: center; font-style: italic; font-size: 16px; font-weight: 300; }
+  .quote small { display: block; margin-top: 10px; font-style: normal; font-size: 12px; letter-spacing: .1em; opacity: .6; }
+  .band { background: linear-gradient(120deg, #efe8ff, #ffeef6); text-align: center; }
+  footer { padding: 26px 20px; text-align: center; font-size: 11px; letter-spacing: .1em; opacity: .55; }
+
+  /* phone layout: scrollable but no visible scrollbar, menu on its own row */
+  html { scrollbar-width: none; } ::-webkit-scrollbar { display: none; }
+  nav { flex-wrap: wrap; row-gap: 6px; }
+  .logo { white-space: nowrap; }
+  @media (max-width: 480px) {
+    nav { justify-content: center; text-align: center; }
+    .logo, .menu { width: 100%; }
+    .menu span:first-child, .menu a:first-child { margin-left: 0; }
+  }
+  @media (max-width: 480px) {
+    .logo { font-size: 12px; letter-spacing: .3em; }
+    .menu { font-size: 10.5px; }
+    .hero { padding: 40px 18px 48px; }
+    .hero h1 { font-size: 25px; }
+    .hero p { font-size: 13px; }
+    .pillars { grid-template-columns: 1fr; gap: 22px; }
+    section { padding: 32px 18px; }
+  }
+</style>
+</head>
+<body>
+  <nav>
+    <div class="logo">Brindle &amp; Bowl</div>
+    <div class="menu"><span>Ethos</span><span>Journey</span><a href="https://youtu.be/XpLJbCGMXvA">Connect</a></div>
+  </nav>
+
+  <header class="hero">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+    <h1>Reimagining the companion nourishment experience</h1>
+    <p>We leverage holistic, science-forward synergies to curate elevated, intentional moments across every stage of your companion's wellness journey.</p>
+    <a class="btn" href="https://www.youtube.com/watch?v=xn3mMmy_ghY&pp=ygUOZG9nIGRvaW5nIHlvZ2E%3D">Discover the journey</a>
+  </header>
+
+  <section>
+    <h2>Our philosophy</h2>
+    <div class="pillars">
+      <div><div class="orb"></div><h3>Synergy</h3><p>Aligning lifestyle touchpoints into one seamless ecosystem.</p></div>
+      <div><div class="orb"></div><h3>Vitality</h3><p>Empowering optimal outcomes through mindful innovation.</p></div>
+      <div><div class="orb"></div><h3>Connection</h3><p>Deepening the bond between you and the ones who matter.</p></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <h2>Beyond the everyday</h2>
+    <p class="quote">"Brindle &amp; Bowl has completely transformed how we think about our routine."<small>A MEMBER OF OUR COMMUNITY</small></p>
+  </section>
+
+  <section>
+    <h2>Begin your story</h2>
+    <p class="quote">Join a movement redefining what it means to care, holistically.</p>
+    <p style="text-align:center;margin-top:22px"><a class="btn" href="https://youtu.be/zUUQMpiIUb8">Learn more</a></p>
+  </section>
+
+  <footer>© Brindle &amp; Bowl · A fictional brand for illustration</footer>
+</body>
+</html>

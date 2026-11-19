@@ -245,7 +245,7 @@ This may or may not immediately seem like rejection sampling, but the key thing 
 Real world slice sampling is then an approximation to the above that is asymptotically correct. Below are some GIFs showing the exact case, as it's pretty easy to figure out the interval $$S = \{x: f(x) \geq y\}$$ in the case of the normal distribution. For the second plot I only show 100 of the coordinates at a time.
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
     src="/files/BlogPostData/2026-02-SliceGibbs/Slice/slice_sampling.gif" 
     style="width: 99%; height: auto; border-radius: 8px;">
 <img 

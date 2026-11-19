@@ -78,7 +78,7 @@ But honestly this is just a little to esoteric for me to internalise. So I'm gon
 Below is a GIF with three rows and two columns. 
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-12-FisherInfo/initial_defn_gif.gif" 
       style="width: 89%; height: auto; border-radius: 1px;">
 </div>

@@ -1,3 +1,134 @@
-<!-- start custom comments snippet -->
+<!-- start custom comments snippet (self-hosted on Cloudflare Workers + D1; no sign-in) -->
+{% unless blog_comments_rendered %}
+{% assign blog_comments_rendered = true %}
+{% assign cw_url = site.comments.selfhosted.worker_url | strip %}
+{% assign ts_key = site.comments.selfhosted.turnstile_sitekey | strip %}
+{% if cw_url.size > 0 %}
+<p class="page__comments-note">Spotted an error, or have feedback (good or bad)? Leave a comment. No sign-in needed.</p>
 
+<div id="blog-comments" data-endpoint="{{ cw_url }}" data-page="{{ page.url }}">
+  <ol class="bc__list" aria-live="polite"></ol>
+  <p class="bc__empty" hidden>No comments yet. Be the first!</p>
+  <p class="bc__error" hidden>Comments couldn't be loaded right now.</p>
+
+  <form class="bc__form" novalidate>
+    <label class="bc__label">Name <span class="bc__opt">(optional)</span>
+      <input type="text" name="name" maxlength="60" autocomplete="name">
+    </label>
+    <label class="bc__label">Comment
+      <textarea name="message" rows="5" maxlength="4000" required></textarea>
+    </label>
+    <!-- Honeypot: hidden from people, filled in by bots -->
+    <div class="bc__hp" aria-hidden="true">
+      <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    {% if ts_key.size > 0 %}<div class="cf-turnstile" data-sitekey="{{ ts_key }}" data-theme="auto"></div>{% endif %}
+    <button type="submit" class="btn btn--primary">Post comment</button>
+    <p class="bc__status" role="status"></p>
+  </form>
+</div>
+
+{% if ts_key.size > 0 %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+
+<style>
+  #blog-comments .bc__list { list-style: none; margin: 0 0 1.5em; padding: 0; }
+  #blog-comments .bc__item { border-left: 3px solid rgba(127,127,127,.35); padding: .4em 0 .4em .9em; margin: 0 0 1em; }
+  #blog-comments .bc__meta { font-size: .8em; opacity: .75; margin-bottom: .25em; }
+  #blog-comments .bc__body { white-space: pre-wrap; word-wrap: break-word; font-size: .95em; }
+  #blog-comments .bc__pending { font-style: italic; }
+  #blog-comments .bc__label { display: block; font-size: .85em; margin-bottom: .8em; }
+  #blog-comments .bc__opt { opacity: .6; }
+  #blog-comments input[type=text], #blog-comments textarea { width: 100%; box-sizing: border-box; margin-top: .3em; }
+  #blog-comments .bc__hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  #blog-comments .cf-turnstile { margin: .5em 0 1em; }
+  #blog-comments .bc__status { font-size: .85em; margin-top: .6em; min-height: 1.2em; }
+</style>
+
+<script>
+(function () {
+  var root = document.getElementById('blog-comments');
+  if (!root || !window.fetch) return;
+  var endpoint = root.getAttribute('data-endpoint').replace(/\/+$/, '');
+  var page = root.getAttribute('data-page');
+  var list = root.querySelector('.bc__list');
+  var empty = root.querySelector('.bc__empty');
+  var errorBox = root.querySelector('.bc__error');
+  var form = root.querySelector('.bc__form');
+  var statusEl = root.querySelector('.bc__status');
+  var button = form.querySelector('button[type=submit]');
+  var started = Date.now();
+
+  function fmtDate(iso) {
+    try { return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+    catch (e) { return ''; }
+  }
+
+  // Everything is inserted as plain text (textContent), never as HTML.
+  function render(c, pending) {
+    var li = document.createElement('li');
+    li.className = 'bc__item' + (pending ? ' bc__pending' : '');
+    var meta = document.createElement('div');
+    meta.className = 'bc__meta';
+    var who = document.createElement('strong');
+    who.textContent = c.name || 'Anonymous';
+    meta.appendChild(who);
+    meta.appendChild(document.createTextNode(' · ' + fmtDate(c.created_at) + (pending ? ' · visible to you only, awaiting approval' : '')));
+    var body = document.createElement('div');
+    body.className = 'bc__body';
+    body.textContent = c.message;
+    li.appendChild(meta);
+    li.appendChild(body);
+    list.appendChild(li);
+    empty.hidden = true;
+  }
+
+  fetch(endpoint + '/comments?page=' + encodeURIComponent(page))
+    .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+    .then(function (d) {
+      var cs = d.comments || [];
+      if (!cs.length) empty.hidden = false;
+      cs.forEach(function (c) { render(c, false); });
+    })
+    .catch(function () { errorBox.hidden = false; });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var fd = new FormData(form);
+    if (!String(fd.get('message') || '').trim()) { statusEl.textContent = 'Please write a comment first.'; return; }
+    button.disabled = true;
+    statusEl.textContent = 'Posting…';
+    var payload = {
+      page: page,
+      name: fd.get('name'),
+      message: fd.get('message'),
+      website: fd.get('website'),
+      started: started,
+      turnstile: fd.get('cf-turnstile-response')
+    };
+    fetch(endpoint + '/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.d.error || 'Something went wrong. Please try again.');
+        var pending = res.d.status === 'pending';
+        if (res.d.comment) render(res.d.comment, pending);
+        form.reset();
+        started = Date.now();
+        statusEl.textContent = pending
+          ? 'Thanks! Your comment will appear publicly once approved.'
+          : 'Thanks for your comment!';
+      })
+      .catch(function (err) { statusEl.textContent = err.message || 'Something went wrong. Please try again.'; })
+      .then(function () {
+        button.disabled = false;
+        if (window.turnstile) { try { window.turnstile.reset(); } catch (e) {} }
+      });
+  });
+})();
+</script>
+{% endif %}
+{% endunless %}
 <!-- end custom comments snippet -->

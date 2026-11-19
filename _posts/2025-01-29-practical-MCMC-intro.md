@@ -263,7 +263,7 @@ The first thing to notice is that we don't require the normalization of our func
 Now, this is the point that I want to show you an animation of the process, but I don't want to do that with the 2D distribution as it's slow enough as it is, and it would be annoying figuring out how to nicely visualize accepting or rejecting a sample. So, forgive me for doing this for a single-dimensional Gaussian that I made up on the spot.
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-01-29/metropolis_gif.gif" 
     alt="GIF showing the process of a Metropolis algorithm" 
     title="GIF showing the process of a Metropolis algorithm" 

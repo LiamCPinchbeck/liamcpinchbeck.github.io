@@ -157,7 +157,7 @@ with $$s_N = z$$. This stacking allows us to combine relatively simple, expressi
 An intuitive demonstration of this idea is shown below, from a GIF by Eric Jang in [his tutorial on normalising flows](https://blog.evjang.com/2019/07/nf-jax.html), which focuses on how to implement flows using JAX:
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-04-28/flow_gif.gif" 
     alt="GIF showing how stacking multiple transformations on a simple distribution can describe a more complicated distribution in the same way that a normalising flow does" 
     title="GIF showing how stacking multiple transformations on a simple distribution can describe a more complicated distribution in the same way that a normalising flow does" 

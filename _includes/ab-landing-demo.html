@@ -1,0 +1,16 @@
+{% include base_path %}
+<div class="ab-demo">
+  <iframe src="{{ base_path }}/files/BlogPostData/ab-testing/landing-a.html" title="Version A landing page (fictional)" loading="lazy"></iframe>
+  <iframe src="{{ base_path }}/files/BlogPostData/ab-testing/landing-b.html" title="Version B landing page (fictional)" loading="lazy"></iframe>
+</div>
+<p class="ab-demo__note">Scroll inside each page. Both are for a fictional brand.</p>
+
+<style>
+  .ab-demo { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5em; margin: 1.5em 0 .4em; }
+  .ab-demo iframe {
+    display: block; width: min(320px, 100%); aspect-ratio: 9 / 16;
+    border: 1px solid var(--global-border-color); border-radius: 10px;
+    background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.08);
+  }
+  .ab-demo__note { font-size: .75em; color: var(--global-text-color-light); text-align: center; margin-top: .4em; }
+</style>

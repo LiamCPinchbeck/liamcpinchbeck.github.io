@@ -504,7 +504,7 @@ images[0].save(
 </details>
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-02-01/estimating_pi.gif" 
     alt="GIF showing process of estimating pi using uniformly drawn samples" 
     title="GIF showing process of estimating pi using uniformly drawn samples" 

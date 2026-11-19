@@ -1,3 +1,7 @@
-<!-- start custom analytics snippet -->
-
+<!-- start custom analytics snippet (GoatCounter: cookie-free page-view counts) -->
+{% assign gc_code = site.analytics.goatcounter.code | strip %}
+{% if gc_code.size > 0 %}
+<script data-goatcounter="https://{{ gc_code }}.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+{% endif %}
 <!-- end custom analytics snippet -->

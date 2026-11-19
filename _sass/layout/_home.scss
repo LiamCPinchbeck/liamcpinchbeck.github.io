@@ -1,0 +1,108 @@
+/* ==========================================================================
+   HOMEPAGE: "Latest from the blog" cards (see _includes/recent-posts.html)
+   ========================================================================== */
+
+.recent-posts {
+  margin: 2.5em 0 2em;
+
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1em;
+    flex-wrap: wrap;
+
+    h2 { margin: 0; border-bottom: none; }
+  }
+
+  &__all {
+    font-size: 0.85em;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25em;
+    margin-top: 1em;
+  }
+}
+
+.recent-post {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--global-border-color);
+  border-radius: 10px;
+  background: var(--global-bg-color);
+  color: var(--global-text-color);
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    border-color: var(--global-link-color);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+    color: var(--global-text-color);
+  }
+
+  &__thumb {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 630;
+    object-fit: cover;
+  }
+
+  /* figures from the post: show the whole plot, not a crop */
+  &__thumb--figure {
+    object-fit: contain;
+    background: #fff;
+    padding: 0.4em;
+    box-sizing: border-box;
+  }
+
+  &__body { padding: 0.9em 1em 1em; }
+
+  &__meta {
+    margin: 0 0 0.35em;
+    font-size: 0.72em;
+    letter-spacing: 0.02em;
+    color: var(--global-text-color-light);
+  }
+
+  &__title {
+    margin: 0 0 0.45em;
+    font-size: 1em;
+    line-height: 1.3;
+    color: var(--global-link-color);
+  }
+
+  &__excerpt {
+    margin: 0;
+    font-size: 0.8em;
+    line-height: 1.5;
+    color: var(--global-text-color-light);
+  }
+
+  &__tags {
+    margin: 0.7em 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+
+    span {
+      font-size: 0.65em;
+      padding: 0.15em 0.6em;
+      border-radius: 999px;
+      border: 1px solid var(--global-border-color);
+      color: var(--global-text-color-light);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recent-post { transition: none; &:hover, &:focus-visible { transform: none; } }
+}

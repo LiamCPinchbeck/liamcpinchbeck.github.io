@@ -344,7 +344,7 @@ That gives us the positions of the points in the lower dimensional space, and th
 
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-10-StudentStressUMAP/2dUMAP_Projections/StressLevel2DUMAP_Projection.png" 
       alt="Nothing to see here." 
       title="Nothing to see here." 

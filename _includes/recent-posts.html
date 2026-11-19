@@ -1,0 +1,46 @@
+{% comment %}
+  "Latest from the blog" cards for the homepage.
+  Usage: {% include recent-posts.html limit=4 %}
+  Posts with `hide_from_home: true` in their front matter are skipped.
+  Posts with `social_card: generated` use the generated card instead of their own image.
+  Thumbnails: an <img class="social"> or the last .png in the post, else the generated card in /images/og/.
+{% endcomment %}
+{% include base_path %}
+{% assign rp_limit = include.limit | default: 4 %}
+{% assign rp_posts = site.posts | where_exp: "p", "p.hide_from_home != true" %}
+{% if rp_posts.size > 0 %}
+<section class="recent-posts" aria-labelledby="latest-posts">
+  <div class="recent-posts__header">
+    <h2 id="latest-posts">Latest from the blog</h2>
+    <a class="recent-posts__all" href="{{ base_path }}/year-archive/">All posts &rarr;</a>
+  </div>
+  <div class="recent-posts__grid">
+    {% for post in rp_posts limit: rp_limit %}
+      {% assign rp_card = post.path | split: "/" | last | replace: ".markdown", "" | replace: ".md", "" | slugify %}
+      {% assign rp_card_path = "/images/og/" | append: rp_card | append: ".png" %}
+      {% assign rp_card_file = site.static_files | where: "path", rp_card_path | first %}
+      {% assign post_img = nil %}
+      {% if post.social_card != "generated" %}{% include post-image.html content=post.content %}{% endif %}
+      <a class="recent-post" href="{{ base_path }}{{ post.url }}">
+        {% if post_img %}
+          {% if post_img contains "://" %}{% assign rp_src = post_img %}{% else %}{% assign rp_src = base_path | append: post_img %}{% endif %}
+          <img class="recent-post__thumb recent-post__thumb--figure" src="{{ rp_src }}" alt="" loading="lazy">
+        {% elsif rp_card_file %}
+          <img class="recent-post__thumb" src="{{ base_path }}{{ rp_card_path }}" alt="" loading="lazy" width="1200" height="630">
+        {% endif %}
+        <div class="recent-post__body">
+          <p class="recent-post__meta">
+            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%-d %b %Y" }}</time>
+            {% if post.read_time %}&middot; {% include read-time.html %}{% endif %}
+          </p>
+          <h3 class="recent-post__title">{{ post.title }}</h3>
+          <p class="recent-post__excerpt">{{ post.excerpt | strip_html | strip_newlines | truncatewords: 24 }}</p>
+          {% if post.tags.size > 0 %}
+            <p class="recent-post__tags">{% for t in post.tags limit: 3 %}<span>{{ t }}</span>{% endfor %}</p>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

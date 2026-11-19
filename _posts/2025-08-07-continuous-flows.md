@@ -483,7 +483,7 @@ And then what we really came for, how well our CNF actually did to approximate o
 
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-08-cont-flows/cnf-4viz4.gif" 
     alt="GIF showing the progression of samples and probability density for our Continuous Normalising Flows approximation of the target sample distribution as a function of 'time'."
     title="GIF showing the progression of samples and probability density for our Continuous Normalising Flows approximation of the target sample distributio as a function of 'time'."

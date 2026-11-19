@@ -75,7 +75,7 @@ And we can do this with any analytic continuous distribution. For example, below
 </div>
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-01-27/combined_1_dist.gif" 
       alt="GIF showing animation of inverse transform sampling principle with a bimodal distribution." 
       title="GIF showing animation of inverse transform sampling principle with a bimodal distribution." 

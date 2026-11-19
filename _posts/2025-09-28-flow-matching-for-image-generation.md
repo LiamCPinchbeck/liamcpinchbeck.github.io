@@ -463,7 +463,7 @@ for i in pbar:
 After training for a few thousand steps I get the following (plus a bonus).
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-09-fmfig/checkerboard/checkerboard_8x8.gif" 
       alt="Nothing to see here." 
       title="Nothing to see here." 

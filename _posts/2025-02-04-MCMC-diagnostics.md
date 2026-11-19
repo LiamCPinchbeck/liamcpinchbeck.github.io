@@ -458,7 +458,7 @@ From this, we can see that the magnitude of autocorrelation is less than or equa
 Starting with the minimal, 0 autocorrelation relates to completely random values or independent samples (our goal with the MCMC samples). If I generate random samples from a normal distribution (i.e., each sample is independent from the next), then with enough samples we should see the values approach 0 (as you can see in the GIF below).
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-02-04/normal_random_samples_autocorrelation.gif" 
     alt="GIF showing the running autocorrelations of random independent samples" 
     title="GIF showing the running autocorrelations of random independent samples" 

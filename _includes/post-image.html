@@ -1,0 +1,28 @@
+{% comment %}
+  Picks a post's preview image from its rendered HTML.
+  Usage: {% include post-image.html content=post.content %}  -> sets `post_img` (src string, or nil)
+  Order: <img class="social">  >  second-last .gif (or the only one)  >  second-last .png (or the only one).
+{% endcomment %}
+{% assign post_img = nil %}
+{% assign pi_gif_last = nil %}{% assign pi_gif_prev = nil %}
+{% assign pi_png_last = nil %}{% assign pi_png_prev = nil %}
+{% assign pi_social = nil %}
+{% if include.content %}
+  {% assign pi_chunks = include.content | split: "<img" %}
+  {% for pi_chunk in pi_chunks offset: 1 %}
+    {% assign pi_tag = pi_chunk | split: ">" | first %}
+    {% unless pi_tag contains 'src="' %}{% continue %}{% endunless %}
+    {% assign pi_src = pi_tag | split: 'src="' | last | split: '"' | first | strip %}
+    {% assign pi_class = "" %}
+    {% if pi_tag contains 'class="' %}{% assign pi_class = pi_tag | split: 'class="' | last | split: '"' | first %}{% endif %}
+    {% assign pi_classes = pi_class | split: " " %}
+    {% if pi_classes contains "social" %}{% assign pi_social = pi_src %}{% break %}{% endif %}
+    {% assign pi_src_lc = pi_src | downcase | split: "?" | first %}
+    {% if pi_src_lc contains ".gif" %}
+      {% assign pi_gif_prev = pi_gif_last %}{% assign pi_gif_last = pi_src %}
+    {% elsif pi_src_lc contains ".png" %}
+      {% assign pi_png_prev = pi_png_last %}{% assign pi_png_last = pi_src %}
+    {% endif %}
+  {% endfor %}
+  {% assign post_img = pi_social | default: pi_gif_prev | default: pi_gif_last | default: pi_png_prev | default: pi_png_last %}
+{% endif %}

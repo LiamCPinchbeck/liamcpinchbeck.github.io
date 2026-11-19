@@ -1848,7 +1848,7 @@ It seems that the spherical VAE has the best separation which makes sense based 
   <img 
       src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/EVAE_2D_MNIST.png" 
       style="width: 69%; height: auto; border-radius: 8px;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-constant-curvature-vaes/comparison_plots/hvae_2d_disc_latent_space.png" 
       style="width: 69%; height: auto; border-radius: 8px;">
 </div>

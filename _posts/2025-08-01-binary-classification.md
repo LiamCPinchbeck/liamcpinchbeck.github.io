@@ -222,7 +222,7 @@ criterion = nn.BCEWithLogitsLoss()  # logits + binary labels
 The flow of evaluation and correction of a neural network can be seen in this GIF, and if you want to know how this actually works I'd recommend [this video](https://youtu.be/IN2XmBhILt4) (StatQuest again, guy's great, intro's are not).
 
 <div style="text-align: center;">
-<img 
+<img class="social" 
     src="/files/BlogPostData/2025-08-binary-classifier/mlp-backprop-gif.gif" 
     alt="https://miro.medium.com/v2/resize:fit:1200/1*lGsIwcrmZ960TcvnBWSLwA.gif" 
     title="Image showing the outline of evaluating and subsequently backpropagating along a neural network" 

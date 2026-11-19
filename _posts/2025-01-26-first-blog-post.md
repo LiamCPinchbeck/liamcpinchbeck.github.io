@@ -366,7 +366,7 @@ plt.show()
 ```
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/2025-01-26/brute-force-unnormed-posterior.png" 
       alt="Brute force unnormalised posterior values." 
       title="Brute forced unnormalised posterior values." 
