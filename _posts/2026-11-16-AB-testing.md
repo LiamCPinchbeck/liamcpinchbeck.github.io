@@ -86,23 +86,13 @@ All of these questions can be designed and analysed as an A/B test. All you need
 - [Part I: Running a good experiment](#part-i-running-a-good-experiment)
     - [Intro](#intro)
     - [Designing the experiment before you collect data](#designing-the-experiment-before-you-collect-data)
-        - The primary metric: what do we REALLY want to measure?
-        - Write down your hypothesis, prediction and decision rule first
-        - Errors and power
-            - False positive / false negative (TABLE)
-            - Significance vs power; 80% vs 99% (a 20% vs 1% miss rate)
-            - Minimum detectable effect
-            - Worked example: "you need ~31k users per arm"
-        - Practical questions before you start
-            - Is the dataset big enough? Is the timeframe long enough?
-            - Will it take too long? Early predictors / surrogate metrics
-            - Randomisation unit: user vs session vs page view
-            - Interference: when treatment leaks into control (social networks, marketplaces)
-            - One change or many: buttons vs vibes
-            - A/B/C/.../H tests
-        - Ethics
+        - [Primary metrics: what do you ACTUALLY want to measure?](#primary-metrics-what-do-you-actually-want-to-measure)
+        - [Writing down your hypothesis, prediction and decision rule](#write-it-down-first)
+        - [Errors and power](#errors-and-power)
+        - [Practical questions before you start](#practical-questions-before-you-start)
+        - [Ethics](#ethics)
     - [Reading the result](#reading-the-results)
-        - What a p-value is (and the five things it isn't)
+        - What a p-value is (and the bajillion things it isn't)
         - Effect sizes and confidence intervals over p-values
         - Statistical vs practical significance
         - Ship, don't ship, or iterate
@@ -259,7 +249,7 @@ This is called **pre-registration**, and its point is that you can’t quietly m
 | **Sample size / duration** | Decided by a power calculation | Decided by a power calculation | Decided by a power calculation |
 | **Decision rule** | Ship B if significant at 5% and guardrails hold | Proceed if efficacy is significant and safety acceptable | Reject β₁ = 0 at 5%, then pick the lowest dose with acceptable side effects |
 
-> Note: Vaccine and dosage thresholds are illustrative; real trials and the numbers they use are dictated by regulators. Please do not actually use what I'm using as fact 😂
+> Note: Vaccine and dosage thresholds are illustrative; real trials and the numbers they use are dictated by regulators. Please do not actually use what I'm using as fact *😂*
 
 
 
@@ -267,10 +257,81 @@ This is called **pre-registration**, and its point is that you can’t quietly m
 
 
 ### Errors and power
-    - False positive / false negative (TABLE)
-    - Significance vs power; 80% vs 99% (a 20% vs 1% miss rate)
-    - Minimum detectable effect
-    - Worked example: "you need ~31k users per arm"
+<!-- - False positive / false negative (TABLE)
+- Significance vs power; 80% vs 99% (a 20% vs 1% miss rate)
+- Minimum detectable effect
+- Worked example: "you need ~31k users per arm" -->
+
+
+Here we are going to run through the key numbers that anyone running one of these tests or experiments should be familiar with (and may have used a couple times already in the post): **false positive and negatives**, **significance**, **power**, and **minimum detectable effect**.
+
+For an A/B experiment, sometimes the measured outcome isn't the same as the 'correct' outcome. 
+Any test/experiment can reach the wrong conclusion, and there are two ways to do it. 
+You may remember these from the COVID tests: a *false positive* says you're infected when you're not; a *false negative* says you're clear when you're not. 
+An A/B test makes the same kinds of mistakes, but about the **whole experiment** rather than one person:
+
+| | **B really is no different** (null true) | **B really is different** (null false) |
+|---|---|---|
+| **Test says "B is different"** | ❌ False positive (Type I error) | ✅ Correct detection |
+| **Test says "no difference"** | ✅ Correct | ❌ False negative (Type II error) |
+
+Note that individual participants "going the wrong way" (an unvaccinated person who never gets infected, a visitor to the clear page who doesn't buy) aren't errors in this sense. That's just the person-to-person variation, the *noise*, that the test has to see through. The errors are about the conclusion we draw from all of them together.
+
+The two error rates get names:
+- **Significance level (usually denoted $$\alpha$$)**: the false positive, or Type I error, rate we're willing to accept, typically 5%.
+- **Power $$(1-\beta)$$** : the probability of catching a real effect of a given size, typically 80%; i.e. we accept missing a real effect 20% of the time. With **$$\beta$$** being the false negative or Type II error rate/probability
+
+For the signficance level, another way or saying this is if B truly does nothing in comparison to A (i.e. they're equivalent), then at $$\alpha$$ = 5% roughly 1 in 20 experiments will still conclude that they are different. We could run 20 tests and expect one ‘discovery’. (later we'll talk about ways to combat this if it is an issue). 
+In particle physics, a new particle is only claimed at "$$5\sigma$$", a p-value of about $$3\times10^{-7}$$. In other words, if there were no new particle, random noise fluctuations would only produce a result that extreme about once in ***3.5 million experiments***. 
+Reaching that bar takes enormous amounts of data, which a typical business/single experiment neither has nor needs, so we'll mostly stick with 1 in 20 ($$\alpha=0.05$$), or 1 in 100 ($$\alpha=0.01$$) if we want to be *really* sure.
+
+
+Power is then the rate at which we *would* see a difference if one really exists. 
+With 80% power ($$(1-\beta)=0.8$$), if B truly beats A by that amount and we ran the experiment 10 times, on average 8 runs would detect it and 20% of the time, or twice, would wrongly conclude there's no difference ($$\beta = 0.2$$). If the true effect is *smaller* than we planned for, our power drops, which is exactly why we need to decide on a **minimum detectable effect**.
+
+The minimum detectable effect is relatively self-descriptive, it's the smallest effect that we'd decide is significant given our choices on power and significance (e.g. if the number of sales go up by X% amount then the change was for the better, or if the rate of infection went down by Y% then we can say that 'this vaccine' is better).
+
+The catch is that noise only shrinks, and thus the required size of the effect decreases, slowly with more data. 
+For a 3% conversion rate, the random wobble in the *difference* between two groups could start at ~0.76 and then:
+
+| Visitors per version | Typical variation in the difference |
+|---|---|
+| 1,000 | ±0.76 pp |
+| 10,000 | ±0.24 pp |
+| 50,000 | ±0.11 pp |
+
+It typically shrinks like $$1/\sqrt{n}$$. Doubling the amount of data you have decreases the measurement noise by a factor of 2, and increasing the amount of data by 10 decreases the amount of noise only by about a factor of 3...  So small effects need *a lot* of data. For example with the standard power and significance numbers used above and the "typical variation" table:
+
+| MDE (from a 3% base rate) | Visitors needed per version |
+|---|---|
+| +0.3 pp (3.0% → 3.3%) | ~53,000 |
+| +0.6 pp (3.0% → 3.6%) | ~14,000 |
+| +0.9 pp (3.0% → 3.9%) | ~6,500 |
+
+Halving the effect you want to detect roughly *quadruples* the sample you need (inverse of the decrease in the size of the noise). 
+
+The standard formulue to decide how much data is required for a given MDE (denoted $$\delta$$ in the formula) are:
+
+$$\begin{align}
+N \approx \frac{(\sigma^2_\text{A} + \sigma^2_\text{B})(z_{1-\alpha/2} + z_{1-\beta})^2}{\delta^2}
+\end{align}$$
+
+with $$\sigma^2_\text{A}$$ and $$\sigma^2_\text{B}$$ being the noise in the measurements squared or the *variance*. 
+
+If you're specifically interested in conversion-rates for option A ($$p_A$$) and for option B ($$p_B$$) then we can use a more specific formula where $$\delta$$ is now the difference between the rates $$\delta=p_B - p_A$$ and the two variances become a function of $$p_A$$ and $$p_B$$:
+
+$$\begin{align}
+N \approx \frac{(z_{1-\alpha/2} + z_{1-\beta})^2 \,\big[p_A(1-p_A) + p_B(1-p_B)\big]}{(p_B - p_A)^2}
+\end{align}$$
+
+where $$z_{1-\alpha/2} \approx 1.96$$ for $$\alpha = 0.05$$ and $$z_{1-\beta} \approx 0.84$$ for 80% power. We'll look at where the formula comes from in Part II; for now, let's chuck it into python:
+
+```python
+
+import math
+
+
+```
 
 
 ### Practical questions before you start
@@ -319,6 +380,7 @@ This is called **pre-registration**, and its point is that you can’t quietly m
 
 I've not used AI for any of the body text or code writing pertaining to actual A/B testing, but at times have used it to 
 - chock up some quick website designs
+- fact checker/checking for inconcsistencies
 
 
 # Footnotes
