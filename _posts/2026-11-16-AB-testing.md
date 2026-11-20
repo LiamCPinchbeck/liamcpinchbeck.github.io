@@ -85,15 +85,8 @@ All of these questions can be designed and analysed as an A/B test. All you need
         
 - [Part I: Running a good experiment](#part-i-running-a-good-experiment)
     - [Intro](#intro)
-        - A/B testing (the design) vs null hypothesis testing (one way to analyse it)
-        - Why randomise at all? Correlation, confounding and the counterfactual
     - [Designing the experiment before you collect data](#designing-the-experiment-before-you-collect-data)
         - The primary metric: what do we REALLY want to measure?
-            - Success metric: clicks vs sales; conversion rate
-            - Guardrail metrics: what must not get worse
-            - Metric sensitivity
-            - Ratio metrics (clicks per page view) vs per-user metrics
-            - Heavy-tailed metrics: revenue and the one whale customer
         - Write down your hypothesis, prediction and decision rule first
         - Errors and power
             - False positive / false negative (TABLE)
@@ -208,18 +201,13 @@ These are two very different effects with their own limitations. "A/B testing" i
 
 
 
-### The primary metric: what do we REALLY want to measure?
-    <!-- - Success metric: clicks vs sales; conversion rate
-    - Guardrail metrics: what must not get worse
-    - Metric sensitivity
-    - Ratio metrics (clicks per page view) vs per-user metrics
-    - Heavy-tailed metrics: revenue and the one whale customer -->
+### Primary metrics: what do you ACTUALLY want to measure?
 
 The most seemingly obvious thing that you have to do before running an A/B experiment to find which option is better is to actually ask what is "better"? 
 
 For scientific purposes, “better” usually falls out of the question itself. “Does dark matter exist?” becomes “is the fraction of events attributed to a dark matter signal greater than zero, beyond what background fluctuations could produce?” “Is waveform model X better than Y?” becomes “does X fit the data significantly better than Y?”
 
-For industrial settings "better" can be more subjective. We need to pick one or at most two "primary metrics" which are a single number that defines "better" for this experiment. Using website design as an example this could be:
+For industrial settings "better" can be more subjective. We need to pick one or at most two "**primary metrics**" which are a single number that define "better" for a given experiment. Using website design as an example this could be:
 - Higher click through rate from the landing page to the item page
 - Higher click through rate from the item page to a specific item listing
 - Higher number of people that visit a specific listing and then put the item into their cart
@@ -227,12 +215,54 @@ For industrial settings "better" can be more subjective. We need to pick one or 
 - Spending more time on the listing page
 - Scroll more on the website
 
-Some of these by there very nature are not good metrics. For example, "spending more time on the listing page" or "scroll more on the website" may not mean a "better" website, but rather a confused user that is trying to figure out what's going on! Click-through rates are less ambiguous but don't necessarily translate into sales. Sales is essentially what you _always_ want however, but is likely to be significantly lower than the number of people just _visiting_ your website. Especially for smaller business, the rate at which people visit the website and buy an item will likely be so low that despite the metric being "good" we wouldn't be _sensitive_ to it. 
+Some of these by their very nature are not good metrics. For example, "spending more time on the listing page" or "scroll more on the website" may not mean a "better" website, but rather a confused user that is trying to figure out what's going on! Click-through rates are less ambiguous but don't necessarily translate into sales. Sales is essentially what you _always_ want, however, the number of sales is likely to be significantly lower than the number of people just _visiting_ your website. Especially for smaller business, the rate at which people visit the website and buy an item will likely be so low that despite the metric being "good" we wouldn't be _sensitive_ to it. 
+
+**Metric sensitivity** is whether given the amount of data we expect to collect in a given experiment and the expected number "hit rate" of the two options (fraction of people clicking through or fraction of people buying dog food), would we be able to get a significant enough difference to conclude that one option is better/different to the other? 
+
+For example let's say over the course of a few months, you measure the fraction of people that once on the landing page and then actually buy a product on average 3%, but this number fluctuates by up to 0.4 percentage points (that is between 2.6% and 3.4%). Then, you want to perform an A/B test experiment for a single month for a new landing page, and you measure that the rate for the original page in this month is 2.8% and the rate for the new one is 3.1%. Do you think this would actually mean the new page is better? Or just that the number fluctuates enough that you can't really tell the difference based on the data from the experiment? We will later see that for common meaures of significance, that the required number of visitors would be around 50,000!
+
+Another thing that we may want to keep in mind are what are called **guardrail metrics**. These are numbers that you don't want to *worsen* as part of your test. Switching to vaccine trials, your primary metric could be the infection rate (lower=better), and of course you want that number to go down. However, you **do not** want the number of people that experience adverse reactions to the vaccine to go up. Or in machine learning emotion classification tasks, where you use a machine learning model to predict the emotion showing in an image, a primary metric might be "correctly identifies the emotion on the face". *However*, you likely wouldn't want the rate at confidently classifying the wrong emotion to rise as well (e.g. someone that is very angry is actually classified as calm and happy...). On the landing page, a guardrail might be the page load time, refund rate, or newsletter unsubscribes. A "flashier" page that sells slightly more, but doubles the return rate, ain't the better option.
+
+
+
+Another thing that we need to keep in mind is that people can be weird. That is, sometimes we will encounter outliers that would otherwise skew our results. Suppose instead of purchase rate we use *revenue per visitor*. Most visitors spend \$0, most buyers spend \$40–60 on a bag of dog food… and then one breeder buys \$4,000 worth for their kennel. If they happen to land in group B, B "wins", and the result doesn't really reflect the actual page but that breeder.
+
+Metrics like revenue are **heavy-tailed**: a handful of extreme values can dominate the average, so the mean can vary a lot and then needs more data to conclusively pin down. Some common fixes are:
+- **Cap (winsorise)** extreme values, e.g. treat any order above the 99th percentile as if it were the 99th percentile.
+- **Use a binary metric** alongside it ("did they buy at all?"), which a single outlier can't move much.
+- **Use methods that don't lean on the mean**, like rank-based tests or the bootstrap (Part II).
+
+Whatever you choose, we need to decide on it *before* looking at the data. Deciding to drop outliers after seeing which group they landed in is exactly what can lead to **cherry-picking**.[^cherrypicking]
+
+[^cherrypicking]: The term "cherry-picking" literally refers to the practice of fruit harvesters that throw away the "bad cherries", only selling the good ones. Referring to how an analyst can look at their data and decide that some data is "bad" and throw it away. 
+
+
+A subtler trap is the **unit** of the metric. Click-through rate can be computed per *page view* (total clicks ÷ total page views) or per *user* (did each user click at least once?). If we randomise users but compute the metric per page view, one visitor with 100 page views counts 100 times, and their page views aren't independent: they're all the same person making similar choices. Treating them as independent makes our uncertainty look smaller than it really is, so we'll "discover" significant differences more often than we should. The fix (the *delta method*) is in Part II; for now the rule of thumb is: **analyse at the same level you randomise**, or use a method that accounts for it.
+
+So we have a single primary metric that unambiguously means "better", a few guardrails that we don't want to get worse, and a check that we'll actually have enough data to see a difference. With these, we can now write down exactly what we expect to happen.
 
 
 
 
-### Write down your hypothesis, prediction and decision rule first
+### Write it down first
+
+Before collecting any data, write down what you're testing, what you expect, and what you'll **do** with a given outcome. 
+This is called **pre-registration**, and its point is that you can’t quietly move the goalposts once you’ve seen the results. Particle physics (and many other domains, but I was trained as a particle physicist) takes a related idea further with blind analysis: the signal region is hidden, or the result is shifted by an unknown offset, while every analysis choice is made. You only “unblind” once the method is frozen, so the result can’t be nudged towards what you want it to be.
+
+| | Landing page | Vaccine efficacy | Drug dosage |
+|---|---|---|---|
+| **Question** | Does the clearer page sell more? | Does the vaccine reduce infection? | Does recovery improve as the dose increases? |
+| **Null hypothesis** | Purchase rate is the same | Infection rate is the same as placebo | Dose has no effect: recovery is flat from placebo upward (slope β₁ = 0) |
+| **Prediction** | B ≥ A by at least 0.3 pp | ≥ 50% fewer infections | Recovery rises with dose (β₁ > 0) |
+| **Primary metric** | Purchase rate per visitor | Infection rate over 6 months | Recovery rate at 4 weeks, regressed on dose (0, 10, 20, 40 mg) |
+| **Guardrails** | Refund rate, load time | Serious adverse events | Side-effect rate at each dose |
+| **Sample size / duration** | Decided by a power calculation | Decided by a power calculation | Decided by a power calculation |
+| **Decision rule** | Ship B if significant at 5% and guardrails hold | Proceed if efficacy is significant and safety acceptable | Reject β₁ = 0 at 5%, then pick the lowest dose with acceptable side effects |
+
+> Note: Vaccine and dosage thresholds are illustrative; real trials and the numbers they use are dictated by regulators. Please do not actually use what I'm using as fact 😂
+
+
+
 
 
 
