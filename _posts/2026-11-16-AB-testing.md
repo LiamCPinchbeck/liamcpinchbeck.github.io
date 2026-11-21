@@ -21,20 +21,20 @@ UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDE
 ## Resources
 
 
-- ["A/B Testing Course (Full Online Course)" -- Data36 - Online Data Science Courses](https://youtu.be/qhYsZWrTiuM?list=PLHS1p0ot3SVjQg0q1eEPrmOmPUY_AT1vB)
-- ["Data Science Essentials – Crash Course in A/B Testing with Case Study" - freeCodeCamp.org](https://youtu.be/KZe0C0Qq4p0)
-- ["A/B Testing in Data Science Interviews by a Google Data Scientist" - DataInterview](https://youtu.be/DUNk4GPZ9bw)
-- [Null hypothesis testing - StatQuest](https://youtu.be/0oc49DyA3hU)
-- [p-values - StatQuest](https://youtu.be/vemZtEM63GY)
-- [Statistical Power - StatQuest](https://youtu.be/Rsc5znwR5FA)
-- [Power Analysis - StatQuest](https://www.youtube.com/watch?v=VX_M3tIyiYk)
-- [p-hacking - StatQuest](https://youtu.be/HDCOUXE3HMM)
-- [Hypothesis Testing in Statistics - Steve Brunton](https://www.youtube.com/watch?v=vVDahuv1bq8)
-- [P-values: misunderstood and misused](https://arxiv.org/abs/1601.06805)
-- [Fundamentals of p-values: Introduction](https://arxiv.org/abs/1603.03952v1)
-- [Post-hoc α Hypothesis Testing and the Post-hoc p-value](https://arxiv.org/abs/2312.08040)
-- [Null hypothesis significance tests: A mix-up of two different theories, the basis for widespread confusion and numerous misinterpretations](https://arxiv.org/abs/1402.1089)
-
+- ["A/B Testing Course (Full Online Course)" -- Data36 - Online Data Science Courses](https://youtu.be/qhYsZWrTiuM?list=PLHS1p0ot3SVjQg0q1eEPrmOmPUY_AT1vB) (video)
+- ["Data Science Essentials – Crash Course in A/B Testing with Case Study" - freeCodeCamp.org](https://youtu.be/KZe0C0Qq4p0) (video)
+- ["A/B Testing in Data Science Interviews by a Google Data Scientist" - DataInterview](https://youtu.be/DUNk4GPZ9bw) (video)
+- [Null hypothesis testing - StatQuest](https://youtu.be/0oc49DyA3hU) (video)
+- [p-values - StatQuest](https://youtu.be/vemZtEM63GY) (video)
+- [Statistical Power - StatQuest](https://youtu.be/Rsc5znwR5FA) (video)
+- [Power Analysis - StatQuest](https://www.youtube.com/watch?v=VX_M3tIyiYk) (video)
+- [p-hacking - StatQuest](https://youtu.be/HDCOUXE3HMM) (video)
+- [Hypothesis Testing in Statistics - Steve Brunton](https://www.youtube.com/watch?v=vVDahuv1bq8) (video)
+- [P-values: misunderstood and misused](https://arxiv.org/abs/1601.06805) (arXiv article)
+- [Fundamentals of p-values: Introduction](https://arxiv.org/abs/1603.03952v1) (arXiv article)
+- [Post-hoc α Hypothesis Testing and the Post-hoc p-value](https://arxiv.org/abs/2312.08040) (arXiv article)
+- [Null hypothesis significance tests: A mix-up of two different theories, the basis for widespread confusion and numerous misinterpretations](https://arxiv.org/abs/1402.1089) (arXiv article)
+- [Statistical Inference (2nd Edition) - George Casella and Roger L. Berger](https://pages.stat.wisc.edu/~shao/stat610/Casella_Berger_Statistical_Inference.pdf) (textbook)
 
 
 
@@ -324,14 +324,21 @@ $$\begin{align}
 N \approx \frac{(z_{1-\alpha/2} + z_{1-\beta})^2 \,\big[p_A(1-p_A) + p_B(1-p_B)\big]}{(p_B - p_A)^2}
 \end{align}$$
 
-where $$z_{1-\alpha/2} \approx 1.96$$ for $$\alpha = 0.05$$ and $$z_{1-\beta} \approx 0.84$$ for 80% power. We'll look at where the formula comes from in Part II; for now, let's chuck it into python:
+where $$z_{1-\alpha/2} \approx 1.96$$ for $$\alpha = 0.05$$ and $$z_{1-\beta} \approx 0.84$$ for 80% power. A demonstration of the kind of effects one can see if they don't properly increase the number of samples can be seen in the gif below.
 
-```python
+<div style="text-align: center;">
+  <img class="social" 
+      src="/files/BlogPostData/ab-testing/n_samp_vs_mde_with_confusion.gif" 
+      style="width: 80%; height: auto; border-radius: 0px;">
+</div>
 
-import math
+With three examples over three hundred simulated experiments: a quadratic increase in the number of samples (correct), a linear increase (e.g. one might assume half the change requires double the samples), or a constant amount (e.g. say someone says that they had more power than they needed in their last tests, surely the same amount will do for a little bit smaller of an MDE...nope). The left column is the number of samples used for experiments vs the MDE (the bottom two rows highlighted red because with our choice of power and significance, they are wrong).
+The middle column shows the false positive and false negative rates.
+And the last column shows the confusion tables for the experiments.
 
-
-```
+There are two things to note that can both be seen in the centre column. As your worsen the number of samples used: 1. the false positive rate doesn't go up and 2. the false negative rate *does* go up. 
+Throwing away all the math really quickly, if we just have less information, then the relative noise to the changes will *increase*. 
+Hence, you will be more likely to say that there is no significant difference most of the time, even when there is one (increase in false negative rate). But because you're less likely to say anything at all, you're also not going to say that there is a difference when there isn't one (no impact on false positives).
 
 
 ### Practical questions before you start
@@ -381,6 +388,7 @@ import math
 I've not used AI for any of the body text or code writing pertaining to actual A/B testing, but at times have used it to 
 - chock up some quick website designs
 - fact checker/checking for inconcsistencies
+- got it to help me with animating the confusion matrix in [Parti I: Errors and Power](#errors-and-power)
 
 
 # Footnotes
