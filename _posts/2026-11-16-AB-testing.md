@@ -287,7 +287,34 @@ Reaching that bar takes enormous amounts of data, which a typical business/singl
 
 
 Power is then the rate at which we *would* see a difference if one really exists. 
-With 80% power ($$(1-\beta)=0.8$$), if B truly beats A by that amount and we ran the experiment 10 times, on average 8 runs would detect it and 20% of the time, or twice, would wrongly conclude there's no difference ($$\beta = 0.2$$). If the true effect is *smaller* than we planned for, our power drops, which is exactly why we need to decide on a **minimum detectable effect**.
+With 80% power ($$(1-\beta)=0.8$$), if B truly beats A by that amount and we ran the experiment 10 times, on average 8 runs would detect it and 20% of the time, or twice, would wrongly conclude there's no difference ($$\beta = 0.2$$). Below is a gif that demonstrates these aspects as areas under distributions. 
+
+The first row shows what we're actually measuring over a 1000 simulated experiments, where each experiment is a test that a company or scientist would do using $$N_\text{samples}$$. $$X$$ measures the number of conversions or 'success' for experiments [^effect].
+The second row then shows the estimated converion rates (e.g. fraction of people that buy a product given that they were on the landing page for landing page design A or B) or simply the rate of success (fraction of $$N_\text{samples}$$ where an effect was seen) as well as pooled estimates wheree you presume the null hypothesis (that the conversion rates are the same).
+
+
+[^effect]: The definition of success can change depending on perspective, it just means a given sample sees an effect.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/power_diagram_two_sided.gif" 
+      style="width: 100%; height: auto; border-radius: 0px;">
+</div>
+
+The third row is then the differences between the estimated effects per experiment: if in a given experiment/test we measure the conversion for landing page A to be $$p_A=0.03$$ and the conversion rate for landing page B to be $$p_B=0.035$$, then the difference would be $$D=p_B-p_A = 0.005$$. And then the final row is just the difference distribution (row 3) but standardised. The ***significance is*** the fraction of area outside the critical values we've set for the experiment (in this case $$\alpha=0.05$$ translates into a standardised value of $$\sim\pm 1.96$$) and the ***power is** the fraction of area in the green distribution outside those bounds.
+
+We could also do what's called a **on-sided test** where all you're interested in is whether the conversion rate is higher, e.g. you will only ship a feature if it performs better, and if it performs the same or worse then you don't care, you won't ship it either way. Thee the power and signifiance are the same, except we're only concerned with the areas *above* (the positions of which slightly change between the one-sided and two-sided tests).
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/power_diagram_one_sided.gif" 
+      style="width: 100%; height: auto; border-radius: 0px;">
+</div>
+
+
+
+Another question we might ask ourselves is if the true effect is *smaller* than we planned for, our the power drops, then we need to decide on a **minimum detectable effect**.
 
 The minimum detectable effect is relatively self-descriptive, it's the smallest effect that we'd decide is significant given our choices on power and significance (e.g. if the number of sales go up by X% amount then the change was for the better, or if the rate of infection went down by Y% then we can say that 'this vaccine' is better).
 
@@ -308,17 +335,23 @@ It typically shrinks like $$1/\sqrt{n}$$. Doubling the amount of data you have d
 | +0.6 pp (3.0% → 3.6%) | ~14,000 |
 | +0.9 pp (3.0% → 3.9%) | ~6,500 |
 
-Halving the effect you want to detect roughly *quadruples* the sample you need (inverse of the decrease in the size of the noise). 
+Halving the effect you want to detect roughly *quadruples* the sample you need (inverse of the decrease in the size of the noise). A plot showing how you probe more minute differences in effects (MDE) as a function of days presuming 2,000 views per day with $$alpha=0.05$$ (significance) and power of 80%. You can see that early on there is a large benefit to increasing the time period one or two days, but then later on the benfits significantly decrease.
 
-The standard formulue to decide how much data is required for a given MDE (denoted $$\delta$$ in the formula) are:
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/MDE_vs_days.png" 
+      style="width: 80%; height: auto; border-radius: 0px;">
+</div>
+
+The standard formulae to decide how much data is required for a given MDE (denoted $$\delta$$ in the formula) are:
 
 $$\begin{align}
-N \approx \frac{(\sigma^2_\text{A} + \sigma^2_\text{B})(z_{1-\alpha/2} + z_{1-\beta})^2}{\delta^2}
+N \approx \frac{(\sigma^2_\text{A} + \sigma^2_\text{B})(z_{1-\alpha/2} + z_{1-\beta})^2}{\delta_\text{MDE}^2}
 \end{align}$$
 
 with $$\sigma^2_\text{A}$$ and $$\sigma^2_\text{B}$$ being the noise in the measurements squared or the *variance*. 
 
-If you're specifically interested in conversion-rates for option A ($$p_A$$) and for option B ($$p_B$$) then we can use a more specific formula where $$\delta$$ is now the difference between the rates $$\delta=p_B - p_A$$ and the two variances become a function of $$p_A$$ and $$p_B$$:
+If you're specifically interested in conversion-rates for option A ($$p_A$$) and for option B ($$p_B$$) then we can use a more specific formula where $$\delta$$ is now the difference between the rates $$\delta_\text{MDE}=p_B - p_A$$ and the two variances become a function of $$p_A$$ and $$p_B$$:
 
 $$\begin{align}
 N \approx \frac{(z_{1-\alpha/2} + z_{1-\beta})^2 \,\big[p_A(1-p_A) + p_B(1-p_B)\big]}{(p_B - p_A)^2}
@@ -340,17 +373,53 @@ There are two things to note that can both be seen in the centre column. As your
 Throwing away all the math really quickly, if we just have less information, then the relative noise to the changes will *increase*. 
 Hence, you will be more likely to say that there is no significant difference most of the time, even when there is one (increase in false negative rate). But because you're less likely to say anything at all, you're also not going to say that there is a difference when there isn't one (no impact on false positives).
 
+This made me wonder about what would lead to an increase in false positives but keep the false negative rate the same, and that basically falls under problems with peaking and multiple testing that I will go through in [What can go wrong](#what-can-go-wrong).
+
 
 ### Practical questions before you start
-    - Is the dataset big enough? Is the timeframe long enough?
-    - Will it take too long? Early predictors / surrogate metrics
-    - Randomisation unit: user vs session vs page view
-    - Interference: when treatment leaks into control (social networks, marketplaces)
-    - One change or many: buttons vs vibes
-    - A/B/C/.../H tests
+
+
+Before one even starts an AB test, I think that there a few questions one should ask particularly for business with relatively low traffic or budgets.
+
+**Is the dataset big enough? Is the timeframe long enough?** 
+
+
+
+
+
+**Will it take too long? Early predictors / surrogate metrics**
+
+
+
+
+
+**One change or many: buttons vs vibes**
+
+
+
+
+
+**Randomisation unit: user vs session vs page view**
+
+
+
+
+
+**Interference: when treatment leaks into control (social networks, marketplaces)**
+
+
+
+
+
+**A/B/C/.../H tests**
+
+
+
 
 
 ### Ethics
+
+
 
 
 
@@ -378,7 +447,57 @@ Hence, you will be more likely to say that there is no significant difference mo
 # Part II: How it works and other fun asides
 
 
+## Test Statistic rules
 
+$$X_A \sim \text{Binom}(n, p_A), X_B \sim \text{Binom}(n, p_B)$$
+
+$$\hat{p}_A = X_A/n, \hat{p}_B = X_B/n$$
+
+$$D = \hat{p}_B - \hat{p}_A$$
+
+$$\mathbb{E}[\hat{p}] = p, \mathbb{V}[\hat{p}] = \frac{p(1-p)}{n}$$
+
+$$\mathbb{E}[D] = p_B-p_A \equiv \delta, \mathbb{V}[D] = \frac{p_A(1-p_A)}{n} + \frac{p_B(1-p_B)}{n} = \sigma_1^2$$
+
+
+By CLT: $$D \sim \mathcal{N}(\delta, \sigma_1^2)$$
+
+
+
+
+
+
+---
+
+Null Hypothesis ($$H_0$$): $$p=p_A=p_B$$
+
+pooled estimates: $$\bar{p} = \frac{p_A+p_B}{2}$$
+
+null-hypothesis standard dev: $$\sigma_0 = \sqrt{\frac{2\bar{p}(1-\bar{p})}{n}}$$
+
+null-hypothesis z-score: $$z_0 = \frac{D}{\sigma_0}$$
+
+rejection cut-off: $$c = z_c \sigma_0$$
+
+Power: $$P(D>c) + P(D<-c)$$. From step 1 to step 2 we assume $\sigma_1$ is correct, then the left side of the equality follows a standard normal.
+
+$$\begin{align}
+P(D>c) &= P(\frac{D-\delta}{\sigma_1}>\frac{c-\delta}{\sigma_1})\\
+&= 1- \Phi(\frac{c-\delta}{\sigma_1})\\
+&= \Phi(\frac{\delta - c}{\sigma_1}) \\
+&= \Phi(\frac{\delta - z_c \sigma_0}{\sigma_1})
+\end{align}$$
+
+Using $$\sigma_1=s_1/\sqrt{n}$$ and $$\sigma_0=s_0/\sqrt{n}$$
+
+$$\begin{align}
+z_{1-\beta} &= \frac{\delta - z_c s_1/\sqrt{n}}{s_0/\sqrt{n}} \\
+z_{1-\beta} s_1 &= \delta \sqrt{n} - z_c s_0 \\
+n &= \left(\frac{z_{1-\beta} s_1 + z_c s_0}{\delta} \right)^2
+\end{align}$$
+
+
+---
 
 
 
