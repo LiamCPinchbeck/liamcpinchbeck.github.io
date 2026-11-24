@@ -20,6 +20,8 @@ UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDE
 
 ## Resources
 
+As usual, if you don't like my explanations or want another perspective I've got some external resources that you can have a look at.
+
 
 - ["A/B Testing Course (Full Online Course)" -- Data36 - Online Data Science Courses](https://youtu.be/qhYsZWrTiuM?list=PLHS1p0ot3SVjQg0q1eEPrmOmPUY_AT1vB) (video)
 - ["Data Science Essentials – Crash Course in A/B Testing with Case Study" - freeCodeCamp.org](https://youtu.be/KZe0C0Qq4p0) (video)
@@ -35,7 +37,7 @@ UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDE
 - [Post-hoc α Hypothesis Testing and the Post-hoc p-value](https://arxiv.org/abs/2312.08040) (arXiv article)
 - [Null hypothesis significance tests: A mix-up of two different theories, the basis for widespread confusion and numerous misinterpretations](https://arxiv.org/abs/1402.1089) (arXiv article)
 - [Statistical Inference (2nd Edition) - George Casella and Roger L. Berger](https://pages.stat.wisc.edu/~shao/stat610/Casella_Berger_Statistical_Inference.pdf) (textbook)
-
+- [What is the Peeking Problem?](https://confidence.spotify.com/glossary/peeking-problem) (blog post)
 
 
 
@@ -301,6 +303,7 @@ The second row then shows the estimated converion rates (e.g. fraction of people
       src="/files/BlogPostData/ab-testing/power_diagram_two_sided.gif" 
       style="width: 100%; height: auto; border-radius: 0px;">
 </div>
+<br>
 
 The third row is then the differences between the estimated effects per experiment: if in a given experiment/test we measure the conversion for landing page A to be $$p_A=0.03$$ and the conversion rate for landing page B to be $$p_B=0.035$$, then the difference would be $$D=p_B-p_A = 0.005$$. And then the final row is just the difference distribution (row 3) but standardised. The ***significance is*** the fraction of area outside the critical values we've set for the experiment (in this case $$\alpha=0.05$$ translates into a standardised value of $$\sim\pm 1.96$$) and the ***power is** the fraction of area in the green distribution outside those bounds.
 
@@ -311,6 +314,7 @@ We could also do what's called a **on-sided test** where all you're interested i
       src="/files/BlogPostData/ab-testing/power_diagram_one_sided.gif" 
       style="width: 100%; height: auto; border-radius: 0px;">
 </div>
+<br>
 
 
 
@@ -335,13 +339,14 @@ It typically shrinks like $$1/\sqrt{n}$$. Doubling the amount of data you have d
 | +0.6 pp (3.0% → 3.6%) | ~14,000 |
 | +0.9 pp (3.0% → 3.9%) | ~6,500 |
 
-Halving the effect you want to detect roughly *quadruples* the sample you need (inverse of the decrease in the size of the noise). A plot showing how you probe more minute differences in effects (MDE) as a function of days presuming 2,000 views per day with $$alpha=0.05$$ (significance) and power of 80%. You can see that early on there is a large benefit to increasing the time period one or two days, but then later on the benfits significantly decrease.
+Halving the effect you want to detect roughly *quadruples* the sample you need (inverse of the decrease in the size of the noise). A plot showing how you probe more minute differences in effects (MDE) as a function of days presuming 2,000 visits per day, base conversion rate of 3%, $$alpha=0.05$$ (significance), and power of 80%. You can see that early on there is a large benefit to increasing the time period one or two days, but then later on the benfits significantly decrease.
 
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/ab-testing/MDE_vs_days.png" 
       style="width: 80%; height: auto; border-radius: 0px;">
 </div>
+<br>
 
 The standard formulae to decide how much data is required for a given MDE (denoted $$\delta$$ in the formula) are:
 
@@ -364,6 +369,7 @@ where $$z_{1-\alpha/2} \approx 1.96$$ for $$\alpha = 0.05$$ and $$z_{1-\beta} \a
       src="/files/BlogPostData/ab-testing/n_samp_vs_mde_with_confusion.gif" 
       style="width: 80%; height: auto; border-radius: 0px;">
 </div>
+<br>
 
 With three examples over three hundred simulated experiments: a quadratic increase in the number of samples (correct), a linear increase (e.g. one might assume half the change requires double the samples), or a constant amount (e.g. say someone says that they had more power than they needed in their last tests, surely the same amount will do for a little bit smaller of an MDE...nope). The left column is the number of samples used for experiments vs the MDE (the bottom two rows highlighted red because with our choice of power and significance, they are wrong).
 The middle column shows the false positive and false negative rates.
@@ -373,7 +379,7 @@ There are two things to note that can both be seen in the centre column. As your
 Throwing away all the math really quickly, if we just have less information, then the relative noise to the changes will *increase*. 
 Hence, you will be more likely to say that there is no significant difference most of the time, even when there is one (increase in false negative rate). But because you're less likely to say anything at all, you're also not going to say that there is a difference when there isn't one (no impact on false positives).
 
-This made me wonder about what would lead to an increase in false positives but keep the false negative rate the same, and that basically falls under problems with peaking and multiple testing that I will go through in [What can go wrong](#what-can-go-wrong).
+This made me wonder about what would lead to an increase in false positives but keep the false negative rate the same, and that basically falls under problems with peeking and multiple testing that I will go through in [What can go wrong](#what-can-go-wrong).
 
 
 ### Practical questions before you start
@@ -381,43 +387,102 @@ This made me wonder about what would lead to an increase in false positives but 
 
 Before one even starts an AB test, I think that there a few questions one should ask particularly for business with relatively low traffic or budgets.
 
-**Is the dataset big enough? Is the timeframe long enough?** 
+***Is the dataset big enough? Is the timeframe long enough? \|\|*** As shown in the percentage MDE given days figure (above the 'standard formula' for required number of samples for a given MDE) shown again below. Remembering that the option A conversion rate was $$\sim 3\%$$. 
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/MDE_vs_days.png" 
+      style="width: 80%; height: auto; border-radius: 0px;">
+</div>
+<br>
+
+
+We noted that increase the amount of days (/samples) early on can allow you to probe much smaller effect sizes / difference between version A and version B's. But later on, the difference in effect size becomes extremely small. 
+
+Similarly, if your expected MDE is too small (e.g. in this case $$\sim 0.2\%$$ or $$0.002$$ difference in the conversion rate/fraction) then there's a chance you would have to expend a significant amount of time to robustly explore that effect. 
+
+
+Generally, if the effect could only be seen after more than two months (the rough period in the figure) then we should ask ourselves whether it's worth expending the time and resources for such a small effect.  
+
+And finally, there is the opposite case where even if you expect to be able to see a difference in a couple days, in the case of website changes/software features, we should generally still run the experiment for two weeks at minimum. This is to rule out periodic effects during the week. *For example*, the new features might make better landing pages, but they take an extra moment to load. On a weekend, maybe people wouldn't mind as much as they have more time to spend on the website and a moment here or there wouldn't matter. *However*, someone during the week might be pressed for time, and those extra few seconds might be frustrating enough to counteract the positive changes.
+
+
+
+***Will it take too long? Early predictors / surrogate metrics \|\|*** In the case of the figure above, we are presuming that the conversions are from landing page to purchases (which 2,000 visitors per day is a large number already), but in most cases there would be significantly more people that go from the landing page to the list of items that you are selling for example. 
+
+We could even argue that clicking to the item listing page is most of the battle and is also a reasonable predictor for how well the landing page is doing. In this case, despite the purchases being your primary predictor, it might be more advantageous to use an **early predictor** which could be people going from the landing page to the item listing page. In this case, you could explore smaller effects in a smaller timeframe, reducing cost and time spent. Below is a figure showing the size of the effect one is able to explore in this kind of case, presuming a base rate of 30% for going from the landing page to the item listing page, and 3% as before for the landing page to actual purchases.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/MDE_vs_days.png" 
+      style="width: 80%; height: auto; border-radius: 0px;">
+</div>
+<br>
+
+If we use an early predictor, we can explore differences of below 2% (same relative difference to our our original 3% to 0.2%) in roughly a seventh of the time! So TLDR: "is there a predictor that I could use that still indicates a difference in the effect I really want to explore, but that I could get more robust results quicker?"
+
+
+***Small changes or big changes: buttons vs vibes \|\|*** A quick addition to the point on early predictors, for low traffic websites, it's almost always better to only A/B test large changes. You might have heard that Google A/B tests absolutely every feature of there websites down to the pixel size differences of the buttons, but they have the traffic to allow this. If you are reading this, you are likely not Google. For most websites, we will likely never be able to distinguish these kinds of effects, so it's better to put your budget towards larger tests (or 'vibes' of a website) or just other things to improve the business/effect that you're trying to look into.
+
+
+
+***Randomisation unit: user vs session vs page view* \|\|** Another easy trap that these tests can fall into is presuming *independence* between samples. That is, that the information in one sample doesn't allow any extra information to be gained on another. An example of this might be a new software feature on a "smart boat". The company/manufacturer/software developers might be recording every time a button is pressed on a new dashboard based on age of the user/driver. You do your tests and find that it roughly decreases with age (but because of expected demographic of "smart" boat owners and tech usage), except for 75-80 year olds where there is a 1000% jump compared to 70-75 and 80-85 year olds. But it turns out this is because there is one person, I usually think of them as "Steve", just really loves pressing buttons and scuba diving, and spent 3 hours just pressing buttons on the new dashboard skewing your results. 
+
+
+<div style="text-align: center;">
+  <img 
+      src="https://media1.tenor.com/m/6gXsVMHqFtQAAAAC/damn-you.gif" 
+      style="width: 50%; height: auto; border-radius: 0px;">
+</div>
+<br>
+
+However, if we had segmented each sample to whether a driver simply pressed a button or not, this wouldn't have happened. (And did I redo that whole example for the gif? Yes I did.)
 
 
 
 
 
-**Will it take too long? Early predictors / surrogate metrics**
+***Interference: when treatment leaks into control (social networks, marketplaces) \|\|*** Similar to the above, you can have that during an experiment one group impacts the other. For example, in vaccine efficacy, you might be measuring infection rate for those that get a vaccine (group B) and those that don't (group A). There might be a real efficacy to the vaccine so the infection rate for group B drops, but because less people are infected in total, then those in group A are *also* less likely to get infected. Making the *actual* amount of efficacy harder to determine or under-estimated.
+
+Or another example could be a discount for a new ride-share company/method (e.g. comparing standard Uber to UberCheap), but because more people are utilising the service, there are less total drivers, so there are less for group A. 
+
+Or maybe you have a new advertising compaigns on social media, and one is doing so well that users picked to be part of the control group (i.e. seeing how often people engage with the company without seeing a campaign) are sent a link from a friend in the experiment (seeing the advertising) group. Biasing the results again. 
+
+
+The general fix for these kind of problems is to randomise bigger groups, so treatment and control are less likely to interact. Using whole cities or regions (*cluster randomisation*), alternating time regions (*switchback experiments*, common to tests involving ride-share), or friend clusters. The problem with this is that there are fewer independent units/tests, so less power (but importantly *rigorous* power rather than a biased power), which links back to whether we have a large enough sample-size for the effect we're trying to investigate.
 
 
 
 
+***A/B/C/D/E/F../../.. tests \|\| [Multiple Comparisons Problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem)*** Another pit fall that we can run into is having a slew of ideas / features / concepts / drugs / vaccines that we wish to test, and we might think that instead of restricting ourselves to one or two at a time that we should test all of them and see what sticks. The problem with this approach is that you are then likely to 'discover' a positive result (seeing an effect/difference) even when there isn't, simply because of the number of tests you are running. 
 
-**One change or many: buttons vs vibes**
-
-
-
+We are in the land of probabilities, and if we set our significance level to $$\alpha=0.05$$, that means that if we run 20 experiments where *none* of them have a real, on average we would expect to see one "result". If we investigate 20 proposed vaccines, and even if none of them should actually lead to a difference, we would think that one of them is effective despite it not being one. For this level of signifiance and number of tests, the chance of at least one false positive is $$1- 0.95^{20} \approx 64\%$$! 
 
 
-**Randomisation unit: user vs session vs page view**
+There are *multiple* ways to *try* and address this problem, each with it's own benefits and deficits. One of which is known as the [Sidak correction](https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction), that defines a new significance for the tests to control the family wise error (positive) rate. The new significance that applied for each comparison defined with respect to the original level of significance $$\alpha$$ is 
 
+$$\begin{align}
+\alpha_\text{new} = 1 - (1-\alpha)^{1/\text{num tests}}.
+\end{align}$$
 
+This is such that if you are running 20 tests that are independent (don't affect each other), then the false positive rate comes down to 
 
+$$\begin{align}
 
+(1-\alpha_\text{new})^{20} = (\alpha^{1/20})^{20} = \alpha,
 
-**Interference: when treatment leaks into control (social networks, marketplaces)**
+\end{align}$$
 
+i.e. the significance that we actually want. For each comparison though the required significance increase. For 20 tests, $$\alpha_\text{new} \approx 0.0026$$ per test ($$z_\text{crit} \approx 3.0$$ instead of $$\sim1.96$$), so for the same number of samples per test, you get less power.
 
-
-
-
-**A/B/C/.../H tests**
-
+This raises the key question of whether to test all these methods at once, or cam we use our intuition/expertise to narrow down our options such that we don't have to double the number of required samples (or more!) to get a robust result. We will go into some more multiple testing solutions and approachs in the [What Can Go Wrong](#what-can-go-wrong) section of the post.
 
 
 
 
 ### Ethics
+
+Another thing that (almost) goes without saying is if there are any impacts on people's physical or mental health or any other possible ethical concerns, those should be addressed properly.
 
 
 
@@ -425,6 +490,22 @@ Before one even starts an AB test, I think that there a few questions one should
 
 ## Reading the results
 
+### What a p-value is (and the bajillion things it isn't)
+
+
+
+
+### Effect sizes and confidence intervals over p-values
+
+
+
+
+### Statistical vs practical significance
+
+
+
+
+### Ship, don't ship, or iterate
 
 
 
@@ -433,6 +514,17 @@ Before one even starts an AB test, I think that there a few questions one should
 
 ## What can go wrong
 
+- Peeking and Winner's Bias
+- Multiple testing
+- When randomisation breaks
+    - Sample ratio mismatch; A/A tests
+    - Returning customers, novelty effects, flickering
+- Long-term effects: holdout groups and short-term metrics that mislead
+- Objective results, subjective interpretations
+    - Segment analysis: "it worked on mobile users in Tasmania"
+    - Simpson's paradox
+    - Observer bias and cherry-picking
+    - More diagnostics are better, but don't go fishing
 
 
 
@@ -444,7 +536,13 @@ Before one even starts an AB test, I think that there a few questions one should
 
 
 
+
+
+
 # Part II: How it works and other fun asides
+
+
+
 
 
 ## Test Statistic rules
@@ -511,3 +609,7 @@ I've not used AI for any of the body text or code writing pertaining to actual A
 
 
 # Footnotes
+
+
+
+<!-- The Message (book) -->
