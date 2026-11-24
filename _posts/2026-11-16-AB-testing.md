@@ -94,10 +94,10 @@ All of these questions can be designed and analysed as an A/B test. All you need
         - [Practical questions before you start](#practical-questions-before-you-start)
         - [Ethics](#ethics)
     - [Reading the result](#reading-the-results)
-        - What a p-value is (and the bajillion things it isn't)
-        - Effect sizes and confidence intervals over p-values
-        - Statistical vs practical significance
-        - Ship, don't ship, or iterate
+        - [What a p-value is (and the bajillion things it isn't)](#what-a-p-value-is-and-the-bajillion-things-it-isnt)
+        - [Effect sizes and confidence intervals over p-values](#effect-sizes-and-confidence-intervals-over-p-values)
+        - [Statistical vs practical significance](#statistical-vs-practical-significance)
+        - [Ship, don't ship, or iterate](#ship-dont-ship-or-iterate)
     - [What can go wrong](#what-can-go-wrong)
         - Peeking
         - Multiple testing
@@ -490,17 +490,70 @@ Another thing that (almost) goes without saying is if there are any impacts on p
 
 ## Reading the results
 
+
+Okay, so we've defined significance, false positive and negative rates and power and looked at some key questions we should ask before conducting a test such that we can set up or define a good experiment. Now let's pretend we have our results, how do we communicate them clearly, concisely and in a way that takes into account the likelihood of the result / doesn't over-promise.
+
+
+
+
+
 ### What a p-value is (and the bajillion things it isn't)
 
 
 
+It is common to mix up the *significance level* we've defined for our test, and the more colloquial meaning of "*significance*": "If we assume our null hypothesis is true, how likely would it have been to observe the data we collected, or to observe even more extreme data". This quantity is called *p-value* and it is *p*lagued with problems.
+
+First things first though, what is it and how does it compare to our previous values? Below should be a gif, with the top panel being the familiar descriptions of $$\alpha$$, $$\beta$$ and power with respect to the distribution of standardised differences or *z-scores*. The bottom panel shows the distribution of *p-values* for the case of the null hypothesis being true (uniform values) and the alternate hypothesis being true (values cluster around 0). We calculate the probability of the result if we assume that the null hypothesis is true, and thus how *unlikely* the results would be if the alternate hypothesis weren't true.
+
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/power_diagram_two_sided.gif" 
+      style="width: 100%; height: auto; border-radius: 0px;">
+</div>
+<br>
+
+The significance of the result is then defined with respect to whether the p-value is smaller than our defined significance threshold $$\alpha$$. i.e. if $$p<\alpha$$ we can say that we can reject the null hypothesis / option A. Rejecting at $$\alpha=0.05$$ is the same as checking whether $$\|z\| > 1.96$$. That is all the p-value is: the probability of observing the data I got, or something more extreme, presuming that the null hypothesis/ option A=option B is true.
+
+
+Things that the p-value is not:
+- *not the probability the null is true*. This is a subtle one, but we measure probability of data given hypothesis, not hypothesis given data.
+- *not the probability the result happened "by chance"*. This is the false positive rate $$\alpha$$, it is a quality of the testing process, not the data outputs of the process. The p-value is the probability of data, or something more extreme, given the null hypothesis. No alternate hypothesis is involved which would be required for this state.
+- *says nothing about effect size or importance*. We'll tackle this one in the next section, but TLDR, a smaller p-value doesn't necessarily mean a larger observed effect.
+- *p = 0.049 vs 0.051 isn't a meaningful difference*. The threshold that we set for ourselves, $$\alpha$$, is largely arbitrary and being either 0.1 percentage points below or above this threshold is not meaningful. With enough data, even a tiny, worthless effect gives a tiny p-value.
+- *a non-significant result isn't evidence of no effect*. "Absence of evidence isn't evidence of absence". Just because you didn't get a significant p-value for an experiment/test, doesn't mean that the effect isn't there. Just that with the data we have, you can't tell.
+
+TLDR: If your p-value lies below the significance threshold $$\alpha$$ you set *before* the experiment, then you can reject the null hypothesis.
+
 
 ### Effect sizes and confidence intervals over p-values
 
+Another thing that you might need to report if you're modelling a new *relationship* or *size* of an effect, is what range of values the parameters or new effect size fall into. For this we utilise **[confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval)** which given some confidence threshold X%, then we can say that the probability of observing the data given that the parameters fall within this range is X%. 
+
+More concretely, if you measuring the efficacy of a vaccine you could say 
+>"With a probability of 68% we would observe the data we collected, or something more extreme, if the new effect size falls within 3% and 4%." 
+
+This ([interval estimation](https://en.wikipedia.org/wiki/Interval_estimation)) can be more useful than simply reporting the average or a [*"point estimate"*](https://en.wikipedia.org/wiki/Point_estimation) of the results and clarifies that the given result has uncertainties.
+
+Presuming the central limit theorem (that the mean estimates of our data approximately follow a Normal distribution), then a simple confidence interval for a reported mean value $$\bar{x}$$ for $$n$$ samples, with sample standard deviation of $$s$$ is given by:
+
+$$\begin{align}
+\text{Confidence Interval} = \left[\bar{x} - c \frac{s}{\sqrt{n}}, \bar{x} + c \frac{s}{\sqrt{n}} \right].
+\end{align}$$
+
+Where $$c$$ is the corresponding to the z-score (value of the parameter in standardised coordinates) for the X%. Some common ones are:
+- $$c=1.645$$ for 90%
+- $$c=1.96$$ for 95%
+- $$c=2.44$$ for 98%
+- and $$c=2.575$$ for 99%
+
+You can read off more of these [here](https://www.craftonhills.edu/current-students/tutoring-center/mathematics-tutoring/distribution_tables_normal_studentt_chisquared.pdf) if you so wish. This also works for the $$z_{1-\alpha/2}$$ we were working with briefly above.
 
 
 
 ### Statistical vs practical significance
+
+
 
 
 
@@ -512,22 +565,60 @@ Another thing that (almost) goes without saying is if there are any impacts on p
 
 
 
+
 ## What can go wrong
 
-- Peeking and Winner's Bias
-- Multiple testing
-- When randomisation breaks
+
+
+
+
+### Peeking and Winner's Bias
+
+
+
+
+
+### Multiple testing
+
+
+
+
+
+### When randomisation breaks
     - Sample ratio mismatch; A/A tests
     - Returning customers, novelty effects, flickering
-- Long-term effects: holdout groups and short-term metrics that mislead
-- Objective results, subjective interpretations
+
+
+
+
+
+### Long-term effects: holdout groups and short-term metrics that mislead
+
+
+
+
+
+### Objective results, subjective interpretations
     - Segment analysis: "it worked on mobile users in Tasmania"
     - Simpson's paradox
     - Observer bias and cherry-picking
     - More diagnostics are better, but don't go fishing
 
 
+### The Replication Crisis
 
+All of these problems have many real world consequences, not only on a per-experiment level, but for widespread research and development. Particularly, they combine into what is called the replication crisis
+
+
+1. Low power plus filtering on p < 0.05 (the false discovery rate). Work this through yourself. Suppose 10% of the hypotheses a field tests are actually true, studies have 80% power, and α = 0.05. Out of 1,000 studies, how many true positives are there, how many false positives, and what fraction of the "significant" findings are real? Now drop power to 35%, which is typical of many small studies. What happens to that fraction? This is the core of Ioannidis's argument, and it uses nothing beyond α, power and your "not the probability the null is true" bullet.
+
+2. The winner's curse (type M error). Underpowered studies that do reach significance overestimate the effect, as in your planned histogram. So even when the original finding is real, replications tend to find a smaller effect. The large psychology replication project found replication effects averaging about half the originals'. Your type M plot explains why in one picture.
+
+3. Multiple comparisons and p-hacking. Trying several outcomes, subgroups or analysis choices, and reporting the one that worked, is your 64% calculation in disguise. Simmons, Nelson & Simonsohn showed that a few such flexible choices can push the false-positive rate from 5% to over 60%. This links to your pre-registration and blind-analysis sections, since those are the fixes.
+
+4. Publication bias: journals publish p < 0.05 and file-drawer the rest. That's the filter that turns points 1–3 into a literature full of false and inflated findings.
+
+5. The industry parallel, to keep it relevant to your readers: A/B test "wins" that vanish after launch are the same phenomenon. Kohavi and colleagues report that most ideas tested at large companies don't improve the metric, so the starting proportion of true effects is low, exactly the situation in point 1.
 
 
 
