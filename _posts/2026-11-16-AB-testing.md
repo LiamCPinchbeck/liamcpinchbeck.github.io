@@ -531,7 +531,7 @@ TLDR: If your p-value lies below the significance threshold $$\alpha$$ you set *
 Another thing that you might need to report if you're modelling a new *relationship* or *size* of an effect, is what range of values the parameters or new effect size fall into. For this we utilise **[confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval)** which reports if you repeated the experiment many times and built a 95% interval each time, about 95% of those intervals would contain the true value.
 
 More concretely, if you measuring the efficacy of a vaccine you could say 
->"With similar data to the data we collect, if we repeated the experiment 100 times, 90 of those experiments would see the effect size falls within the 3% to 4% interval." 
+>"With similar data to the data we collect, if we repeated the experiment 100 times, 90 of those experiments would see the effect size fall within the 3% to 4% interval." 
 
 This ([interval estimation](https://en.wikipedia.org/wiki/Interval_estimation)) can be more useful than simply reporting the average or a [*"point estimate"*](https://en.wikipedia.org/wiki/Point_estimation) of the results and clarifies that the given result has uncertainties.
 
@@ -558,14 +558,24 @@ The above is mostly concerned with *statistical significance* and not *[practica
 
 Unfortunately, just because you find a statistically significant result doesn't mean you have an interesting one. I've personally had to deal with developing a method that is theoretically "better" but didn't practically perform well enough to justify asking people to use it and thus never published it. 
 
-One twist to this though, is if say Vaccine B was significantly cheaper than Vaccine A, then performs about the same is a good result as well. In my case, the approach was also slower, so there was no justification to use it over the current methods. Although, if simply doing as well as A was the criterion you were setting out with, then you should really use a different statistical test.
+One twist to this though, is if say Vaccine B was significantly cheaper than Vaccine A, but still performs about the same, this is a good result as well. In my case, the approach was also slower, so there was no justification to use it over the current methods. Although, if simply doing as well as A was the criterion you were setting out with, then you should really use a different statistical test. Say instead of "A is the same as B" and "B is better than A", you should use "B is worse than A" (null) and "B is the same or better than A" (alternate)
 
 
 
 ### Ship, don't ship, or iterate
 
 
+So after all that, we have to decide on one of three outcomes: conclude that we can reject the null hypothesis (e.g. that A=B), conclude that our null hypothesis is as likely or more likely than our alternate, OR the result is borderline or inconclusive and you want to change something. 
 
+
+| What the result looks like |	Decision |
+| -- | -- |
+| Interval entirely above the MDE, guardrails fine |	Ship/Positive Outcome/Report Alternate Hypothesis is true |
+| Interval entirely above the MDE, guardrails **NOT** fine |	Don't ship. BUT BUT BUT record it. For companies, it's good to not repeat the experiment later on, and for science we wouldn't want some PhD student or postdoc to go through what you went through for nothing. |
+| Interval narrow and inside ±MDE (confidently "no meaningful effect") |	Don't ship/Report a negative result, BUT BUT BUT record it. For companies, it's good to not repeat the experiment later on, and for science we wouldn't want some PhD student or postdoc to go through what you went through for nothing. |
+| Interval wide and straddling 0 or the MDE (inconclusive), or mixed signals |	Iterate: a bigger change, a better metric, or a properly powered rerun |
+
+The trap here is "iterate": rerunning or extending the same test until it turns significant is peeking and multiple testing in disguise. Any rerun should be a fresh, properly powered experiment designed to give a clear answer, not more data until it crosses the line. If your p-value is something like 0.051, don't presume that a little more data will make it "significant". But, if you want to be sure don't add just a 'little' data, you would have to rerun the whole experiment to be sure and take into account that you've done two tests (i.e. use a stricter $$\alpha$$ / significance threshold). There is a principled way to plan in advance to look multiple times (group-sequential designs), which we cover in Part II.
 
 
 
