@@ -526,12 +526,12 @@ Things that the p-value is not:
 TLDR: If your p-value lies below the significance threshold $$\alpha$$ you set *before* the experiment, then you can reject the null hypothesis.
 
 
-### Effect sizes and confidence intervals over p-values
+### Confidence intervals
 
-Another thing that you might need to report if you're modelling a new *relationship* or *size* of an effect, is what range of values the parameters or new effect size fall into. For this we utilise **[confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval)** which given some confidence threshold X%, then we can say that the probability of observing the data given that the parameters fall within this range is X%. 
+Another thing that you might need to report if you're modelling a new *relationship* or *size* of an effect, is what range of values the parameters or new effect size fall into. For this we utilise **[confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval)** which reports if you repeated the experiment many times and built a 95% interval each time, about 95% of those intervals would contain the true value.
 
 More concretely, if you measuring the efficacy of a vaccine you could say 
->"With a probability of 68% we would observe the data we collected, or something more extreme, if the new effect size falls within 3% and 4%." 
+>"With similar data to the data we collect, if we repeated the experiment 100 times, 90 of those experiments would see the effect size falls within the 3% to 4% interval." 
 
 This ([interval estimation](https://en.wikipedia.org/wiki/Interval_estimation)) can be more useful than simply reporting the average or a [*"point estimate"*](https://en.wikipedia.org/wiki/Point_estimation) of the results and clarifies that the given result has uncertainties.
 
@@ -547,14 +547,18 @@ Where $$c$$ is the corresponding to the z-score (value of the parameter in stand
 - $$c=2.44$$ for 98%
 - and $$c=2.575$$ for 99%
 
-You can read off more of these [here](https://www.craftonhills.edu/current-students/tutoring-center/mathematics-tutoring/distribution_tables_normal_studentt_chisquared.pdf) if you so wish. This also works for the $$z_{1-\alpha/2}$$ we were working with briefly above.
+You can read off more of these [here](https://www.craftonhills.edu/current-students/tutoring-center/mathematics-tutoring/distribution_tables_normal_studentt_chisquared.pdf) if you so wish. This also works for the $$z_{1-\alpha/2}$$ we were working with briefly above e.g. a significance level of 90% corresponds to $$z_{1-\alpha/2}=1.645$$ and so on.
 
 
 
 ### Statistical vs practical significance
 
 
+The above is mostly concerned with *statistical significance* and not *[practical significance](https://statisticsbyjim.com/hypothesis-testing/practical-statistical-significance/)* which is concerned at where the effect you've observed really matter within whatever field/industry you are applying the test. For example, if you somehow through some miracle, find that Vaccine B is 0.00003% better than Vaccine A... does that even matter? This would correspond to if you used Vaccine B instead of Vaccine A on **30,000,000** people, 1 person on average would have a better outcome than if they had Vaccine A. In real world numbers, if you used the vaccine on every single person in **Australia**, then roughly 1 would have a better outcome. 
 
+Unfortunately, just because you find a statistically significant result doesn't mean you have an interesting one. I've personally had to deal with developing a method that is theoretically "better" but didn't practically perform well enough to justify asking people to use it and thus never published it. 
+
+One twist to this though, is if say Vaccine B was significantly cheaper than Vaccine A, then performs about the same is a good result as well. In my case, the approach was also slower, so there was no justification to use it over the current methods. Although, if simply doing as well as A was the criterion you were setting out with, then you should really use a different statistical test.
 
 
 
