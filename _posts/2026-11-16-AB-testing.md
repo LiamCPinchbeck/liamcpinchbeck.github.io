@@ -43,8 +43,8 @@ As usual, if you don't like my explanations or want another perspective I've got
 - [Multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) (Wiki)
 - [Family-wise error rate](https://en.wikipedia.org/wiki/Family-wise_error_rate) (Wiki)
 - [False discovery rate](https://en.wikipedia.org/wiki/False_discovery_rate) (Wiki)
-
-
+- [Differential attrition in health behaviour change trials: A systematic review and meta-analysis](https://www.tandfonline.com/doi/full/10.1080/08870446.2014.953526)
+- [Focusing on the Long-term: It’s Good for Users and Business - H. Hohnhold, D. O'Briend, D. Tang](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43887.pdf)
 
 # Statement of the problem
 
@@ -607,7 +607,7 @@ You can think of the experiment process as a *random walk* as represented in the
 <div style="text-align: center;">
   <img 
       src="/files/BlogPostData/ab-testing/z_crit_walking.gif" 
-      style="width: 70%; height: auto; border-radius: 0px;">
+      style="width: 100%; height: auto; border-radius: 0px;">
 </div>
 <br>
 
@@ -629,7 +629,7 @@ This demonstration also shows why if you're "close" to a significant result, you
 ### Multiple testing
 
 
-So multiple testing has come up a couple times already in this post, here, I will try and cover a some broad ideas to combat multiple testing (Early stopping is a related problem, covered with the specific correction methods in [Part II](#part-ii-how-it-works-and-other-fun-asides)).
+So multiple testing has come up a couple times already in this post, here, I will try and cover a some broad ideas to combat multiple testing (Early stopping is a related problem, covered with the specific correction methods in [Part II](#part-ii-how-it-works-and-other-fun-asides)). Multiple testing doesn't refer to multiple things being compared, or multiple experiments, but also multiple predictors. e.g. One might be tempted to say that a test indicated good performance *sometimes* like "it worked on mobile users in Tasmania". Multiple comparisons/metrics/experiments/tests all count under multiple testing. The Tasmania example is also a case of ***cherry picking*** where you throw away bad results in favour of the good ones.
 
 Before the experiment:
 
@@ -643,7 +643,7 @@ Before the experiment:
 This second point leads into "***False Discovery Rate***" vs "***Family-Wise Error Rate***" which are different ways to quantify the false positive rate when performing multiple testing. To put it simply, the *False discovery rate* (FDR) is the average proportion or rate of false positives (V) to all positive/discoveries (True Positives = S),
 
 $$\begin{align}
-\text{FDR} = \mathbb{E}[\frac{V}{V + S}],
+\text{FDR} = \mathbb{E}\left[\frac{V}{V + S}\right],
 \end{align}$$
 
 (ofentimes it's written V/R) and the *Family-Wise Error Rate* (FWER) is the probability of there being 1 or more False discoveries/results amongst multiple tests/experiments
@@ -654,7 +654,7 @@ $$\begin{align}
 
 Typically, methods that control FWER are more strict than those that control FDR. FDR allows a certain *rate* of false discoveries, while FWER controls the probability of *any* false positives.
 
-Analysing the experiment: Treat exploratory wins as *hypotheses* or *candidates*, not definite results. A "winner" among 20 metrics deserves a dedicated follow-up test, it doesn't necessarily deserve an immediate launch/decision.
+*Analysing the experiment*: Treat exploratory wins as *hypotheses* or *candidates*, not definite results. A "winner" among 20 metrics deserves a dedicated follow-up test, it doesn't necessarily deserve an immediate launch/decision.
 
 
 
@@ -662,8 +662,71 @@ Analysing the experiment: Treat exploratory wins as *hypotheses* or *candidates*
 
 
 ### When randomisation breaks
-- Sample ratio mismatch; A/A tests
-- Returning customers, novelty effects, flickering
+
+Another common issue with these experiments is when the presumed 'randomness' of the testing groups in line with the interference effects we talked about above. 
+
+
+<u><i>Sample ratio mismatch (SRM) or <a href="https://www.tandfonline.com/doi/full/10.1080/08870446.2014.953526">differential attrition</a>:</i></u>
+
+In this case the observed split doesn't match the planned split. e.g. you planned 50/50, but got, say, 50,800 vs 49,200.
+
+The problem in this case isn't some inherent bias in the statistics, but that the "missing" users usually aren't random.
+
+e.g. 
+- version B of a website loads slower, so impatient users leave before they're counted and what you're left with are people that are more likely to view version B as the 'good' version. (a selection effect)
+- You're looking at vaccine efficacy and say some participants in the control group don't come back for the follow up. They're more likely to have had complications and *can't* attend the follow up. So the control group is left with more healthy people lowering the control infection rate making it harder to see if the vaccine did anything.
+- A drug has serious side-effects, leading to people not coming to the follow up, artifically lowering the rate of side-effects in the experimental participants
+
+So the groups now differ in who is in them, and confounding is back.
+
+One way you can spot these kind of issues is to run a chi-squared (or z) test on the counts against the planned split. 
+
+e.g. With 100,000 users, is 50,800 vs 49,200 *plausible* under a true 50/50 split? (It isn't --> $$z \approx 5$$.) 
+
+Teams typically use a strict threshold like p < 0.001 for the chi-squared test.
+
+
+<u><i>A/A tests:</i></u>
+
+This isn't really a *problem* but a way to *expose* problems. You do an exploratory experiment where you purposefully have two groups that aren't different (Group A and Group A). This then sees whether your analysis pipeline is working as intended. If it reports no difference (or only reports a difference in line with the significance that your set, $$\alpha$$) between the groups hypotheses then we're good! A similar version to this is common in signal processing, where you will test out your pipeline on pure noise, to make sure that nothing is "informative" about the signal. Don't want to "discover" dark matter where we know there is none!
+
+Too many significant results means your variance estimate or randomisation is broken.
+p-values from repeated A/A tests should be uniform on 0–1 (bottom panel of the p-value GIF).
+
+<u><i>Returning customers and carryover / Crossover / non-compliance: </i></u>
+
+Examples of this effect are when
+
+e.g. 
+- The same person appears in both website testing groups (cleared cookies, different devices), so they've seen both versions.
+- Website users remember a previous experiment, which colours their behaviour in this one.
+- Placebo patients get the treatment elsewhere.
+
+To mitigate these effects you can randomise on a stable ID (account login) where possible, leave gaps between experiments, and record participants across multiple locations and keep records of compliance on each participants.
+
+
+<u><i>Novelty and primacy effects:</i></u>
+
+Novelty: a shiny "new" thing (e.g. a new website gets clicks just for being new, people buy the newer version of car, people want the "new" treatment option) then the effect fades as it becomes less "new".
+
+Similarly, people can be against "new" things: regular website visitors dislike any change at first, so the effect starts negative, then recovers.
+
+One way to see these effects is to plot the effect day by day, or compare new and returning participants. Is the gap shrinking or growing over time? 
+
+The easy fix if it's within your monetary or time budget is to just run the experiment long enough for it to settle (in line with the two-week minimum), and weight towards new users for example if the change is mainly for them.
+
+
+
+<u><i>Flickering:</i></u>
+
+This is more for website/software feature tests. For a client-side test, the page/software loads version A, then swaps to B after a split second. Users glimpse both, and the delay itself can hurt B, so a guardrail (load time) is contaminating the comparison.
+Assign the version well before you think the user/participant would see it (server-side in the case of website deisng).
+
+
+
+<u><i>Unblinding:</i></u>
+
+This is mostly an issue for medical trials, but patients can guess their group. If a participants is in the placebo group, and *figure out* that they're in the placebo group (e.g. hear the researchers talking behind a door) then they won't experience the *Placebo effect*, where positive health outcomes occur due to people thinking they *will* have positive health outcomes. We want both groups to experience the *same* placebo effect. If the placebo group *knows* they're in the placebo group, then they will experience a lowered plcaebo effect.
 
 
 
@@ -671,15 +734,45 @@ Analysing the experiment: Treat exploratory wins as *hypotheses* or *candidates*
 
 ### Long-term effects: holdout groups and short-term metrics that mislead
 
+The problem for this section is... Experiments run for weeks, but decisions have long term impacts over months or years, and a short-term metric can point the opposite way from the long-term.
+
+e.g. the dog food site that I used an example initially.
+
+{% include ab-landing-demo.html %}
+
+Maybe an aggressive "subscribe & save" pop-up lifts purchases this week, but cancellations and complaints show up a month later. 
+
+
+Or showing more ads can raise revenue in a short test, but users gradually learn to ignore them, or leave (#YouTube!!!). Google measured this "ad blindness" over many months already (Hohnhold et al. 2015 in the references, although this message hasn't been communicated to YouTube apparently).
+
+In medicine real-world consequences like this can often show up where an early predictor is used to avoid either otherwise invasive tests or very long term effects, but these predictors can actually (without knowing) lead to *negative* health outcomes.
+
+
+TLDR Short-term metrics can mislead. We've already gone through a few examples:
+
+- novelty and primacy effects decay (new website design!)
+- users adapt their behaviour over time (ads)
+- surrogates that don't track the outcome you care about (e.g. the medical early predictors)
+
+A useful tool for comparing long-term effects are control or holdout groups. e.g. after shipping a change, or a batch of them, keep a small slice of users (say ~1–5%) on the old experience for months.
+
+This allows us to measure the cumulative, *long*-term effect of what we shipped, which fundamentally a 2-week test cannot do.
+
+However, holdout users miss out on improvements, and in medical trials this is a big ethical question that I am not equipped to address properly.
+
+A small group means low power, which is why holdouts actually *have* to run for a long time as well.
+
+Generally, extended follow-up and post-marketing surveillance can catche rare or slow side effects that trials are too short or too small to see. Just because a drug trial finished and gave good outcomes over a few months, doesn't mean it'll work well over years
+
 
 
 
 
 ### Objective results, subjective interpretations
-- Segment analysis: "it worked on mobile users in Tasmania"
+
 - Simpson's paradox
-- Observer bias and cherry-picking
-- More diagnostics are better, but don't go fishing
+- Cherry-picking
+
 
 
 ### The Replication Crisis
@@ -773,7 +866,7 @@ n &= \left(\frac{z_{1-\beta} s_1 + z_c s_0}{\delta} \right)^2
 I've not used AI for any of the body text or code writing pertaining to actual A/B testing, but at times have used it to 
 - chock up some quick website designs
 - fact checker/checking for inconcistencies + helped me check for ideas that I forgot to mention
-- got it to help me with animating the confusion matrix in [Parti I: Errors and Power](#errors-and-power)
+- got it to help me with animating the confusion matrix in [Part I: Errors and Power](#errors-and-power)
 - it helped with finding documentation for some matplotlib objects for the animations
 
 
