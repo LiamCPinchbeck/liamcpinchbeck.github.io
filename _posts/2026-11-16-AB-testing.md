@@ -39,6 +39,11 @@ As usual, if you don't like my explanations or want another perspective I've got
 - [Statistical Inference (2nd Edition) - George Casella and Roger L. Berger](https://pages.stat.wisc.edu/~shao/stat610/Casella_Berger_Statistical_Inference.pdf) (textbook)
 - [What is the Peeking Problem?](https://confidence.spotify.com/glossary/peeking-problem) (blog post)
 - [A/B Testing 101 for Digital Marketers](https://evteo.com/posts/ab-testing-101-digital-marketers) (blog post)
+- [Family-Wise Error Rate vs. False Discovery Rate - Clinical Biostats](https://www.clinicalbiostats.com/tutorials/biostatistics/family-wise-error-rate-vs-false-discovery-rate/) (Claude looking blog post)
+- [Multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) (Wiki)
+- [Family-wise error rate](https://en.wikipedia.org/wiki/Family-wise_error_rate) (Wiki)
+- [False discovery rate](https://en.wikipedia.org/wiki/False_discovery_rate) (Wiki)
+
 
 
 # Statement of the problem
@@ -591,9 +596,11 @@ So ""**check yourself before you wreck yourself**" basically.
 
 ### Peeking and Winner's Bias
 
-"*Peeking*" is specifically the phenomenon of looking at an experiment's results before collecting the required number of samples based on the power analysis you did beforehand, seeing a "significant" positive result, and finishing the experiment early. I'm gonna skip the explanations as to why real quick and say **THIS IS BAD, DON'T DO THIS**.
+"*Peeking*" is specifically the phenomenon of looking at an experiment's results before collecting the required number of samples based on the power analysis you did beforehand, seeing a "significant" positive result, and finishing the experiment early. I'm gonna skip the explanations as to why real quick and first just say: **THIS IS BAD, DON'T DO THIS**. 
 
-Now, ending an experiment early because we think its done is an extremely reasonable thing to think. However, part of the reason we do the power analysis beforehand, on top of to get rough estimates of testing time and result significance, is to also figure out how many samples you need to avoid the variable result you can get from low samples sizes. That is, for a lower number of samples, it is artifically more likely for one to come to a very positive or very negative result by pure chance.
+And now the explanation.
+
+Now, ending an experiment early because we think its done is an extremely reasonable thing to think. However, part of the reason we do the power analysis beforehand, on top of to get rough estimates of testing time and result significance, is to also figure out how many samples you need to avoid the variable result you can get from low samples sizes. That is, if you continually look at the results, this is equivalent to multiple testing using smaller sample sizes where the experiments are dependent on each other!! 
 
 You can think of the experiment process as a *random walk* as represented in the below gif. What I've done is for every sample, calculated the corresponding z-value for the samples collected so far, so at N=1 I did the analysis suite for one sample, and for N=20 I did it for 20, all the way up to the number of samples required by the power analysis for this given experiment.
 
@@ -609,12 +616,46 @@ The top plot is the mean progression of the significance for a number of experim
 When the alternate hypothesis is true, the fraction of these experiments increases and gradually moves towards one, as you may expect.
 *However*, the fraction of experiments where the null hypothesis is true that pass the significance threshold is also non-zero and almost reaches 50%! That means that at some point during the experiment, roughly half the experiments where there is no significant result, would report a significant result!!
 
-This is to say, just because you might see a "significant" result early on, **it doesn't mean anything** unless it persists to the full duration of the experiment. The warning here is to not sit in front of your experiment waiting for the point it reaches significance, because without the full number of samples it may just be a brief fluctuation.
+This is to say, just because you might see a "significant" result early on, **it doesn't mean anything** unless it persists to the full duration of the experiment. The warning here is to not sit in front of your experiment waiting for the point it reaches significance, because without the full number of samples it may just be a brief fluctuation. Overall, the effect of this is to increase the false positive rate (rate at which you *falsely* reject the null hypothesis). 
+
+
+This also isn't to say that sometimes early stopping could be valid, for example if the effect size is larger than you expected, but there are special techniques that you have to use to mitigate the increase in false positive discoveries. 
+
+This demonstration also shows why if you're "close" to a significant result, you have to collect *significantly* more data. As, if you're close to your significance threshold and you collect just slightly more data, there's a larger than you would think chance for getting the significance, even if you're not "meant" to (look at the orange example curve for the null hypothesis in the gif above).
 
 
 
 
 ### Multiple testing
+
+
+So multiple testing has come up a couple times already in this post, here, I will try and cover a some broad ideas to combat multiple testing (Early stopping is a related problem, covered with the specific correction methods in [Part II](#part-ii-how-it-works-and-other-fun-asides)).
+
+Before the experiment:
+
+1. Know your number of tests. Count every scenario, metric and segment you'll look at. Every extra comparison is another possible false positive, and at relatively small numbers (20) your chance of getting a false positive can be larger than you think (64%).
+2. Decide what kind of mistake matters (this is the FWER vs FDR choice, defined below):
+- for confirmatory decisions, i.e. you want to confirm a decision (ship it / approve the vaccine), keep the chance of any false positive low
+- for exploratory screening, maybe you can accept some false hits but keep their proportion low, then confirm the hits in a follow-up test
+3. Reduce comparisons by construction/design first. One pre-decided primary metric decides the outcome; everything else other thing secondary or exploratory. Just because some other metric does better doesn't mean that your result is "better", every metric can be thought of as another experiment/another test that increases your false positive rate.
+4. Standard corrections exist (Bonferroni, Holm, Benjamini-Hochberg that typically balance either the FDR or the FWER); they tighten the threshold (as we saw above), which costs power, so plan your sample size with the corrected $$\alpha$$.
+
+This second point leads into "***False Discovery Rate***" vs "***Family-Wise Error Rate***" which are different ways to quantify the false positive rate when performing multiple testing. To put it simply, the *False discovery rate* (FDR) is the average proportion or rate of false positives (V) to all positive/discoveries (True Positives = S),
+
+$$\begin{align}
+\text{FDR} = \mathbb{E}[\frac{V}{V + S}],
+\end{align}$$
+
+(ofentimes it's written V/R) and the *Family-Wise Error Rate* (FWER) is the probability of there being 1 or more False discoveries/results amongst multiple tests/experiments
+
+$$\begin{align}
+\text{FWER} = P(V\geq 1) = 1- P(V=0).
+\end{align}$$ 
+
+Typically, methods that control FWER are more strict than those that control FDR. FDR allows a certain *rate* of false discoveries, while FWER controls the probability of *any* false positives.
+
+Analysing the experiment: Treat exploratory wins as *hypotheses* or *candidates*, not definite results. A "winner" among 20 metrics deserves a dedicated follow-up test, it doesn't necessarily deserve an immediate launch/decision.
+
 
 
 
@@ -731,8 +772,9 @@ n &= \left(\frac{z_{1-\beta} s_1 + z_c s_0}{\delta} \right)^2
 
 I've not used AI for any of the body text or code writing pertaining to actual A/B testing, but at times have used it to 
 - chock up some quick website designs
-- fact checker/checking for inconcsistencies
+- fact checker/checking for inconcistencies + helped me check for ideas that I forgot to mention
 - got it to help me with animating the confusion matrix in [Parti I: Errors and Power](#errors-and-power)
+- it helped with finding documentation for some matplotlib objects for the animations
 
 
 # Footnotes
