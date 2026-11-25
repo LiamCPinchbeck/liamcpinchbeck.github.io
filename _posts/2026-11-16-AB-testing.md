@@ -768,27 +768,22 @@ Generally, extended follow-up and post-marketing surveillance can catche rare or
 
 
 
-### Objective results, subjective interpretations
-
-- Simpson's paradox
-- Cherry-picking
-
-
 
 ### The Replication Crisis
 
-All of these problems have many real world consequences, not only on a per-experiment level, but for widespread research and development. Particularly, they combine into what is called the replication crisis
+All of these problems have many real world consequences, not only on a per-experiment level, but for widespread research and development. Particularly, they combine into what is called the "replication crisis"
 
 
-1. Low power plus filtering on p < 0.05 (the false discovery rate). Work this through yourself. Suppose 10% of the hypotheses a field tests are actually true, studies have 80% power, and α = 0.05. Out of 1,000 studies, how many true positives are there, how many false positives, and what fraction of the "significant" findings are real? Now drop power to 35%, which is typical of many small studies. What happens to that fraction? This is the core of Ioannidis's argument, and it uses nothing beyond α, power and your "not the probability the null is true" bullet.
+1. Low power plus filtering on $$p < 0.05$$ (the false discovery rate). Work this through yourself. Suppose 10% of the hypotheses a field tests are actually true, studies have 80% power, and $$\alpha = 0.05$$. Out of $$1,000$$ studies, how many true positives are there, how many false positives, and what fraction of the "significant" findings are real? Now drop power to 35%, which is typical of many small studies. What happens to that fraction? 
 
-2. The winner's curse (type M error). Underpowered studies that do reach significance overestimate the effect, as in your planned histogram. So even when the original finding is real, replications tend to find a smaller effect. The large psychology replication project found replication effects averaging about half the originals'. Your type M plot explains why in one picture.
+2. The winner's curse/bias (type M errors). Underpowered studies that do reach significance overestimate the effect. So even when the original finding is real, replications tend to find a smaller effect. The large psychology replication project found replication effects averaging about half the originals'.
 
-3. Multiple comparisons and p-hacking. Trying several outcomes, subgroups or analysis choices, and reporting the one that worked, is your 64% calculation in disguise. Simmons, Nelson & Simonsohn showed that a few such flexible choices can push the false-positive rate from 5% to over 60%. This links to your pre-registration and blind-analysis sections, since those are the fixes.
+3. Multiple comparisons and p-hacking. Trying several outcomes, subgroups or analysis choices, and reporting the one that worked i.e. uncorrected multiple testings.
 
-4. Publication bias: journals publish p < 0.05 and file-drawer the rest. That's the filter that turns points 1–3 into a literature full of false and inflated findings.
+4. Publication bias: journals publish $$p < 0.05$$ and file-drawer the rest. There is a huge bias, beyond the "replication crisis" called the "Positive publication bias"
 
-5. The industry parallel, to keep it relevant to your readers: A/B test "wins" that vanish after launch are the same phenomenon. Kohavi and colleagues report that most ideas tested at large companies don't improve the metric, so the starting proportion of true effects is low, exactly the situation in point 1.
+
+A/B test "wins" in industry settings that vanish after launch are the same phenomenon. It has been reported that most ideas tested at large companies don't improve their primary metric.
 
 
 
