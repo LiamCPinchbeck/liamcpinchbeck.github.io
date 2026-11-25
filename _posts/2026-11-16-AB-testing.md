@@ -14,7 +14,7 @@ This includes seeing whether certain features on websites increase customer chur
 We will look at common factors to be aware of when conducting these kinds of experiments in business and scientific settings before ever running an analysis or before putting a data scientist to the task.
 For those interested in the underlying workings of the tests, I also go through the workings of standard techniques and some more modern techniques that you can employ going into as much detail without inflating this post beyond a 60min reading time.
 
-UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION
+UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION UNDER CONSTRUCTION 
 ---
 
 
@@ -38,7 +38,7 @@ As usual, if you don't like my explanations or want another perspective I've got
 - [Null hypothesis significance tests: A mix-up of two different theories, the basis for widespread confusion and numerous misinterpretations](https://arxiv.org/abs/1402.1089) (arXiv article)
 - [Statistical Inference (2nd Edition) - George Casella and Roger L. Berger](https://pages.stat.wisc.edu/~shao/stat610/Casella_Berger_Statistical_Inference.pdf) (textbook)
 - [What is the Peeking Problem?](https://confidence.spotify.com/glossary/peeking-problem) (blog post)
-
+- [A/B Testing 101 for Digital Marketers](https://evteo.com/posts/ab-testing-101-digital-marketers) (blog post)
 
 
 # Statement of the problem
@@ -99,18 +99,11 @@ All of these questions can be designed and analysed as an A/B test. All you need
         - [Statistical vs practical significance](#statistical-vs-practical-significance)
         - [Ship, don't ship, or iterate](#ship-dont-ship-or-iterate)
     - [What can go wrong](#what-can-go-wrong)
-        - Peeking
-        - Multiple testing
-        - The winner's curse
-        - When randomisation breaks
-            - Sample ratio mismatch; A/A tests
-            - Returning customers, novelty effects, flickering
-        - Long-term effects: holdout groups and short-term metrics that mislead
-        - Objective results, subjective interpretations
-            - Segment analysis: "it worked on mobile users in Tasmania"
-            - Simpson's paradox
-            - Observer bias and cherry-picking
-            - More diagnostics are better, but don't go fishing
+        - [Peeking and the Winner's Curse](#peeking-and-winners-bias)
+        - [Multiple testing](#multiple-testing)
+        - [When randomisation breaks](#when-randomisation-breaks)
+        - [Long-term effects: holdout groups and short-term metrics that mislead](#long-term-effects-holdout-groups-and-short-term-metrics-that-mislead)
+        - [Objective results, subjective interpretations](#objective-results-subjective-interpretations)
     - [Checklist: running an experiment](#checklist-running-an-experiment)
 
 - [Part II: How it works and other fun asides](#part-ii-how-it-works-and-other-fun-asides)
@@ -299,7 +292,7 @@ The second row then shows the estimated converion rates (e.g. fraction of people
 
 
 <div style="text-align: center;">
-  <img 
+  <img class="social" 
       src="/files/BlogPostData/ab-testing/power_diagram_two_sided.gif" 
       style="width: 100%; height: auto; border-radius: 0px;">
 </div>
@@ -365,7 +358,7 @@ N \approx \frac{(z_{1-\alpha/2} + z_{1-\beta})^2 \,\big[p_A(1-p_A) + p_B(1-p_B)\
 where $$z_{1-\alpha/2} \approx 1.96$$ for $$\alpha = 0.05$$ and $$z_{1-\beta} \approx 0.84$$ for 80% power. A demonstration of the kind of effects one can see if they don't properly increase the number of samples can be seen in the gif below.
 
 <div style="text-align: center;">
-  <img class="social" 
+  <img
       src="/files/BlogPostData/ab-testing/n_samp_vs_mde_with_confusion.gif" 
       style="width: 80%; height: auto; border-radius: 0px;">
 </div>
@@ -565,22 +558,32 @@ One twist to this though, is if say Vaccine B was significantly cheaper than Vac
 ### Ship, don't ship, or iterate
 
 
-So after all that, we have to decide on one of three outcomes: conclude that we can reject the null hypothesis (e.g. that A=B), conclude that our null hypothesis is as likely or more likely than our alternate, OR the result is borderline or inconclusive and you want to change something. 
+So after all that, we have to decide on one of three outcomes: conclude that we can reject the null hypothesis (e.g. that A=B), conclude that our null hypothesis is as likely or more likely than our alternate, OR the result is borderline or inconclusive and you want to change something. Below is a rough table with a couple specific example case specific terminologies.
 
+<br>
 
-| What the result looks like |	Decision |
-| -- | -- |
-| Interval entirely above the MDE, guardrails fine |	Ship/Positive Outcome/Report Alternate Hypothesis is true |
-| Interval entirely above the MDE, guardrails **NOT** fine |	Don't ship. BUT BUT BUT record it. For companies, it's good to not repeat the experiment later on, and for science we wouldn't want some PhD student or postdoc to go through what you went through for nothing. |
-| Interval narrow and inside ±MDE (confidently "no meaningful effect") |	Don't ship/Report a negative result, BUT BUT BUT record it. For companies, it's good to not repeat the experiment later on, and for science we wouldn't want some PhD student or postdoc to go through what you went through for nothing. |
-| Interval wide and straddling 0 or the MDE (inconclusive), or mixed signals |	Iterate: a bigger change, a better metric, or a properly powered rerun |
+| Result | Decision | Website | Clinical trial |
+| -- | -- | -- | -- |
+| Interval entirely above the MDE, guardrails fine | Adopt B | Ship the new page | Recommend the new treatment |
+| Interval above 0 but includes the MDE | Weigh the cost: a real effect that may be too small to matter | Ship if cheap | Consider cost, side effects and access |
+| Interval narrow, within ±MDE | Keep A BUT BUT BUT ***record the null result*** | Don't ship | No evidence of meaningful benefit |
+| A guardrail clearly worse | Keep A | Don't ship | Safety concern: stop or don't approve |
+| Interval wide, includes 0 | Inconclusive: redesign with a new, properly powered plan | Bigger change or better metric | A larger trial |
 
-The trap here is "iterate": rerunning or extending the same test until it turns significant is peeking and multiple testing in disguise. Any rerun should be a fresh, properly powered experiment designed to give a clear answer, not more data until it crosses the line. If your p-value is something like 0.051, don't presume that a little more data will make it "significant". But, if you want to be sure don't add just a 'little' data, you would have to rerun the whole experiment to be sure and take into account that you've done two tests (i.e. use a stricter $$\alpha$$ / significance threshold). There is a principled way to plan in advance to look multiple times (group-sequential designs), which we cover in Part II.
+<br>
+
+The trap here is "Inconclusive" or "iterate": rerunning or extending the same test *until* it turns significant, is peeking **and** multiple testing in disguise. Any rerun should be a fresh, properly powered experiment designed to give a clear answer, not more data until it crosses the line. If your p-value is something like 0.051, don't presume that a little more data will make it "significant". But, if you want to be sure don't add just a 'little' data, you would have to rerun the whole experiment to be sure and take into account that you've done two tests (i.e. use a stricter $$\alpha$$ / significance threshold). There is a principled way to plan in advance to look multiple times (group-sequential designs), which we cover in Part II.
+
 
 
 
 
 ## What can go wrong
+
+Now in this part, we are going to look at common things that can go awry when performing these tests, and ways to mitigate their impact (not *eliminate* most of the time). 
+The biggest problem that happens with these tests, is the person analysing the test. Full stop. The test is the test, it's the person interpreting the results or administrating the test that is the problem. That includes me and you. We both would *like* a positive result, and that is the issue that leads to most of these issues.
+
+So ""**check yourself before you wreck yourself**" basically.
 
 
 
@@ -588,6 +591,25 @@ The trap here is "iterate": rerunning or extending the same test until it turns 
 
 ### Peeking and Winner's Bias
 
+"*Peeking*" is specifically the phenomenon of looking at an experiment's results before collecting the required number of samples based on the power analysis you did beforehand, seeing a "significant" positive result, and finishing the experiment early. I'm gonna skip the explanations as to why real quick and say **THIS IS BAD, DON'T DO THIS**.
+
+Now, ending an experiment early because we think its done is an extremely reasonable thing to think. However, part of the reason we do the power analysis beforehand, on top of to get rough estimates of testing time and result significance, is to also figure out how many samples you need to avoid the variable result you can get from low samples sizes. That is, for a lower number of samples, it is artifically more likely for one to come to a very positive or very negative result by pure chance.
+
+You can think of the experiment process as a *random walk* as represented in the below gif. What I've done is for every sample, calculated the corresponding z-value for the samples collected so far, so at N=1 I did the analysis suite for one sample, and for N=20 I did it for 20, all the way up to the number of samples required by the power analysis for this given experiment.
+
+<div style="text-align: center;">
+  <img 
+      src="/files/BlogPostData/ab-testing/z_crit_walking.gif" 
+      style="width: 70%; height: auto; border-radius: 0px;">
+</div>
+<br>
+
+The top plot is the mean progression of the significance for a number of experiments as well as a couple examples of when the null hypothesis and alternate hypotheses are true. The bottom panel, shows the fraction of these independent experiments that at the given point in the data collection have passed the significance threshold. 
+
+When the alternate hypothesis is true, the fraction of these experiments increases and gradually moves towards one, as you may expect.
+*However*, the fraction of experiments where the null hypothesis is true that pass the significance threshold is also non-zero and almost reaches 50%! That means that at some point during the experiment, roughly half the experiments where there is no significant result, would report a significant result!!
+
+This is to say, just because you might see a "significant" result early on, **it doesn't mean anything** unless it persists to the full duration of the experiment. The warning here is to not sit in front of your experiment waiting for the point it reaches significance, because without the full number of samples it may just be a brief fluctuation.
 
 
 
@@ -599,8 +621,8 @@ The trap here is "iterate": rerunning or extending the same test until it turns 
 
 
 ### When randomisation breaks
-    - Sample ratio mismatch; A/A tests
-    - Returning customers, novelty effects, flickering
+- Sample ratio mismatch; A/A tests
+- Returning customers, novelty effects, flickering
 
 
 
@@ -613,10 +635,10 @@ The trap here is "iterate": rerunning or extending the same test until it turns 
 
 
 ### Objective results, subjective interpretations
-    - Segment analysis: "it worked on mobile users in Tasmania"
-    - Simpson's paradox
-    - Observer bias and cherry-picking
-    - More diagnostics are better, but don't go fishing
+- Segment analysis: "it worked on mobile users in Tasmania"
+- Simpson's paradox
+- Observer bias and cherry-picking
+- More diagnostics are better, but don't go fishing
 
 
 ### The Replication Crisis
