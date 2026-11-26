@@ -1,5 +1,5 @@
 ---
-title: "AB testing / Null Hypothesis testing: How do I know my experiment is producing an effect?"
+title: "AB testing and Null Hypothesis testing: How do I know my experiment is producing an effect?"
 date: 2126-04-21
 permalink: /posts/2126/11/2126-11-AB-testing/
 tags:
@@ -9,7 +9,7 @@ header-includes:
 ---
 
 
-Hi there, in this post we will go through 'AB testing' or 'null hypothesis testing', that essentially wants to determine whether some change or idea performs better or at least _differently_ compared to the original.
+Hi there, in this post we will go through 'AB testing' and 'null hypothesis testing', that essentially wants to determine whether some change or idea performs better or at least _differently_ compared to the original.
 This includes seeing whether certain features on websites increase customer churn and whether a medicine has a significant effect during a drug trial.
 We will look at common factors to be aware of when conducting these kinds of experiments in business and scientific settings before ever running an analysis or before putting a data scientist to the task.
 For those interested in the underlying workings of the tests, I also go through the workings of standard techniques and some more modern techniques that you can employ going into as much detail without inflating this post beyond a 60min reading time.
@@ -43,8 +43,8 @@ As usual, if you don't like my explanations or want another perspective I've got
 - [Multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) (Wiki)
 - [Family-wise error rate](https://en.wikipedia.org/wiki/Family-wise_error_rate) (Wiki)
 - [False discovery rate](https://en.wikipedia.org/wiki/False_discovery_rate) (Wiki)
-- [Differential attrition in health behaviour change trials: A systematic review and meta-analysis](https://www.tandfonline.com/doi/full/10.1080/08870446.2014.953526)
-- [Focusing on the Long-term: It’s Good for Users and Business - H. Hohnhold, D. O'Briend, D. Tang](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43887.pdf)
+- [Differential attrition in health behaviour change trials: A systematic review and meta-analysis](https://www.tandfonline.com/doi/full/10.1080/08870446.2014.953526) (research article)
+- [Focusing on the Long-term: It’s Good for Users and Business - H. Hohnhold, D. O'Brien, D. Tang](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43887.pdf) (google research paper)
 
 # Statement of the problem
 
@@ -90,7 +90,7 @@ All of these questions can be designed and analysed as an A/B test. All you need
 
 - [Statement of the problem](#statement-of-the-problem)
         
-- [Part I: Running a good experiment](#part-i-running-a-good-experiment)
+- [Part I: Running a good experiment](#part-i-running-a-good-experiment) (~40 mins)
     - [Intro](#intro)
     - [Designing the experiment before you collect data](#designing-the-experiment-before-you-collect-data)
         - [Primary metrics: what do you ACTUALLY want to measure?](#primary-metrics-what-do-you-actually-want-to-measure)
@@ -110,8 +110,9 @@ All of these questions can be designed and analysed as an A/B test. All you need
         - [Long-term effects: holdout groups and short-term metrics that mislead](#long-term-effects-holdout-groups-and-short-term-metrics-that-mislead)
         - [Objective results, subjective interpretations](#objective-results-subjective-interpretations)
     - [Checklist: running an experiment](#checklist-running-an-experiment)
+    - [What I didn't cover in Part I that will be in Part II](#what-i-didnt-cover-in-part-i-that-will-be-in-part-ii)
 
-- [Part II: How it works and other fun asides](#part-ii-how-it-works-and-other-fun-asides)
+- [Part II: How it works and other fun asides](#part-ii-how-it-works-and-other-fun-asides) (~60 mins)
     - The causal foundation
         - Potential outcomes (Rubin): the effect we can never observe
         - Why randomisation makes the difference in means unbiased
@@ -158,8 +159,6 @@ All of these questions can be designed and analysed as an A/B test. All you need
     - Case study: from A/B tests to adaptive clinical trials
         - A simulated drug trial with early stopping
         - Response-adaptive randomisation (bandits in medicine)
-
-- Final rules of thumb
 
 
 
@@ -303,7 +302,7 @@ The second row then shows the estimated converion rates (e.g. fraction of people
 </div>
 <br>
 
-The third row is then the differences between the estimated effects per experiment: if in a given experiment/test we measure the conversion for landing page A to be $$p_A=0.03$$ and the conversion rate for landing page B to be $$p_B=0.035$$, then the difference would be $$D=p_B-p_A = 0.005$$. And then the final row is just the difference distribution (row 3) but standardised. The ***significance is*** the fraction of area outside the critical values we've set for the experiment (in this case $$\alpha=0.05$$ translates into a standardised value of $$\sim\pm 1.96$$) and the ***power is** the fraction of area in the green distribution outside those bounds.
+The third row is then the differences between the estimated effects per experiment: if in a given experiment/test we measure the conversion for landing page A to be $$p_A=0.03$$ and the conversion rate for landing page B to be $$p_B=0.035$$, then the difference would be $$D=p_B-p_A = 0.005$$. And then the final row is just the difference distribution (row 3) but standardised. The ***significance is*** the fraction of area outside the critical values we've set for the experiment (in this case $$\alpha=0.05$$ translates into a standardised value of $$\sim\pm 1.96$$) and the **power is** the fraction of area in the green distribution outside those bounds.
 
 We could also do what's called a **on-sided test** where all you're interested in is whether the conversion rate is higher, e.g. you will only ship a feature if it performs better, and if it performs the same or worse then you don't care, you won't ship it either way. Thee the power and signifiance are the same, except we're only concerned with the areas *above* (the positions of which slightly change between the one-sided and two-sided tests).
 
@@ -318,7 +317,7 @@ We could also do what's called a **on-sided test** where all you're interested i
 
 Another question we might ask ourselves is if the true effect is *smaller* than we planned for, our the power drops, then we need to decide on a **minimum detectable effect**.
 
-The minimum detectable effect is relatively self-descriptive, it's the smallest effect that we'd decide is significant given our choices on power and significance (e.g. if the number of sales go up by X% amount then the change was for the better, or if the rate of infection went down by Y% then we can say that 'this vaccine' is better).
+The minimum detectable effect is relatively self-descriptive, it's the smallest true effect the test will detect with the chosen power (or the smallest effect worth detecting). e.g. if the number of sales go up by X% amount then the change was for the better, or if the rate of infection went down by Y% then we can say that 'this vaccine' is better.
 
 The catch is that noise only shrinks, and thus the required size of the effect decreases, slowly with more data. 
 For a 3% conversion rate, the random wobble in the *difference* between two groups could start at ~0.76 and then:
@@ -329,7 +328,7 @@ For a 3% conversion rate, the random wobble in the *difference* between two grou
 | 10,000 | ±0.24 pp |
 | 50,000 | ±0.11 pp |
 
-It typically shrinks like $$1/\sqrt{n}$$. Doubling the amount of data you have decreases the measurement noise by a factor of 2, and increasing the amount of data by 10 decreases the amount of noise only by about a factor of 3...  So small effects need *a lot* of data. For example with the standard power and significance numbers used above and the "typical variation" table:
+It typically shrinks like $$1/\sqrt{n}$$. Doubling the amount of data you have decreases the measurement noise by a factor of ~1.4, and increasing the amount of data by 10 decreases the amount of noise only by about a factor of 3...  So small effects need *a lot* of data. For example with the standard power and significance numbers used above and the "typical variation" table:
 
 | MDE (from a 3% base rate) | Visitors needed per version |
 |---|---|
@@ -467,7 +466,7 @@ This is such that if you are running 20 tests that are independent (don't affect
 
 $$\begin{align}
 
-(1-\alpha_\text{new})^{20} = (\alpha^{1/20})^{20} = \alpha,
+(1-\alpha_\text{new})^{20} = ((1-\alpha)^{1/20})^{20} = 1-\alpha,
 
 \end{align}$$
 
@@ -528,7 +527,7 @@ TLDR: If your p-value lies below the significance threshold $$\alpha$$ you set *
 
 Another thing that you might need to report if you're modelling a new *relationship* or *size* of an effect, is what range of values the parameters or new effect size fall into. For this we utilise **[confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval)** which reports if you repeated the experiment many times and built a 95% interval each time, about 95% of those intervals would contain the true value.
 
-More concretely, if you measuring the efficacy of a vaccine you could say 
+More concretely, if you measuring the efficacy of a vaccine you could say for a 90% confidence interval
 >"With similar data to the data we collect, if we repeated the experiment 100 times, 90 of those experiments would see the effect size fall within the 3% to 4% interval." 
 
 This ([interval estimation](https://en.wikipedia.org/wiki/Interval_estimation)) can be more useful than simply reporting the average or a [*"point estimate"*](https://en.wikipedia.org/wiki/Point_estimation) of the results and clarifies that the given result has uncertainties.
@@ -542,17 +541,17 @@ $$\begin{align}
 Where $$c$$ is the corresponding to the z-score (value of the parameter in standardised coordinates) for the X%. Some common ones are:
 - $$c=1.645$$ for 90%
 - $$c=1.96$$ for 95%
-- $$c=2.44$$ for 98%
-- and $$c=2.575$$ for 99%
+- $$c=2.326$$ for 98%
+- and $$c=2.576$$ for 99%
 
-You can read off more of these [here](https://www.craftonhills.edu/current-students/tutoring-center/mathematics-tutoring/distribution_tables_normal_studentt_chisquared.pdf) if you so wish. This also works for the $$z_{1-\alpha/2}$$ we were working with briefly above e.g. a significance level of 90% corresponds to $$z_{1-\alpha/2}=1.645$$ and so on.
+You can read off more of these [here](https://www.craftonhills.edu/current-students/tutoring-center/mathematics-tutoring/distribution_tables_normal_studentt_chisquared.pdf) if you so wish. This also works for the $$z_{1-\alpha/2}$$ we were working with briefly above e.g. a significance level of 90% ($$\alpha=0.1$$) corresponds to $$z_{1-\alpha/2}=1.645$$ and so on.
 
 
 
 ### Statistical vs practical significance
 
 
-The above is mostly concerned with *statistical significance* and not *[practical significance](https://statisticsbyjim.com/hypothesis-testing/practical-statistical-significance/)* which is concerned at where the effect you've observed really matter within whatever field/industry you are applying the test. For example, if you somehow through some miracle, find that Vaccine B is 0.00003% better than Vaccine A... does that even matter? This would correspond to if you used Vaccine B instead of Vaccine A on **30,000,000** people, 1 person on average would have a better outcome than if they had Vaccine A. In real world numbers, if you used the vaccine on every single person in **Australia**, then roughly 1 would have a better outcome. 
+The above is mostly concerned with *statistical significance* and not *[practical significance](https://statisticsbyjim.com/hypothesis-testing/practical-statistical-significance/)* which is concerned at where the effect you've observed really matter within whatever field/industry you are applying the test. For example, if you somehow through some miracle, find that Vaccine B is 0.000003% better than Vaccine A... does that even matter? This would correspond to if you used Vaccine B instead of Vaccine A on **30,000,000** people, 1 person on average would have a better outcome than if they had Vaccine A. In real world numbers, if you used the vaccine on every single person in **Australia**, then roughly 1 would have a better outcome. 
 
 Unfortunately, just because you find a statistically significant result doesn't mean you have an interesting one. I've personally had to deal with developing a method that is theoretically "better" but didn't practically perform well enough to justify asking people to use it and thus never published it. 
 
@@ -588,7 +587,7 @@ The trap here is "Inconclusive" or "iterate": rerunning or extending the same te
 Now in this part, we are going to look at common things that can go awry when performing these tests, and ways to mitigate their impact (not *eliminate* most of the time). 
 The biggest problem that happens with these tests, is the person analysing the test. Full stop. The test is the test, it's the person interpreting the results or administrating the test that is the problem. That includes me and you. We both would *like* a positive result, and that is the issue that leads to most of these issues.
 
-So ""**check yourself before you wreck yourself**" basically.
+So "**check yourself before you wreck yourself**" basically.
 
 
 
@@ -638,7 +637,7 @@ Before the experiment:
 - for confirmatory decisions, i.e. you want to confirm a decision (ship it / approve the vaccine), keep the chance of any false positive low
 - for exploratory screening, maybe you can accept some false hits but keep their proportion low, then confirm the hits in a follow-up test
 3. Reduce comparisons by construction/design first. One pre-decided primary metric decides the outcome; everything else other thing secondary or exploratory. Just because some other metric does better doesn't mean that your result is "better", every metric can be thought of as another experiment/another test that increases your false positive rate.
-4. Standard corrections exist (Bonferroni, Holm, Benjamini-Hochberg that typically balance either the FDR or the FWER); they tighten the threshold (as we saw above), which costs power, so plan your sample size with the corrected $$\alpha$$.
+4. Standard corrections exist (Bonferroni, Holm, Benjamini-Hochberg that typically balance either the FWER or the FDR); they tighten the threshold (as we saw above), which costs power, so plan your sample size with the corrected $$\alpha$$.
 
 This second point leads into "***False Discovery Rate***" vs "***Family-Wise Error Rate***" which are different ways to quantify the false positive rate when performing multiple testing. To put it simply, the *False discovery rate* (FDR) is the average proportion or rate of false positives (V) to all positive/discoveries (True Positives = S),
 
@@ -736,11 +735,7 @@ This is mostly an issue for medical trials, but patients can guess their group. 
 
 The problem for this section is... Experiments run for weeks, but decisions have long term impacts over months or years, and a short-term metric can point the opposite way from the long-term.
 
-e.g. the dog food site that I used an example initially.
-
-{% include ab-landing-demo.html %}
-
-Maybe an aggressive "subscribe & save" pop-up lifts purchases this week, but cancellations and complaints show up a month later. 
+e.g. the dog food site that I used an example initially. Maybe an aggressive "subscribe & save" pop-up lifts purchases this week, but cancellations and complaints show up a month later. 
 
 
 Or showing more ads can raise revenue in a short test, but users gradually learn to ignore them, or leave (#YouTube!!!). Google measured this "ad blindness" over many months already (Hohnhold et al. 2015 in the references, although this message hasn't been communicated to YouTube apparently).
@@ -790,12 +785,186 @@ A/B test "wins" in industry settings that vanish after launch are the same pheno
 
 ## Checklist: running an experiment
 
+**BEFORE:** (where most of your effort *should* go)
+
+1. What quantity/metric do we *really* want to investigate during the experiment (primary metrics)
+2. What quantity/metrics do we want to keep track of / not get worse during the experiment but not use to decide success (guardrail metrics)
+3. What is our randomisation unit: user/participant, session or page view? Analyse at the same level you randomise.
+4. Are there any quantities or effects that could the groups affect each other, or differ in ways beyond the change being investigated? (confounding/common causalities/interference)
+5. What are the hypotheses that we will be testing? (null and alternative; one- or two-sided?)
+6. What is the rough expected size of the effect we're investigating? (not a strict MDE, just a rough estimate for now)
+7. Do we have any previous data that we can utilise to decrease the variance of our results and/or decrease test duration/amount of \*new\* data required?
+8. How significant do we want our results to be? What $$\alpha$$ and power do we want? Taking into account known limitations, rough time estimates, and how many comparisons we are performing. ($$\alpha=0.05$$, $$\alpha=0.01$$, $$\alpha=X$$? $$1-\beta = 0.8, 0.9, 0.95, Y$$?)
+9. How many samples and how much time would it take to get a result with the effect size estimate, significance and power? (Power Analysis)
+10. Taking into account time, number of samples required and wanted significance what is our MDE? --> Rerun the power analysis
+11. How long should the experiment be to mitigate novelty / seasonal / periodic effects or particular events (Christmas / Halloween / Gamma Ray Bursts / Share drinks night at the local pub)?
+12. Should we utilise an early predictor metric, and how sure are we that it correlates with the primary metric? (if yes repeat the steps again from the primary metric, treating the surrogate as the metric)
+13. Consider any ethical possibilities such as consent, harm, withholding a known benefit, getting approvals
+14. Can we run an A/A test before or during the real experiment? If the pipeline is new to mitigate faulty pipelines with positive or negative biases
+14. Write every decision, hypothesis, metric, sample size, stopping and decision rules BEFORE starting and commit to them. 
+    - What will you do with a clear negative or clear positive result? 
+    - What qualifies as "unclear" or grounds for collecting more data that is not just "to reach significance". 
+    - Are you running multiple comparisons? What will you decide as a win on a specific segment ("mobile users in Tasmania") and how will you follow up?
+    - How bad do the guardrails have to be to nullify the results on your primary metric? What are our stopping rules (when to stop a drug trial due to adverse effects, or what would require stopping a website feature test)
+    - Should you have a holdout group / look for longer term effects?
+    - What specific analysis method are we going to use? One- or two-sided, and how will outliers be handled (capping or winsorising)
+    - 
 
 
+**DURING:**
 
+1. DON'T PEEK!!! Remember to only stop the test once you reach your minimum required sample size decided BEFORE the experiment (presuming that everything is running smoothly). 
+2. Does the observed split match the planned one? ($$p < 0.001$$ flags a problem). 
+3. Don't peek, but do check in. Watch out for critical guardrails or other critical problems. See whether anything is broken / option B page won't load / the equipment isn't measuring *any* data/ you're seeing immediate adverse effects from a drug/vaccine. Without a clear stopping rule decided *before* the experiment, this can lead to peeking WHICH YOU SHOULDN'T DO
+
+
+**AFTER:**
+1. Before anything we should check for sample ratio mismatch. If it fails (it is unlikely that we got the size of mismatch that we did get), find the bug before looking at results
+2. Report effect size, confidence interval ***and*** p-value (all of them!)
+3. Apply any planned multiple-testing correction. Treat any segment wins ("mobile users in Tasmania") as hypotheses/candidates for a new test.
+4. Novelty and primacy: plot any recorded effects over time. Are they fading or growing?
+5. Decide using the pre-decided rules: adopt B, weigh the cost, keep A, or inconclusive. Do not just rerun until it turns significant.
+6. Record the result whatever it is, including nulls
+7. Observe any holdout groups or cohort tracking for big or cumulative changes.
+
+
+## What I didn't cover in Part I that will be in Part II
+
+So the Part I ended up significantly (\*wink wink\*) longer than I thought it would and more than I would like. So despite skipping a few things I'm going to leave it there. 
+But I'll mention a few things that I would've liked to put in, that *will* go into Part II (which will be as long as it needs to be to cover the topics I planned out).
+
+- Bayesian A/B testing / CUPED: How to leverage historical/previous data to reduce number of samples required/duration of an experiment. I mentioned this in the checklist, but when comparing a standard option (say website version A vs website version B), a company (or the literature in the case of medical trials or the like) may already have information on the 'Option A' or 'previous option' that you can leverage. If you already know the rates for the original options to within 0.1%, then you can spot a deviation from that quicker than if you didn't use that information. ([Bayesian methods](#bayesian-ab-testing) and [Variance Reduction](#variance-reduction))
+- Specifics on multiple testings. Including details on the trade-offs, what the different methods tackle (FWER/FDR/other). Also [methods such as ANOVA and the F-statistics](#more-than-two-groups-one-way-anova-and-the-f-statistic-brief-links-to-the-follow-up-post)
+- When to use a normal distribution as the basis for testing and when to use a t-distribution / when CLT breaks down
+- How to bypass some of the mathematics if you can simulate your experiment / Monte Carlo methods ([Power by Simulation](#power-by-simulation-monte-carlo-when-the-formula-doesnt-apply))
+- How to peek "correctly", construction of early stopping rules ([Peeking, formally](#peeking-formally))
+- Bootstrapping, how to estimate the variance of your results without collecting huge amounts/new data ([Bootstrap confidence intervals](#bootstrap-confidence-intervals))
+- More modern methods such as *multi-armed bandits* (yes you read that right) ([Beyond fixed experiments: multi-armed bandits](#beyond-fixed-experiments-multi-armed-bandits))
+- A couple full simulated case-studies ([One based on a medical trial](#case-study-from-ab-tests-to-adaptive-clinical-trials) and [one based ona new website landing page design](#case-study-new-website-landing-page-design))
+- Derivations of the formulae / results that I just stated in the above (e.g. [Deriving the sample-size / power formula](#deriving-the-sample-size--power-formula))
 
 
 # Part II: How it works and other fun asides
+
+
+## The causal foundation
+
+### Potential outcomes (Rubin): the effect we can never observe
+
+### Why randomisation makes the difference in means unbiased
+
+## SUTVA, and cluster / switchback designs when it fails
+
+
+
+
+
+## Basic two-group tests
+
+### Which test when: proportions vs means vs counts
+
+### z-test, t-test, chi-squared test of independence, matched pairs
+
+### Fisher's exact test and the lady tasting tea
+
+### The Neyman–Pearson lemma: why likelihood ratios are optimal
+
+### Deriving the sample-size / power formula
+
+### Power by Simulation: Monte Carlo when the formula doesn't apply
+
+
+
+## When the CLT lets you down
+### Heavy tails and slow convergence (simulation)
+### Permutation tests: exact inference from shuffling labels
+### Bootstrap confidence intervals
+### Mann–Whitney U, and what it actually tests
+
+
+## Ratio metrics and the delta method
+### Why naive standard errors are too small
+### Deriving the delta-method variance
+
+
+## Variance reduction
+### Stratification and post-stratification
+### CUPED as control variates
+
+## More than two groups: one-way ANOVA and the F-statistic (brief; links to the follow-up post)
+
+
+## Peeking, formally
+
+
+### The experiment as a random walk
+
+### How bad is it? Simulating false-positive rates under peeking
+
+### The look-elsewhere effect and trials factors
+
+### Wald's sequential probability ratio test (a WWII story, but probably not as good as Private Ryan)
+
+### Fixes: group-sequential designs (O'Brien–Fleming)
+
+### Fixes: always-valid inference (mSPRT, confidence sequences)
+
+
+
+## Multiple testing corrections: Bonferroni vs Benjamini–Hochberg
+
+
+
+## The winner's curse, formally
+
+
+
+### Selection bias in estimated effects
+
+
+### Shrinkage: James–Stein and hierarchical models to the rescue
+
+
+
+
+## Bayesian A/B testing
+
+
+
+### Beta-binomial posteriors and P(B > A)
+
+
+### Expected loss as a stopping rule
+
+
+### Does Bayes fix peeking? (Not really)
+
+
+### Hierarchical priors from past experiments
+
+
+
+
+## Beyond fixed experiments: multi-armed bandits
+
+
+### Explore vs exploit, and regret
+
+### ε-greedy, UCB and Thompson sampling
+
+
+### When to use a bandit instead of an A/B test (and when not to)
+
+
+
+
+## Case study: from A/B tests to adaptive clinical trials
+### A simulated drug trial with early stopping
+### Response-adaptive randomisation (bandits in medicine)
+
+
+## Case study: New Website Landing Page Design
+
 
 
 
