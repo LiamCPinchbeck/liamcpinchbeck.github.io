@@ -500,17 +500,17 @@ Okay, so we've defined significance, false positive and negative rates and power
 
 It is common to mix up the *significance level* we've defined for our test, and the more colloquial meaning of "*significance*": "If we assume our null hypothesis is true, how likely would it have been to observe the data we collected, or to observe even more extreme data". This quantity is called *p-value* and it is *p*lagued with problems.
 
-First things first though, what is it and how does it compare to our previous values? Below should be a gif, with the top panel being the familiar descriptions of $$\alpha$$, $$\beta$$ and power with respect to the distribution of standardised differences or *z-scores*. The bottom panel shows the distribution of *p-values* for the case of the null hypothesis being true (uniform values) and the alternate hypothesis being true (values cluster around 0). We calculate the probability of the result if we assume that the null hypothesis is true, and thus how *unlikely* the results would be if the alternate hypothesis weren't true.
+First things first though, what is it and how does it compare to our previous values? Below should be a gif, with the top panel being the familiar descriptions of $$\alpha$$, $$\beta$$ and power with respect to the distribution of standardised differences or *z-scores*. The bottom two panels show the distribution of *p-values* (and $$log_{10}$$ p-values) for the case of the null hypothesis being true (uniform values, or in the log plot stick around 0) and the alternate hypothesis being true (values cluster around 0 and moves towards negative log values). We calculate the probability of the result if we assume that the null hypothesis is true, and thus how *unlikely* the results would be if the alternate hypothesis weren't true.
 
 
 <div style="text-align: center;">
   <img 
-      src="/files/BlogPostData/ab-testing/power_diagram_two_sided.gif" 
+      src="/files/BlogPostData/ab-testing/p_value_diagram.gif" 
       style="width: 100%; height: auto; border-radius: 0px;">
 </div>
 <br>
 
-The significance of the result is then defined with respect to whether the p-value is smaller than our defined significance threshold $$\alpha$$. i.e. if $$p<\alpha$$ we can say that we can reject the null hypothesis / option A. Rejecting at $$\alpha=0.05$$ is the same as checking whether $$\|z\| > 1.96$$. That is all the p-value is: the probability of observing the data I got, or something more extreme, presuming that the null hypothesis/ option A=option B is true.
+The significance of the result is then defined with respect to whether the p-value is smaller than our defined significance threshold $$\alpha$$ (vertical lines in p-value plots). i.e. if $$p<\alpha$$ we can say that we can reject the null hypothesis / option A. Rejecting at $$\alpha=0.05$$ is the same as checking whether $$\|z\| > 1.96$$. That is all the p-value is: the probability of observing the data I got, or something more extreme, presuming that the null hypothesis/ option A=option B is true.
 
 
 Things that the p-value is not:
@@ -595,7 +595,7 @@ So "**check yourself before you wreck yourself**" basically.
 
 ### Peeking and Winner's Bias
 
-"*Peeking*" is specifically the phenomenon of looking at an experiment's results before collecting the required number of samples based on the power analysis you did beforehand, seeing a "significant" positive result, and finishing the experiment early. I'm gonna skip the explanations as to why real quick and first just say: **THIS IS BAD, DON'T DO THIS**. 
+"*Peeking*" is specifically the phenomenon of looking at an experiment's results before collecting the required number of samples based on the power analysis you did beforehand, seeing a "significant" positive result, and finishing the experiment early. I'm gonna skip the explanations as to why real quick and first just say: **THIS IS BAD, DON'T DO THIS. WAIT FOR THE EXPERIMENT TO END!**. 
 
 And now the explanation.
 
@@ -846,12 +846,58 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 # Part II: How it works and other fun asides
 
+Okay, now for the people with the interest AND time, I'm going to do as mathematically driven approach to a bunch of ideas and topics in the above, building up to more modern methods, and their draw backs and benefits. Trying to clearly show how everything comes about.
+
+
 
 ## The causal foundation
 
+
+Starting off with what we're actually doing statistics on, let's say we have a single visitor to the dog-food site, Sam. 
+
+Before Sam arrives/interacts, there are two possible outcomes:
+
+- $$Y_\text{Sam}(A)$$: whether Sam buys if shown page A
+- $$Y_\text{Sam}(B)$$: whether Sam buys if shown page B
+
+The effect of the page on Sam is the difference:
+
+$$\tau_\text{Sam} = Y_\text{Sam}(B) - Y_\text{Sam}(A)$$
+
+But Sam only ever gets to see the one page. If Sam sees B, then $$Y_\text{Sam}(A)$$ is a *counterfactual*: what *would* have happened, which we don't get to observe.
+
+This is the fundamental problem of causal inference (Holland 1986): individual effects are never directly measurable.
+
+So instead we aim for the average effect over everyone:
+
+$$\text{ATE} = \mathbb{E}\big[Y(B) - Y(A)\big] = \mathbb{E}[Y(B)] - \mathbb{E}[Y(A)]$$
+
+We can estimate that pretty concretely, because each half of the expression only needs some people's outcomes under B and some under A.
+
+Writing $$T = B$$ for "was shown B". What we can compute from data is
+
+$$\mathbb{E}[Y \mid T{=}B] - \mathbb{E}[Y \mid T{=}A]$$
+
+i.e. the average outcome of the people who got B minus that of the people who got A. Adding and subtracting $$\mathbb{E}[Y(A) \mid T{=}B]$$ splits it into
+
+$$\underbrace{\mathbb{E}[Y(B) - Y(A) \mid T{=}B]}_{\text{effect on those who got B}} \;+\; \underbrace{\mathbb{E}[Y(A) \mid T{=}B] - \mathbb{E}[Y(A) \mid T{=}A]}_{\text{selection bias}}$$
+
+The selection-bias term asks: would the B group have behaved differently even with page A? 
+
+In the intro's month-by-month comparison it would: B's month had Christmas shoppers, who buy more regardless of the page. 
+
+
+
+
 ### Potential outcomes (Rubin): the effect we can never observe
 
+
+
+
 ### Why randomisation makes the difference in means unbiased
+
+
+
 
 ## SUTVA, and cluster / switchback designs when it fails
 
@@ -861,37 +907,117 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 ## Basic two-group tests
 
+
+
+
 ### Which test when: proportions vs means vs counts
+
+
+
 
 ### z-test, t-test, chi-squared test of independence, matched pairs
 
+
+
+
 ### Fisher's exact test and the lady tasting tea
+
+
+
 
 ### The Neyman–Pearson lemma: why likelihood ratios are optimal
 
+
+
+
 ### Deriving the sample-size / power formula
+
+
+
 
 ### Power by Simulation: Monte Carlo when the formula doesn't apply
 
 
 
+
+
+
+
+
+
+
 ## When the CLT lets you down
+
+
+
+
+
+
+
 ### Heavy tails and slow convergence (simulation)
+
+
+
+
 ### Permutation tests: exact inference from shuffling labels
+
+
+
+
 ### Bootstrap confidence intervals
+
+
+
+
 ### Mann–Whitney U, and what it actually tests
 
 
+
+
+
+
+
+
+
 ## Ratio metrics and the delta method
+
+
 ### Why naive standard errors are too small
+
+
+
 ### Deriving the delta-method variance
 
 
+
+
+
+
+
+
 ## Variance reduction
+
+
+
 ### Stratification and post-stratification
+
+
+
 ### CUPED as control variates
 
+
+
+
+
+
+
 ## More than two groups: one-way ANOVA and the F-statistic (brief; links to the follow-up post)
+
+
+
+
+
+
 
 
 ## Peeking, formally
@@ -899,15 +1025,36 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 ### The experiment as a random walk
 
+
+
+
 ### How bad is it? Simulating false-positive rates under peeking
+
+
+
 
 ### The look-elsewhere effect and trials factors
 
+
+
+
 ### Wald's sequential probability ratio test (a WWII story, but probably not as good as Private Ryan)
+
+
+
 
 ### Fixes: group-sequential designs (O'Brien–Fleming)
 
+
+
+
 ### Fixes: always-valid inference (mSPRT, confidence sequences)
+
+
+
+
+
+
 
 
 
@@ -915,14 +1062,30 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 
 
+
+
+
+
+
+
 ## The winner's curse, formally
+
 
 
 
 ### Selection bias in estimated effects
 
 
+
+
+
 ### Shrinkage: James–Stein and hierarchical models to the rescue
+
+
+
+
+
+
 
 
 
@@ -931,13 +1094,25 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 
 
+
+
+
 ### Beta-binomial posteriors and P(B > A)
+
+
+
 
 
 ### Expected loss as a stopping rule
 
 
+
+
+
 ### Does Bayes fix peeking? (Not really)
+
+
+
 
 
 ### Hierarchical priors from past experiments
@@ -945,12 +1120,27 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 
 
+
+
+
+
+
+
 ## Beyond fixed experiments: multi-armed bandits
+
+
+
 
 
 ### Explore vs exploit, and regret
 
+
+
+
 ### ε-greedy, UCB and Thompson sampling
+
+
+
 
 
 ### When to use a bandit instead of an A/B test (and when not to)
@@ -958,9 +1148,27 @@ But I'll mention a few things that I would've liked to put in, that *will* go in
 
 
 
+
+
+
+
+
+
 ## Case study: from A/B tests to adaptive clinical trials
+
+
+
 ### A simulated drug trial with early stopping
+
+
+
 ### Response-adaptive randomisation (bandits in medicine)
+
+
+
+
+
+
 
 
 ## Case study: New Website Landing Page Design
