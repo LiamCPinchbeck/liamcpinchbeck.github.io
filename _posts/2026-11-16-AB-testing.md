@@ -855,36 +855,64 @@ Okay, now for the people with the interest AND time, I'm going to do as mathemat
 
 Starting off with what we're actually doing statistics on, let's say we have a single visitor to the dog-food site, Sam. 
 
-Before Sam arrives/interacts, there are two possible outcomes:
+Before Sam arrives/interacts (we'll denote the *effect* of interacting with a given option $$Y$$, and specifically *Sam* interacting with an option /experienciing an option/category $$Y_\text{Sam}$$. This might seem overly specific atm, but trust me it makes some of the later stuff easier to disentangle, so might as well put it here than there.), there are two possible outcomes:
 
 - $$Y_\text{Sam}(A)$$: whether Sam buys if shown page A
 - $$Y_\text{Sam}(B)$$: whether Sam buys if shown page B
 
 The effect of the page on Sam is the difference:
 
-$$\tau_\text{Sam} = Y_\text{Sam}(B) - Y_\text{Sam}(A)$$
+$$\Delta Y_\text{Sam} = Y_\text{Sam}(B) - Y_\text{Sam}(A)$$
 
-But Sam only ever gets to see the one page. If Sam sees B, then $$Y_\text{Sam}(A)$$ is a *counterfactual*: what *would* have happened, which we don't get to observe.
+However, Sam only ever gets to experience landing on the one page. If Sam sees B, then $$Y_\text{Sam}(A)$$ is a *counterfactual*: what *would* have happened, but we don't actually get to observe.
 
-This is the fundamental problem of causal inference (Holland 1986): individual effects are never directly measurable.
+*This* is the fundamental problem of causal inference (Holland 1986): individual effects **cannot** be directly measurable.
 
-So instead we aim for the average effect over everyone:
+So instead, we aim for an average effect over everyone:
 
 $$\text{ATE} = \mathbb{E}\big[Y(B) - Y(A)\big] = \mathbb{E}[Y(B)] - \mathbb{E}[Y(A)]$$
 
-We can estimate that pretty concretely, because each half of the expression only needs some people's outcomes under B and some under A.
+With $$\text{ATE}=\text{Average Treatment Effect}$$. This is a proper quantity that we can robustly perform inference with, because each half of the expression only needs *some* people's outcomes under B and *some* under A. We don't require the multiverse to decide whether dog will eat one brand of food or the other.
 
-Writing $$T = B$$ for "was shown B". What we can compute from data is
+Writing $$T = B$$ for "was shown B" ($$T$$ is a denotion of the random variable in the same way that $$X$$ is often used like $$P(X=x)$$). What we can compute from data is
 
 $$\mathbb{E}[Y \mid T{=}B] - \mathbb{E}[Y \mid T{=}A]$$
 
-i.e. the average outcome of the people who got B minus that of the people who got A. Adding and subtracting $$\mathbb{E}[Y(A) \mid T{=}B]$$ splits it into
+i.e. the average effect/outcome of the people who got B, minus that of the people who got A. Adding and subtracting $$\mathbb{E}[Y(A) \mid T{=}B]$$ splits it into
 
-$$\underbrace{\mathbb{E}[Y(B) - Y(A) \mid T{=}B]}_{\text{effect on those who got B}} \;+\; \underbrace{\mathbb{E}[Y(A) \mid T{=}B] - \mathbb{E}[Y(A) \mid T{=}A]}_{\text{selection bias}}$$
+$$\begin{align}
+& \mathbb{E}[Y(B) | T{=}B] − E[Y(A) | T{=}B] + \mathbb{E}[Y(A) | T{=}B] − E[Y(A) | T{=}A] \\
+& = \underbrace{\mathbb{E}[Y(B) - Y(A) \mid T{=}B]}_{\text{effect on those who got B}} \;+\; \underbrace{\mathbb{E}[Y(A) \mid T{=}B] - \mathbb{E}[Y(A) \mid T{=}A]}_{\text{selection bias}}
+\end{align}$$
 
-The selection-bias term asks: would the B group have behaved differently even with page A? 
+The selection-bias term asks: would the B group have behaved differently even with page A? Ir in another way, if we swapped the participants for groups A and B, would we observe the same outcome. Unfortunately, we also cannot ever directly observe this (unless someone has access to some spare multiverses), but we can indirectly. 
 
-In the intro's month-by-month comparison it would: B's month had Christmas shoppers, who buy more regardless of the page. 
+In the intro's month-by-month comparison it caused a change: B's month had Christmas shoppers, who buy more regardless of the page. This relates to the (discrete) four types of visitors that we would observe:
+- No matter the landing page: the person never buys anything (blegh). The two options make no effect (😬).
+- No matter the landing page: the person always buys anything (yay!). The two options make no effect (😬).
+- If shown B would not buy, but if shown A *would* buy. The two options have an effect (😮).
+- If shown A would not buy, but if shown B *would* buy. The two options have an effect (😮).
+
+If we denote buying a product 1, nd not buying as 0. Then what these options translate into is
+
+|Type | (Y(A), Y(B)) | Individual effect $$\tau$$ | Share of population |
+| -- | -- | -- | -- |
+| Never-buyer | (0, 0)  |0 | $$\pi_N$$ |
+| Always-buyer | (1, 1) | 0 | $$\pi_S$$ |
+| Put off by B | (1, 0) | −1 | $$\pi_H$$ |
+| Persuadable by B | (0, 1) | +1 | $$\pi_P$$ |
+
+The shares satisfy $$\pi_N + \pi_S + \pi_H + \pi_P = 1$$. And back to what we have to analyse:
+
+$$\begin{align}
+\mathbb{E}[Y \mid T{=}A] &= \pi_S + \pi_H \text{(who buys under A?)}
+\mathbb{E}[Y \mid T{=}B] &= \pi_S +  \pi_P \text{(who buys under B?)}
+\text{ATE} = \mathbb{E}\big[Y(B) - Y(A)\big] = \pi_P − \pi_H
+\end{align}$$
+
+And boom, those people that are unaffected by the landing page don't come into our estimate!!!! This is similar to the placebo effect and why we need to control it during out experiments. Sometimes an illness will miraculously get better, regardless of treatment, just because the person *believes* they will get better.
+
+
 
 
 
